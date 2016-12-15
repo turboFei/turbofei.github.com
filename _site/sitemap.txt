@@ -16,4 +16,3 @@ http://bbwff.github.io/java/2016/11/17/Jvm-%E7%9B%B8%E5%85%B3
 http://bbwff.github.io/java/2016/11/13/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8
 http://bbwff.github.io/%E7%A7%91%E7%A0%94%E7%9B%B8%E5%85%B3/2016/08/30/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BC%9A%E8%AE%AE
 http://bbwff.github.io/%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/2016/08/17/ganglia-%E5%AE%89%E8%A3%85
-http://bbwff.github.io/java/2016/07/10/java-%E6%96%87%E4%BB%B6%E5%A4%96%E9%83%A8%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F
