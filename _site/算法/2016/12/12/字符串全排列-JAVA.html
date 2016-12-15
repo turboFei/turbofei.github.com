@@ -1,0 +1,368 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>字符串全排列</title>
+    
+    <meta name="author" content="bbw">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes//bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes//css/style.css" rel="stylesheet" type="text/css" media="all">
+
+    <!-- code highlighting-->
+    <link href="/assets/google-code-prettify/desert.css" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images -->
+    <link rel="shortcut icon" href="img/logo.ico">
+   <!-- <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+  </head>
+
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="/">bbw's blog</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              
+              
+              
+
+
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+  
+    
+      
+      	
+      	<li><a href="/pages">Pages</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+
+
+
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="row">
+        
+<div class="span9">
+  <div class="page-header">
+    <h1>字符串全排列 </h1>
+  </div>
+
+  
+    <ul class="tag_box inline">
+      <li><i class="icon-folder-open"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/categories.html#算法-ref">
+    		算法 (4)
+    	</a></li>
+    
+  
+
+
+
+    </ul>
+    
+
+  
+    <ul class="tag_box inline">
+      <li><i class="icon-tags"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/tags.html#algorithm-ref">algorithm <span>4</span></a></li>
+    
+  
+
+
+
+    </ul>
+  
+  <hr>
+
+  <div class="row-fluid post-full">
+    <div class="span12">
+      <div class="date">
+        <span>12 December 2016</strong>
+      </div>
+      <div class="content">
+        
+<p><strong>Overview</strong></p>
+
+<p>最近在做一些牛客网上的题，遇到一道题，是对一个字符串，按字典序输出它的全排列。</p>
+
+<h2 id="题目描述">题目描述</h2>
+
+<p>输入一个字符串,按字典序打印出该字符串中字符的所有排列。例如输入字符串abc,则打印出由字符a,b,c所能排列出来的所有字符串abc,acb,bac,bca,cab和cba。 
+<!--more--></p>
+<h2 id="解题过程">解题过程</h2>
+<p>一开始受数学的思想影响严重，总是觉得全排列是先从n个字符里面随机取出一个，然后再从n-1里面随机取出一个字符，直到取完为止。但是这样直接分支来写，很难写出来的。 
+可以把这个过程转为递归的过程。像数学归纳法一样，一步一步化繁为简。
+数学归纳法的思想如下：
+一般地，证明一个与自然数n有关的命题P(n），有如下步骤：
+（1）证明当n取第一个值n0时命题成立。n0对于一般数列取值为0或1，但也有特殊情况；
+（2）假设当n=k（k≥n0，k为自然数）时命题成立，证明当n=k+1时命题也成立。
+综合（1）（2），对一切自然数n（≥n0），命题P(n）都成立。</p>
+
+<p>然后运用到此处，
+初始条件：当只有一个字符的时候，他的全排列就是他本身。
+1）当有两个字符的时候，他的全排列就是所有字符和第一个字符交换之后的第一个字符加后面一个字符的全排列。
+2）当有K+1字符的时候，他的全排列就是所有字符分别与第一个字符交换之后的第一个字符加后面k个字符的全排列。
+综合 (1) (2)，对一切自然数n(n&gt;0),这个命题都成立。</p>
+
+<p>然后数学归纳法，一般是由初始条件到一般条件的归纳，跟递归的过程刚好相反，但只要我们归纳出了这个规律，写递归就简单了。</p>
+
+<p>设一组数p = {r1, r2, r3, … ,rn}, 全排列为perm(p)，pn = p - {rn}。
+因此perm(p) = r1perm(p1), r2perm(p2), r3perm(p3), … , rnperm(pn)。当n = 1时perm(p} = r1。
+其实就是跟归纳一个反的过程。代码如下</p>
+
+<pre><code class="language-JAVA">import java.util.*;
+
+/**
+ * Created by bbw on 16/12/11.
+ */
+public class Permutation {
+    TreeSet&lt;String&gt; treeSet=new TreeSet&lt;String&gt;();
+    public  void  swap(char[] str,int a,int b){
+        char c=str[a];
+        str[a]=str[b];
+        str[b]=c;
+    }
+ public void perm(char[] str, int a,int b){
+        if (a==b){
+            String t="";
+            for (int i=0;i&lt;=b;i++){
+                t=t+str[i];
+
+            }
+            treeSet.add(t);
+        }
+        else {
+            for (int i=a;i&lt;=b;i++){
+                swap(str,i,a);
+                perm(str,a+1,b);
+                swap(str,i,a);
+            }
+
+        }
+    }
+    public ArrayList&lt;String&gt; Permutation(String str) {
+        perm(str.toCharArray(),0,str.length()-1);
+        ArrayList&lt;String&gt; r=new ArrayList&lt;String&gt;();
+        for (String s:treeSet)
+            r.add(s);
+        return r;
+
+    }
+}
+</code></pre>
+
+
+      </div>
+ 
+      <hr>
+        <div class="pagination">
+          <ul>
+          
+            <li class="prev"><a href="/%E7%AE%97%E6%B3%95/2016/11/28/%E7%AE%97%E6%B3%95%E5%AF%BC%E8%AE%BA%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0" title="算法导论学习笔记">&larr; Previous</a></li>
+          
+            <li><a href="/archive.html">Archive</a></li>
+          
+            <li class="next"><a href="/%E7%AE%97%E6%B3%95/2016/12/13/%E5%8C%BA%E9%97%B4%E5%86%851%E5%87%BA%E7%8E%B0%E6%AC%A1%E6%95%B0" title="区间内1出现次数">Next &rarr;</a></li>
+          
+          </ul>
+        </div>
+      <hr>
+      
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'bbwff'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+    </div>
+  </div>
+</div>
+<div class="span3">
+  <div class="well sidebar-nav">
+  <div class="content">
+    <p style="text-align:center;">
+      <img src="/img/smg.jpg" alt="myself" width="120"> 
+    </p>
+  </div>
+  <HR>
+  <ul class="nav nav-list">
+    <li class="nav-header">Categories</li>
+      
+      
+
+
+  
+     
+    	<li><a href="/categories.html#java-ref">
+    		java (3)
+    	</a></li>
+     
+    	<li><a href="/categories.html#环境配置-ref">
+    		环境配置 (1)
+    	</a></li>
+     
+    	<li><a href="/categories.html#科研相关-ref">
+    		科研相关 (1)
+    	</a></li>
+     
+    	<li><a href="/categories.html#算法-ref">
+    		算法 (4)
+    	</a></li>
+    
+  
+
+
+
+    <li class="nav-header">Tags</li>
+      
+      
+
+
+  
+     
+    	<li><a href="/tags.html#java-ref">java <span>(3)</span></a></li>
+     
+    	<li><a href="/tags.html#env-ref">env <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#related-ref">related <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#algorithm-ref">algorithm <span>(4)</span></a></li>
+    
+  
+
+
+
+    <li class="nav-header">Links</li>
+    <li><a href="http://www.ruanyifeng.com/blog/">阮一峰的网络日志</a></li>
+    <li><a href="http://mindhacks.cn/">刘未鹏</a></li>
+    <li><a href="http://coolshell.cn/">酷壳</a></li>
+    <li><a href="http://dplord.com/">dplord</a></li>
+  </ul>
+  
+</div>
+
+</div>
+
+
+      </div> <!--/.row-->
+
+      <hr>
+      <footer>
+        <p>&copy; 2016 bbw
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+    </div>
+
+<!-- code highlighting -->
+
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/google-code-prettify/prettify.js"></script>
+    <script type="text/javascript">
+      !function ($) {
+        $(function(){
+            $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto');
+            window.prettyPrint && prettyPrint();
+        });
+      }(window.jQuery);
+    </script>
+    <!-- math function -->
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    
+  </body>
+</html>
+

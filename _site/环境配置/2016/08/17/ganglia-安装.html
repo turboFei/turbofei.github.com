@@ -1,0 +1,533 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>ganglia 安装</title>
+    
+    <meta name="author" content="bbw">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes//bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes//css/style.css" rel="stylesheet" type="text/css" media="all">
+
+    <!-- code highlighting-->
+    <link href="/assets/google-code-prettify/desert.css" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images -->
+    <link rel="shortcut icon" href="img/logo.ico">
+   <!-- <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+  </head>
+
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="/">bbw's blog</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              
+              
+              
+
+
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+  
+    
+      
+      	
+      	<li><a href="/pages">Pages</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+
+
+
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="row">
+        
+<div class="span9">
+  <div class="page-header">
+    <h1>ganglia 安装 </h1>
+  </div>
+
+  
+    <ul class="tag_box inline">
+      <li><i class="icon-folder-open"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/categories.html#环境配置-ref">
+    		环境配置 (1)
+    	</a></li>
+    
+  
+
+
+
+    </ul>
+    
+
+  
+    <ul class="tag_box inline">
+      <li><i class="icon-tags"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/tags.html#env-ref">env <span>1</span></a></li>
+    
+  
+
+
+
+    </ul>
+  
+  <hr>
+
+  <div class="row-fluid post-full">
+    <div class="span12">
+      <div class="date">
+        <span>17 August 2016</strong>
+      </div>
+      <div class="content">
+        
+<p><strong>Overview</strong></p>
+
+<p>最近帮大菠萝安装ganglia，记录下，方便以后安装。</p>
+
+<h1 id="cluster-server-and-clients">Cluster Server and Clients</h1>
+
+<p>I configured our nodes with the following hostnames using these steps. Our server is:</p>
+
+<pre><code>3.buhpc.com
+</code></pre>
+
+<p>The clients are:</p>
+
+<pre><code>1.buhpc.com
+2.buhpc.com
+4.buhpc.com
+5.buhpc.com
+6.buhpc.com
+</code></pre>
+<!--more-->
+
+<h1 id="installation">Installation</h1>
+
+<p>On the server, inside the shared folder of our cluster, we will first download the latest version of ganglia. For our cluster, /nfs is the folder with our network file system.</p>
+
+<pre><code>cd /nfs
+wget http://downloads.sourceforge.net/project/ganglia/ganglia%20monitoring%20core/3.7.2/ganglia-3.7.2.tar.gz
+</code></pre>
+<p>On the server, we will install dependencies and libconfuse.</p>
+
+<pre><code>yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
+yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
+yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
+
+#建立rrd数据库
+mkdir -p /var/lib/ganglia/rrds/
+chown nobody:nobody -R /var/lib/ganglia/rrds/
+</code></pre>
+
+<p>Now, we will build the rpms from ganglia-3.7.2 on the server.</p>
+
+<pre><code>rpmbuild -tb ganglia-3.7.2.tar.gz
+</code></pre>
+<p>After running rpmbuild, /root/rpmbuild/RPMS/x86_64 contains the generated rpms:</p>
+
+<pre><code>cd /root/rpmbuild/RPMS/x86_64/
+yum install *ganglia*.rpm -y
+</code></pre>
+<p>We will remove gmetad because we do not need it on the clients. Send the rest of the rpms to all the clients’ /tmp folder:</p>
+
+<pre><code>cd /root/rpmbuild/RPMS/x86_64/
+rm -rf ganglia-gmetad*.rpm
+scp *.rpm root@1.buhpc.com:/tmp
+scp *.rpm root@2.buhpc.com:/tmp
+scp *.rpm root@4.buhpc.com:/tmp
+scp *.rpm root@5.buhpc.com:/tmp
+scp *.rpm root@6.buhpc.com:/tmp
+</code></pre>
+<p>SSH onto every client and install the rpms that we will need:</p>
+
+<pre><code>ssh root@#.buhpc.com
+yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
+yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
+yum install /tmp/*ganglia*.rpm - y
+</code></pre>
+<p>Back on the server, we will adjust the gmetad configuration file:</p>
+
+<pre><code>cd /etc/ganglia
+vim gmetad.conf
+</code></pre>
+<p>buhpc will be the name of  our cluster. Find the following line and add the name of your cluster and ip address. I am using the subdomain instead of the ip address.</p>
+
+<pre><code>data_source "buhpc" 1 3.buhpc.com
+</code></pre>
+<p>Now, we edit the server’s gmond configuration file.</p>
+
+<pre><code>vim /etc/ganglia/gmond.conf
+</code></pre>
+<p>Make sure that these sections have the following and comment any extra lines you see that are within each section.</p>
+
+<pre><code>cluster {
+  name = "buhpc"
+  owner = "unspecified"
+  latlong = "unspecified"
+  url = "unspecified"
+}
+
+udp_send_channel {
+  host = 1.buhpc.com
+  port = 8649
+  ttl = 1
+}
+
+udp_send_channel {
+  host = 2.buhpc.com
+  port = 8649
+  ttl = 1
+}
+
+udp_send_channel {
+  host = 3.buhpc.com
+  port = 8649
+  ttl = 1
+}
+udp_send_channel {
+  host = 4.buhpc.com
+  port = 8649
+  ttl = 1
+}
+
+udp_send_channel {
+  host = 5.buhpc.com
+  port = 8649
+  ttl = 1
+}
+
+udp_send_channel {
+  host = 6.buhpc.com
+  port = 8649
+  ttl = 1
+}
+
+udp_recv_channel {
+  port = 8649
+  retry_bind = true
+}
+</code></pre>
+<p>Now, SSH into each of the clients and do the following individually. On every client:</p>
+
+<pre><code>vim /etc/ganglia/gmond.conf
+</code></pre>
+<p>We will change the clients’ gmond.conf in the same way as the server’s.  Make sure that these sections have the following lines and comment any extra lines you see that are within each section.</p>
+
+<pre><code>cluster {
+  name = "buhpc"
+  owner = "unspecified"
+  latlong = "unspecified"
+  url = "unspecified"
+}
+
+udp_send_channel {
+  host = 1.buhpc.com
+  port = 8649
+  ttl = 1
+}
+
+udp_send_channel {
+  host = 2.buhpc.com
+  port = 8649
+  ttl = 1
+}
+
+udp_send_channel {
+  host = 3.buhpc.com
+  port = 8649
+  ttl = 1
+}
+udp_send_channel {
+  host = 4.buhpc.com
+  port = 8649
+  ttl = 1
+}
+
+udp_send_channel {
+  host = 5.buhpc.com
+  port = 8649
+  ttl = 1
+}
+
+udp_send_channel {
+  host = 6.buhpc.com
+  port = 8649
+  ttl = 1
+}
+
+udp_recv_channel {
+  port = 8649
+  retry_bind = true
+}
+</code></pre>
+<p>We will start gmond on the clients for monitoring.</p>
+
+<pre><code>chkconfig gmond on
+systemctl start gmond
+</code></pre>
+<p>然后，安装ganglia-web 3.7.1</p>
+
+<pre><code>wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
+tar zxvf  ganglia-web-3.7.1.tar.gz
+cd  ganglia-web-3.7.1
+vim Makefile
+      # Location where gweb should be installed to (excluding conf, dwoo dirs).
+      GDESTDIR = /var/www/html/ganglia
+
+      # Gweb statedir (where conf dir and Dwoo templates dir are stored)
+      GWEB_STATEDIR = /var/lib/ganglia-web
+
+      # Gmetad rootdir (parent location of rrd folder)
+      GMETAD_ROOTDIR = /var/lib/ganglia
+
+      # User by which your webserver is running
+      APACHE_USER =  apache
+
+ make install
+</code></pre>
+
+<p>Next, we will want to disable SELinux. Change SELINUX inside /etc/sysconfig/selinux from enforcing to disabled. Then, restart the server node.</p>
+
+<pre><code>vim /etc/sysconfig/selinux
+SELINUX=disabled
+#如果 SELINUX本就是disable，不必reboot
+reboot
+Now, on the server, we’ll open the correct ports on the firewall.
+
+#如果 firewall 没有打开，systemctl service firewalld
+firewall-cmd --permanent --zone=public --add-service=http
+firewall-cmd --permanent --zone=public --add-port=8649/udp
+firewall-cmd --permanent --zone=public --add-port=8649/tcp
+firewall-cmd --permanent --zone=public --add-port=8651/tcp
+firewall-cmd --permanent --zone=public --add-port=8652/tcp
+firewall-cmd --reload
+</code></pre>
+<p>On the server, we will now start httpd, gmetad, and gmond.</p>
+
+<pre><code>chkconfig httpd
+chkconfig gmetad on
+chkconfig gmond on
+systemctl start httpd
+systemctl start gmetad
+systemctl start gmond
+</code></pre>
+<p>Visit http://3.buhpc.com/ganglia to see Ganglia’s monitoring. You should see something like this:</p>
+
+<p><img src="http://www.slothparadise.com/wp-content/uploads/2016/03/ganglia-home-page.png" alt="" /></p>
+
+
+      </div>
+ 
+      <hr>
+        <div class="pagination">
+          <ul>
+          
+            <li class="prev"><a href="/java/2016/07/10/java-%E6%96%87%E4%BB%B6%E5%A4%96%E9%83%A8%E5%BD%92%E5%B9%B6%E6%8E%92%E5%BA%8F" title="java 文件外部归并排序">&larr; Previous</a></li>
+          
+            <li><a href="/archive.html">Archive</a></li>
+          
+            <li class="next"><a href="/%E7%A7%91%E7%A0%94%E7%9B%B8%E5%85%B3/2016/08/30/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BC%9A%E8%AE%AE" title="计算机会议">Next &rarr;</a></li>
+          
+          </ul>
+        </div>
+      <hr>
+      
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'bbwff'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+    </div>
+  </div>
+</div>
+<div class="span3">
+  <div class="well sidebar-nav">
+  <div class="content">
+    <p style="text-align:center;">
+      <img src="/img/smg.jpg" alt="myself" width="120"> 
+    </p>
+  </div>
+  <HR>
+  <ul class="nav nav-list">
+    <li class="nav-header">Categories</li>
+      
+      
+
+
+  
+     
+    	<li><a href="/categories.html#java-ref">
+    		java (3)
+    	</a></li>
+     
+    	<li><a href="/categories.html#环境配置-ref">
+    		环境配置 (1)
+    	</a></li>
+     
+    	<li><a href="/categories.html#科研相关-ref">
+    		科研相关 (1)
+    	</a></li>
+     
+    	<li><a href="/categories.html#算法-ref">
+    		算法 (4)
+    	</a></li>
+    
+  
+
+
+
+    <li class="nav-header">Tags</li>
+      
+      
+
+
+  
+     
+    	<li><a href="/tags.html#java-ref">java <span>(3)</span></a></li>
+     
+    	<li><a href="/tags.html#env-ref">env <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#related-ref">related <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#algorithm-ref">algorithm <span>(4)</span></a></li>
+    
+  
+
+
+
+    <li class="nav-header">Links</li>
+    <li><a href="http://www.ruanyifeng.com/blog/">阮一峰的网络日志</a></li>
+    <li><a href="http://mindhacks.cn/">刘未鹏</a></li>
+    <li><a href="http://coolshell.cn/">酷壳</a></li>
+    <li><a href="http://dplord.com/">dplord</a></li>
+  </ul>
+  
+</div>
+
+</div>
+
+
+      </div> <!--/.row-->
+
+      <hr>
+      <footer>
+        <p>&copy; 2016 bbw
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+    </div>
+
+<!-- code highlighting -->
+
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/google-code-prettify/prettify.js"></script>
+    <script type="text/javascript">
+      !function ($) {
+        $(function(){
+            $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto');
+            window.prettyPrint && prettyPrint();
+        });
+      }(window.jQuery);
+    </script>
+    <!-- math function -->
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    
+  </body>
+</html>
+

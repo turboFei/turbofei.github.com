@@ -1,0 +1,337 @@
+---
+layout: post
+category: java
+summary: 最近在写堆外操作的代码，需要用到unsafe 类，记录下。
+title: java unsafe类的使用
+date: 2016-11-13 00:24:19
+tags:  java
+toc: true
+comments: true
+categories:
+- java
+---
+{% include JB/setup %}
+
+
+**Overview**
+
+{{ page.summary }}
+
+# unsafe 简介
+
+unsafe类位于 sun.misc包,之所以叫unsafe是因为他操作堆外内存，即不受JVM控制的内存。由于最近要做点把数据存储在堆外的工作，所以了解了下unsafe。
+
+<!--more-->
+
+下面是关于unsafe做测试的代码。
+
+
+```JAVA
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
+
+/**
+ * Created by bbw on 2016/11/11.
+ */
+class cat{
+    public Integer name;
+    public Integer age;
+    public cat(Integer name,Integer age){
+        this.name=name;
+        this.age=age;
+    }
+
+}
+public class testUnSafe {
+    private static int apple = 10;
+    private int orange = 10;
+    private int banana=10;
+    public   cat ki=new cat(233,3);
+
+ //这是获得对象里面对象field的方法，根据这个对象在类里面的偏移量来获得
+    public Object getObject(long offset) throws SecurityException, NoSuchFieldException, IllegalArgumentException,
+            IllegalAccessException{
+        return getUnsafeInstance().getObject(this,offset);
+    }
+
+
+    public static void main(String[] args) throws Exception {
+        Unsafe unsafe = getUnsafeInstance();
+        testUnSafe tus=new testUnSafe();
+
+        Field appleField = testUnSafe.class.getDeclaredField("apple");
+        // 获得field的偏移量
+        System.out.println("Location of Apple: " + unsafe.staticFieldOffset(appleField));
+
+        Field orangeField = testUnSafe.class.getDeclaredField("orange");
+        System.out.println("Location of Orange: " + unsafe.objectFieldOffset(orangeField));
+
+
+
+//这是field 是一个cat类的实例化对象，根据他的便宜地址获得对象，然后强制类型转化
+        Field catField = testUnSafe.class.getDeclaredField("ki");
+        System.out.println("Location of cat: " + unsafe.objectFieldOffset(catField));
+        long offset=unsafe.objectFieldOffset(catField);
+        Object rki=tus.getObject(offset);
+        cat rrki=(cat)rki;
+        System.out.println(rrki.name);
+
+        // follow is addressTest
+        cat ncat=new cat(333,444);
+        cat ncat2=new cat(555,666);
+        cat[] ca={ncat,ncat2};
+        long catArrayOffset=unsafe.arrayBaseOffset(cat[].class);
+        System.out.println(catArrayOffset+" "+unsafe.arrayIndexScale(cat[].class));
+        //cat rncat=((cat[])(tus.getObject(catArrayOffset)))[0];
+       // System.out.println(rncat.name+rncat.age);
+        Field bananaField = testUnSafe.class.getDeclaredField("banana");
+        System.out.println("Location of banana: " + unsafe.objectFieldOffset(bananaField));
+    }
+    
+    //获得unsafe 的方法，是单例模式
+    private static Unsafe getUnsafeInstance() throws SecurityException, NoSuchFieldException, IllegalArgumentException,
+            IllegalAccessException {
+        Field theUnsafeInstance = Unsafe.class.getDeclaredField("theUnsafe");
+        theUnsafeInstance.setAccessible(true);
+        return (Unsafe) theUnsafeInstance.get(Unsafe.class);
+    }
+}
+
+```
+
+
+unsafe 是单例模式，所以全局就只有一个unsafe，必须用它提供的方法来获取。
+然后里面有获得里面字段 和静态字段偏移地址的方法，偏移地址是相对于在这个对象里面的偏移地址，可以根据偏移地址获得这个field。
+例如，我在这个类里面声明的 cat 类 field ，就可以根据它在对象里面偏移地址来取得这个类。
+
+至于如何获得方法里面变量的内存地址以及如何通过这个获得的内存地址来取得这个变量对象，我还不是很明白，只知道unsafe.arrayBaseOffset 来获得对象数据的偏移地址。
+
+下面是我写的一个静态类，可以用来实现unsafe的放置变量，并且可以把这块堆外内存里面存的数据转化为迭代器。
+我是这样存数据的，首先是申请一块堆外内存，然后前四个字节存储这块内存的大小，然后紧接着四个字节存储已经使用的大小。然后存储数据的类型是从外部传进去的，0代表int,1代表long，2代表double。
+然后每次在写入数据的时候，都会判断这块内存的大小够不够写入数据，如果不够就申请一个更大的内存，然后把原来的数据拷贝到新的内存里面，重新对这块内存的前八个字节赋值，即内存的大小和使用情况。
+然后这个类的静态参数在每次传入内存的起始地址后会首先读取这块内存的前八个字节，获得内存大小以及使用情况。
+
+
+
+```JAVA
+
+package org.apache.spark.unsafe;
+import java.util.Iterator;
+/**
+ * Created by bbw on 2016/11/14.
+ */
+public  final class UnsafeBuffer<T> {
+
+
+
+    public  static int  MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+    public static   int  hugeCapacity(int minCapacity) {
+        if (minCapacity < 0) throw new OutOfMemoryError();
+        if ((minCapacity > MAX_ARRAY_SIZE))
+            return Integer.MAX_VALUE;
+        else
+            return MAX_ARRAY_SIZE;
+        }
+
+
+    public static long  copyBuf2New ( long baseAddress,int vType,int  minCapacity) {
+        // read the size and count of this buf(the format size,count)
+        int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+
+
+        long address = PlatformDependent.UNSAFE.allocateMemory(minCapacity);
+        // write the size and count
+
+        PlatformDependent.UNSAFE.putInt(null,address,minCapacity);
+        PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount);
+
+
+        int   i= 8;
+        switch (vType) {
+            case 0 :
+        while (i < sizeCount) {
+        PlatformDependent.UNSAFE.putInt(null, address + i, PlatformDependent.UNSAFE.getInt(null, baseAddress + i));
+        i = i + 4;
+        }
+            case 1 :
+        while (i < sizeCount) {
+        PlatformDependent.UNSAFE.putLong(null, address + i, PlatformDependent.UNSAFE.getLong(null, baseAddress + i));
+        i = i + 8;
+        }
+            case 2 :
+        while (i < sizeCount) {
+        PlatformDependent.UNSAFE.putDouble(null, address + i, PlatformDependent.UNSAFE.getDouble(null, baseAddress + i));
+        i = i + 8;
+        }
+        default:
+            assert (1==0);
+        }
+        return address;
+
+        }
+
+
+        public static long putInt(long baseAddress, int vType,int value){
+            int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+            int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+           long address= ensureCapacity(baseAddress,vType,sizeCount+4);
+
+            PlatformDependent.UNSAFE.putInt(null,address+sizeCount,value);
+
+            PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+4);
+
+            return address;
+
+
+        }
+    public static long putLong(long baseAddress, int vType,long value){
+        int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+        long address= ensureCapacity(baseAddress,vType,sizeCount+8);
+
+        PlatformDependent.UNSAFE.putLong(null,address+sizeCount,value);
+
+        PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+8);
+
+        return address;
+
+
+    }
+    public static long putDouble(long baseAddress, int vType,double value){
+        int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+        long address= ensureCapacity(baseAddress,vType,sizeCount+8);
+
+        PlatformDependent.UNSAFE.putDouble(null,address+sizeCount,value);
+
+        PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+8);
+
+        return address;
+
+
+    }
+
+
+public  static long grow (long  baseAddress,int vType,int minCapacity) {
+
+    int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+    int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+        int  oldCapacity=size;
+        int  newCapacity = oldCapacity << 1;
+        if (newCapacity - minCapacity < 0) newCapacity = minCapacity;
+        if (newCapacity - MAX_ARRAY_SIZE > 0) newCapacity = hugeCapacity(minCapacity);
+        //buf = Arrays.copyOf(buf, newCapacity)
+        //重新分配空间
+        // baseAddress=PlatformDependent.UNSAFE.allocateMemory(newCapacity)
+        long  temp=copyBuf2New(baseAddress,vType,minCapacity);
+        PlatformDependent.UNSAFE.freeMemory(baseAddress);
+
+    return temp;
+}
+
+    public static  long   ensureCapacity (long baseAddress,int vType,int minCapacity) {
+
+    int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+    int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+
+        if (minCapacity - size > 0)
+           return grow(baseAddress,vType,minCapacity);
+    else return baseAddress;
+}
+
+
+
+
+    public static   Iterator<Integer> intIterator( long baseAddress) {
+        // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
+        final long address = baseAddress;
+        return new Iterator<Integer>() {
+            int offset = 8;
+
+            @Override
+            public boolean hasNext() {
+                if (offset < sizeCount)
+                    return true;
+                else {
+                    PlatformDependent.UNSAFE.freeMemory(address);
+                    return false;
+                }
+            }
+
+            @Override
+            public Integer next() {
+                offset += 4;
+                return PlatformDependent.UNSAFE.getInt(null, address + offset - 4);
+            }
+        };
+    }
+
+    public static   Iterator<Long> longIterator( long baseAddress) {
+        // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
+        final long address = baseAddress;
+        return new Iterator<Long>() {
+            int offset = 8;
+
+            @Override
+            public boolean hasNext() {
+                if (offset < sizeCount)
+                    return true;
+                else {
+                    PlatformDependent.UNSAFE.freeMemory(address);
+                    return false;
+                }
+            }
+
+            @Override
+            public Long next() {
+                offset += 8;
+                return PlatformDependent.UNSAFE.getLong(null, address + offset - 8);
+            }
+        };
+    }
+
+    public static   Iterator<Double> doubleIterator( long baseAddress) {
+        // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
+        final long address = baseAddress;
+        return new Iterator<Double>() {
+            int offset = 8;
+
+            @Override
+            public boolean hasNext() {
+                if (offset < sizeCount)
+                    return true;
+                else {
+                    PlatformDependent.UNSAFE.freeMemory(address);
+                    return false;
+                }
+            }
+
+            @Override
+            public Double next() {
+                offset += 8;
+                return PlatformDependent.UNSAFE.getDouble(null, address + offset - 8);
+            }
+        };
+    }
+
+
+    public static  long createBuff(int size){
+        long address=PlatformDependent.UNSAFE.allocateMemory(size);
+        PlatformDependent.UNSAFE.putInt(null,address,size);
+        PlatformDependent.UNSAFE.putInt(null,address+4,8);
+        return address;
+    }
+}
+
+```

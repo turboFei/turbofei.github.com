@@ -1,0 +1,371 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>区间内1出现次数</title>
+    
+    <meta name="author" content="bbw">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes//bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes//css/style.css" rel="stylesheet" type="text/css" media="all">
+
+    <!-- code highlighting-->
+    <link href="/assets/google-code-prettify/desert.css" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images -->
+    <link rel="shortcut icon" href="img/logo.ico">
+   <!-- <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+  </head>
+
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="/">bbw's blog</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              
+              
+              
+
+
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+  
+    
+      
+      	
+      	<li><a href="/pages">Pages</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+
+
+
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="row">
+        
+<div class="span9">
+  <div class="page-header">
+    <h1>区间内1出现次数 </h1>
+  </div>
+
+  
+    <ul class="tag_box inline">
+      <li><i class="icon-folder-open"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/categories.html#算法-ref">
+    		算法 (4)
+    	</a></li>
+    
+  
+
+
+
+    </ul>
+    
+
+  
+    <ul class="tag_box inline">
+      <li><i class="icon-tags"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/tags.html#algorithm-ref">algorithm <span>4</span></a></li>
+    
+  
+
+
+
+    </ul>
+  
+  <hr>
+
+  <div class="row-fluid post-full">
+    <div class="span12">
+      <div class="date">
+        <span>13 December 2016</strong>
+      </div>
+      <div class="content">
+        
+<p><strong>Overview</strong></p>
+
+<p>求出1~13的整数中1出现的次数,并算出100~1300的整数中1出现的次数？为此他特别数了一下1~13中包含1的数字有1、10、11、12、13因此共出现6次,但是区间大一点怎么求呢？</p>
+
+<h1 id="题目描述">题目描述</h1>
+
+<p>求出1~13的整数中1出现的次数,并算出100~1300的整数中1出现的次数？为此他特别数了一下1~13中包含1的数字有1、10、11、12、13因此共出现6次,但是对于后面问题他就没辙了。ACMer希望你们帮帮他,并把问题更加普遍化,可以很快的求出任意非负整数区间中1出现的次数。
+<!--more--></p>
+
+<h1 id="解题思路">解题思路</h1>
+
+<p>刚开始没理解清楚题目的意思，理解题目很关键。</p>
+
+<p>题目描述里面说1-13 区间里面包含1 的有 1，10 ，11，12，13这五个数字，但是1出现了6次，因为11中有两个1。看来是我理解错了，我之前以为是求这个区间里面包含1的数字的个数，那这样的话，1-13里面只有五个了。</p>
+
+<p>所以我刚开始看到网上讲解时，看到它是分别求个位，十位，百位等上面为1的可能次数相加之和，当时就想会不会有重复的，现在想想，这样刚好不重复，比如在1-13里面，个位为1 和十位为1 都有11，但是这样相加并没重复的。</p>
+
+<p>那么现在的问题就是求一个区间，上面每个位上面为1可能出现的次数。</p>
+
+<p>举个例子吧，我们看十位上面为1的个数。</p>
+
+<ol>
+  <li>
+    <p>1118这个数字，因为十位就是1，所以，高位是任意数字，还有地位是任意数字他都有1，高位是11，地位是8， 可以分为两个区间，在0-1110这个区间，前面的高位可以是0-10 任意数字和后面地位的0-9任意数字，或者前面高位是11 然后后面低位为0 ，而在1111-1118这个区间，还有8个让十位为1的，所以次数就是11*10+1+8.</p>
+  </li>
+  <li>
+    <p>1128这个数字，十位是2，所以这个区间如果让十位为1，只能算到0-1119这个区间里面十位为1的个数。也就是高位是0-11随意，低位时0-9随意。所以这样情况出现次数就是（11+1）*10=120.</p>
+  </li>
+  <li>
+    <p>1108这个数字，十位是0，所以如果十位为1，只能算到0-1019这个地方。次数应该是11*10=110.</p>
+
+    <p>所以应该可以看出来了，当前位为1，则，高位*当前位权重+低位+1。</p>
+
+    <p>当前位大于1，则（高位+1）*当前位权重。</p>
+
+    <p>当前位小于1，则高位*当前位权重。</p>
+  </li>
+</ol>
+
+<p>代码如下：</p>
+
+<pre><code class="language-JAVA">public int NumberOf1Between1AndN_Solution(int n) {
+    int i=1;
+    int total=0;
+
+    int hight;
+    do{
+         hight=n/(int)Math.pow(10,i);
+        int temp=n%(int)Math.pow(10,i);
+        int curr=temp/(int)Math.pow(10,i-1);
+        int low=temp%(int)Math.pow(10,i-1);
+        if (curr==1){
+            total+=hight*(int)Math.pow(10,i-1)+low+1;
+
+        }
+        else if(curr&lt;1){
+            total+=hight*(int)Math.pow(10,i-1);
+        }
+        else if(curr&gt;1){
+            total+=(hight+1)*(int)Math.pow(10,i-1);
+
+        }
+        i++;
+    }
+    while (hight!=0);
+    return total;
+
+}
+</code></pre>
+
+<h1 id="扩展">扩展</h1>
+
+<p>以上思路可以扩展到区间内x出现的次数。</p>
+
+      </div>
+ 
+      <hr>
+        <div class="pagination">
+          <ul>
+          
+            <li class="prev"><a href="/%E7%AE%97%E6%B3%95/2016/12/12/%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%85%A8%E6%8E%92%E5%88%97-JAVA" title="字符串全排列">&larr; Previous</a></li>
+          
+            <li><a href="/archive.html">Archive</a></li>
+          
+            <li class="next"><a href="/%E7%AE%97%E6%B3%95/2016/12/14/%E7%90%86%E8%A7%A3%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92" title="理解动态规划">Next &rarr;</a></li>
+          
+          </ul>
+        </div>
+      <hr>
+      
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'bbwff'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+    </div>
+  </div>
+</div>
+<div class="span3">
+  <div class="well sidebar-nav">
+  <div class="content">
+    <p style="text-align:center;">
+      <img src="/img/smg.jpg" alt="myself" width="120"> 
+    </p>
+  </div>
+  <HR>
+  <ul class="nav nav-list">
+    <li class="nav-header">Categories</li>
+      
+      
+
+
+  
+     
+    	<li><a href="/categories.html#java-ref">
+    		java (3)
+    	</a></li>
+     
+    	<li><a href="/categories.html#环境配置-ref">
+    		环境配置 (1)
+    	</a></li>
+     
+    	<li><a href="/categories.html#科研相关-ref">
+    		科研相关 (1)
+    	</a></li>
+     
+    	<li><a href="/categories.html#算法-ref">
+    		算法 (4)
+    	</a></li>
+    
+  
+
+
+
+    <li class="nav-header">Tags</li>
+      
+      
+
+
+  
+     
+    	<li><a href="/tags.html#java-ref">java <span>(3)</span></a></li>
+     
+    	<li><a href="/tags.html#env-ref">env <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#related-ref">related <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#algorithm-ref">algorithm <span>(4)</span></a></li>
+    
+  
+
+
+
+    <li class="nav-header">Links</li>
+    <li><a href="http://www.ruanyifeng.com/blog/">阮一峰的网络日志</a></li>
+    <li><a href="http://mindhacks.cn/">刘未鹏</a></li>
+    <li><a href="http://coolshell.cn/">酷壳</a></li>
+    <li><a href="http://dplord.com/">dplord</a></li>
+  </ul>
+  
+</div>
+
+</div>
+
+
+      </div> <!--/.row-->
+
+      <hr>
+      <footer>
+        <p>&copy; 2016 bbw
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+    </div>
+
+<!-- code highlighting -->
+
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/google-code-prettify/prettify.js"></script>
+    <script type="text/javascript">
+      !function ($) {
+        $(function(){
+            $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto');
+            window.prettyPrint && prettyPrint();
+        });
+      }(window.jQuery);
+    </script>
+    <!-- math function -->
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    
+  </body>
+</html>
+

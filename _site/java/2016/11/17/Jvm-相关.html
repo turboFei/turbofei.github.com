@@ -1,0 +1,307 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Jvm 相关</title>
+    
+    <meta name="author" content="bbw">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes//bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes//css/style.css" rel="stylesheet" type="text/css" media="all">
+
+    <!-- code highlighting-->
+    <link href="/assets/google-code-prettify/desert.css" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images -->
+    <link rel="shortcut icon" href="img/logo.ico">
+   <!-- <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+  </head>
+
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="/">bbw's blog</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              
+              
+              
+
+
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+  
+    
+      
+      	
+      	<li><a href="/pages">Pages</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+
+
+
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="row">
+        
+<div class="span9">
+  <div class="page-header">
+    <h1>Jvm 相关 </h1>
+  </div>
+
+  
+    <ul class="tag_box inline">
+      <li><i class="icon-folder-open"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/categories.html#java-ref">
+    		java (3)
+    	</a></li>
+    
+  
+
+
+
+    </ul>
+    
+
+  
+    <ul class="tag_box inline">
+      <li><i class="icon-tags"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/tags.html#java-ref">java <span>3</span></a></li>
+    
+  
+
+
+
+    </ul>
+  
+  <hr>
+
+  <div class="row-fluid post-full">
+    <div class="span12">
+      <div class="date">
+        <span>17 November 2016</strong>
+      </div>
+      <div class="content">
+        
+<p><strong>Overview</strong></p>
+
+<p>想看看jvm相关的，了解下gc以及内存的分配。</p>
+
+<h1 id="jvm">Jvm</h1>
+
+<p>jvm内有方法区，运行时常量池是方法区的一部分。String的实例化对象在jvm中就是常量，介绍下String类的intern()方法。</p>
+
+<p>当一个String实例str调用intern()方法时，java查找常量池中是否有相同unicode的字符串常量，如果有，则返回其引用，如果没有，则在常量池中增加一个unicode等于str的字符串并返回它的引用。这样就会节省方法区常量池的空间。</p>
+
+      </div>
+ 
+      <hr>
+        <div class="pagination">
+          <ul>
+          
+            <li class="prev"><a href="/java/2016/11/13/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8" title="java unsafe类的使用">&larr; Previous</a></li>
+          
+            <li><a href="/archive.html">Archive</a></li>
+          
+            <li class="next"><a href="/%E7%AE%97%E6%B3%95/2016/11/28/%E7%AE%97%E6%B3%95%E5%AF%BC%E8%AE%BA%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0" title="算法导论学习笔记">Next &rarr;</a></li>
+          
+          </ul>
+        </div>
+      <hr>
+      
+
+
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+    var disqus_developer = 1;
+    var disqus_shortname = 'bbwff'; // required: replace example with your forum shortname
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+
+
+
+
+    </div>
+  </div>
+</div>
+<div class="span3">
+  <div class="well sidebar-nav">
+  <div class="content">
+    <p style="text-align:center;">
+      <img src="/img/smg.jpg" alt="myself" width="120"> 
+    </p>
+  </div>
+  <HR>
+  <ul class="nav nav-list">
+    <li class="nav-header">Categories</li>
+      
+      
+
+
+  
+     
+    	<li><a href="/categories.html#java-ref">
+    		java (3)
+    	</a></li>
+     
+    	<li><a href="/categories.html#环境配置-ref">
+    		环境配置 (1)
+    	</a></li>
+     
+    	<li><a href="/categories.html#科研相关-ref">
+    		科研相关 (1)
+    	</a></li>
+     
+    	<li><a href="/categories.html#算法-ref">
+    		算法 (4)
+    	</a></li>
+    
+  
+
+
+
+    <li class="nav-header">Tags</li>
+      
+      
+
+
+  
+     
+    	<li><a href="/tags.html#java-ref">java <span>(3)</span></a></li>
+     
+    	<li><a href="/tags.html#env-ref">env <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#related-ref">related <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#algorithm-ref">algorithm <span>(4)</span></a></li>
+    
+  
+
+
+
+    <li class="nav-header">Links</li>
+    <li><a href="http://www.ruanyifeng.com/blog/">阮一峰的网络日志</a></li>
+    <li><a href="http://mindhacks.cn/">刘未鹏</a></li>
+    <li><a href="http://coolshell.cn/">酷壳</a></li>
+    <li><a href="http://dplord.com/">dplord</a></li>
+  </ul>
+  
+</div>
+
+</div>
+
+
+      </div> <!--/.row-->
+
+      <hr>
+      <footer>
+        <p>&copy; 2016 bbw
+          with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>
+          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>
+        </p>
+      </footer>
+    </div>
+
+<!-- code highlighting -->
+
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/google-code-prettify/prettify.js"></script>
+    <script type="text/javascript">
+      !function ($) {
+        $(function(){
+            $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto');
+            window.prettyPrint && prettyPrint();
+        });
+      }(window.jQuery);
+    </script>
+    <!-- math function -->
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    
+  </body>
+</html>
+
