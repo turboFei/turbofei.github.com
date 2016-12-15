@@ -7,7 +7,9 @@ exclude: [".rvmrc", ".rbenv-version", "README.md", "Rakefile", "changelog.md"]
 #highlighter: pygments
 markdown: kramdown
 highlighter: rouge
-# Themes are encouraged to use these universal variables
+kramdown:
+  input: GFM
+  hard_wrap: false
 # so be sure to set them if your theme uses them.
 #
 title : bbw's blog
