@@ -4,7 +4,7 @@
  <title>bbw's blog</title>
  <link href="http://bbwff.github.io/" rel="self"/>
  <link href="http://bbwff.github.io"/>
- <updated>2016-12-15T14:59:10+08:00</updated>
+ <updated>2016-12-15T15:03:25+08:00</updated>
  <id>http://bbwff.github.io</id>
  <author>
    <name>bbw</name>
@@ -76,34 +76,34 @@
 
 &lt;p&gt;代码如下：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;public int NumberOf1Between1AndN_Solution(int n) {
+&lt;p&gt;public int NumberOf1Between1AndN_Solution(int n) {
     int i=1;
-    int total=0;
+    int total=0;&lt;/p&gt;
 
-    int hight;
-    do{
-         hight=n/(int)Math.pow(10,i);
-        int temp=n%(int)Math.pow(10,i);
-        int curr=temp/(int)Math.pow(10,i-1);
-        int low=temp%(int)Math.pow(10,i-1);
-        if (curr==1){
-            total+=hight*(int)Math.pow(10,i-1)+low+1;
+&lt;pre&gt;&lt;code&gt;int hight;
+do{
+     hight=n/(int)Math.pow(10,i);
+    int temp=n%(int)Math.pow(10,i);
+    int curr=temp/(int)Math.pow(10,i-1);
+    int low=temp%(int)Math.pow(10,i-1);
+    if (curr==1){
+        total+=hight*(int)Math.pow(10,i-1)+low+1;
 
-        }
-        else if(curr&amp;lt;1){
-            total+=hight*(int)Math.pow(10,i-1);
-        }
-        else if(curr&amp;gt;1){
-            total+=(hight+1)*(int)Math.pow(10,i-1);
-
-        }
-        i++;
     }
-    while (hight!=0);
-    return total;
+    else if(curr&amp;lt;1){
+        total+=hight*(int)Math.pow(10,i-1);
+    }
+    else if(curr&amp;gt;1){
+        total+=(hight+1)*(int)Math.pow(10,i-1);
 
+    }
+    i++;
 }
+while (hight!=0);
+return total;
 &lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;}&lt;/p&gt;
 
 &lt;h1 id=&quot;扩展&quot;&gt;扩展&lt;/h1&gt;
 
