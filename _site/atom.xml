@@ -4,7 +4,7 @@
  <title>bbw's blog</title>
  <link href="http://bbwff.github.io/" rel="self"/>
  <link href="http://bbwff.github.io"/>
- <updated>2016-12-15T15:58:12+08:00</updated>
+ <updated>2016-12-15T16:07:58+08:00</updated>
  <id>http://bbwff.github.io</id>
  <author>
    <name>bbw</name>
@@ -22,7 +22,7 @@
 
 &lt;p&gt;最近在看动态规划，挺难理解的，慢慢看，把心得记录下。&lt;/p&gt;
 
-&lt;h2 id=&quot;参考资料&quot;&gt;参考资料&lt;/h2&gt;
+&lt;h2 id=&quot;section&quot;&gt;参考资料&lt;/h2&gt;
 
 &lt;p&gt;http://blog.csdn.net/pi9nc/article/details/8142876&lt;/p&gt;
 
@@ -39,12 +39,12 @@
 
 &lt;p&gt;求出1~13的整数中1出现的次数,并算出100~1300的整数中1出现的次数？为此他特别数了一下1~13中包含1的数字有1、10、11、12、13因此共出现6次,但是区间大一点怎么求呢？&lt;/p&gt;
 
-&lt;h1 id=&quot;题目描述&quot;&gt;题目描述&lt;/h1&gt;
+&lt;h1 id=&quot;section&quot;&gt;题目描述&lt;/h1&gt;
 
 &lt;p&gt;求出1~13的整数中1出现的次数,并算出100~1300的整数中1出现的次数？为此他特别数了一下1~13中包含1的数字有1、10、11、12、13因此共出现6次,但是对于后面问题他就没辙了。ACMer希望你们帮帮他,并把问题更加普遍化,可以很快的求出任意非负整数区间中1出现的次数。
 &lt;!--more--&gt;&lt;/p&gt;
 
-&lt;h1 id=&quot;解题思路&quot;&gt;解题思路&lt;/h1&gt;
+&lt;h1 id=&quot;section-1&quot;&gt;解题思路&lt;/h1&gt;
 
 &lt;p&gt;刚开始没理解清楚题目的意思，理解题目很关键。&lt;/p&gt;
 
@@ -76,36 +76,36 @@
 
 &lt;p&gt;代码如下：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;public int NumberOf1Between1AndN_Solution(int n) {
+&lt;p&gt;```
+public int NumberOf1Between1AndN_Solution(int n) {&lt;/p&gt;
 
-    int i=1;
-    int total=0;
+&lt;pre&gt;&lt;code&gt;int i=1;
+int total=0;
 
-    int hight;
-    do{
-         hight=n/(int)Math.pow(10,i);
-        int temp=n%(int)Math.pow(10,i);
-        int curr=temp/(int)Math.pow(10,i-1);
-        int low=temp%(int)Math.pow(10,i-1);
-        if (curr==1){
-            total+=hight*(int)Math.pow(10,i-1)+low+1;
+int hight;
+do{
+     hight=n/(int)Math.pow(10,i);
+    int temp=n%(int)Math.pow(10,i);
+    int curr=temp/(int)Math.pow(10,i-1);
+    int low=temp%(int)Math.pow(10,i-1);
+    if (curr==1){
+        total+=hight*(int)Math.pow(10,i-1)+low+1;
 
-        }
-        else if(curr&amp;lt;1){
-            total+=hight*(int)Math.pow(10,i-1);
-        }
-        else if(curr&amp;gt;1){
-            total+=(hight+1)*(int)Math.pow(10,i-1);
-
-        }
-        i++;
     }
-    while (hight!=0);
-    return total;
+    else if(curr&amp;lt;1){
+        total+=hight*(int)Math.pow(10,i-1);
+    }
+    else if(curr&amp;gt;1){
+        total+=(hight+1)*(int)Math.pow(10,i-1);
+
+    }
+    i++;
 }
+while (hight!=0);
+return total; } ```
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&quot;扩展&quot;&gt;扩展&lt;/h1&gt;
+&lt;h1 id=&quot;section-2&quot;&gt;扩展&lt;/h1&gt;
 
 &lt;p&gt;以上思路可以扩展到区间内x出现的次数。&lt;/p&gt;
 </content>
@@ -121,12 +121,12 @@
 
 &lt;p&gt;最近在做一些牛客网上的题，遇到一道题，是对一个字符串，按字典序输出它的全排列。&lt;/p&gt;
 
-&lt;h2 id=&quot;题目描述&quot;&gt;题目描述&lt;/h2&gt;
+&lt;h2 id=&quot;section&quot;&gt;题目描述&lt;/h2&gt;
 
 &lt;p&gt;输入一个字符串,按字典序打印出该字符串中字符的所有排列。例如输入字符串abc,则打印出由字符a,b,c所能排列出来的所有字符串abc,acb,bac,bca,cab和cba。 
-&lt;!--more--&gt;&lt;/p&gt;
-&lt;h2 id=&quot;解题过程&quot;&gt;解题过程&lt;/h2&gt;
-&lt;p&gt;一开始受数学的思想影响严重，总是觉得全排列是先从n个字符里面随机取出一个，然后再从n-1里面随机取出一个字符，直到取完为止。但是这样直接分支来写，很难写出来的。 
+&lt;!--more--&gt;
+## 解题过程
+一开始受数学的思想影响严重，总是觉得全排列是先从n个字符里面随机取出一个，然后再从n-1里面随机取出一个字符，直到取完为止。但是这样直接分支来写，很难写出来的。 
 可以把这个过程转为递归的过程。像数学归纳法一样，一步一步化繁为简。
 数学归纳法的思想如下：
 一般地，证明一个与自然数n有关的命题P(n），有如下步骤：
@@ -146,13 +146,14 @@
 因此perm(p) = r1perm(p1), r2perm(p2), r3perm(p3), … , rnperm(pn)。当n = 1时perm(p} = r1。
 其实就是跟归纳一个反的过程。代码如下&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;import java.util.*;
+&lt;p&gt;```JAVA
+import java.util.*;&lt;/p&gt;
 
-/**
+&lt;p&gt;/**
  * Created by bbw on 16/12/11.
  */
 public class Permutation {
-    TreeSet&amp;lt;String&amp;gt; treeSet=new TreeSet&amp;lt;String&amp;gt;();
+    TreeSet&lt;String&gt; treeSet=new TreeSet&lt;String&gt;();
     public  void  swap(char[] str,int a,int b){
         char c=str[a];
         str[a]=str[b];
@@ -162,29 +163,28 @@ public class Permutation {
         if (a==b){
             String t=&quot;&quot;;
             for (int i=0;i&amp;lt;=b;i++){
-                t=t+str[i];
+                t=t+str[i];&lt;/String&gt;&lt;/String&gt;&lt;/p&gt;
 
-            }
-            treeSet.add(t);
-        }
-        else {
-            for (int i=a;i&amp;lt;=b;i++){
-                swap(str,i,a);
-                perm(str,a+1,b);
-                swap(str,i,a);
-            }
-
-        }
+&lt;pre&gt;&lt;code&gt;        }
+        treeSet.add(t);
     }
-    public ArrayList&amp;lt;String&amp;gt; Permutation(String str) {
-        perm(str.toCharArray(),0,str.length()-1);
-        ArrayList&amp;lt;String&amp;gt; r=new ArrayList&amp;lt;String&amp;gt;();
-        for (String s:treeSet)
-            r.add(s);
-        return r;
+    else {
+        for (int i=a;i&amp;lt;=b;i++){
+            swap(str,i,a);
+            perm(str,a+1,b);
+            swap(str,i,a);
+        }
 
     }
 }
+public ArrayList&amp;lt;String&amp;gt; Permutation(String str) {
+    perm(str.toCharArray(),0,str.length()-1);
+    ArrayList&amp;lt;String&amp;gt; r=new ArrayList&amp;lt;String&amp;gt;();
+    for (String s:treeSet)
+        r.add(s);
+    return r;
+
+} } ```
 &lt;/code&gt;&lt;/pre&gt;
 
 </content>
@@ -200,7 +200,7 @@ public class Permutation {
 
 &lt;p&gt;最近在看算法导论，想记录一个读书笔记之类的东西自己看。就是会记载的很乱，写的很随意，自己看，反正这个博客也不会公开，hhhh。&lt;/p&gt;
 
-&lt;h2 id=&quot;第二章-算法入门&quot;&gt;第二章-算法入门&lt;/h2&gt;
+&lt;h2 id=&quot;section&quot;&gt;第二章-算法入门&lt;/h2&gt;
 
 &lt;p&gt;算法这种东西，有些思想是比较简单的，最好是把算法写成代码实现。&lt;/p&gt;
 
@@ -210,7 +210,8 @@ public class Permutation {
 
 &lt;p&gt;下面是我写的分治法排序的代码，是递归归并排序。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;package Introduction2Algorithms.chapter2;
+&lt;p&gt;```
+package Introduction2Algorithms.chapter2;
 import java.io.Console;
 /**
  * Created by bbw on 2016/11/28.
@@ -231,12 +232,13 @@ public class mergeSort {
             a2[i]=a[q+1+i];
         }
         //此处是一个哨兵，无穷大的
-        a2[l2]=Integer.MAX_VALUE;
+        a2[l2]=Integer.MAX_VALUE;&lt;/p&gt;
 
-        int i1=0;
-        int i2=0;
+&lt;pre&gt;&lt;code&gt;    int i1=0;
+    int i2=0;
+&lt;/code&gt;&lt;/pre&gt;
 
-//此处出现过bug，就是我把i从0开始了，应该是从p开始
+&lt;p&gt;//此处出现过bug，就是我把i从0开始了，应该是从p开始
         for (int i=p;i&amp;lt;=r;i++){
             if (a1[i1]&amp;lt;a2[i2]) {
                 a[i] = a1[i1];
@@ -247,27 +249,26 @@ public class mergeSort {
                 i2++;
             }
         }
-    }
+    }&lt;/p&gt;
 
-    static void mergeSort(int[]a,int p,int q){
+&lt;pre&gt;&lt;code&gt;static void mergeSort(int[]a,int p,int q){
 
-        if (p&amp;lt;q){
-            int t=(p+q)/2;
-            mergeSort(a,p,t);
-            mergeSort(a,t+1,q);
-            merge(a,p,t,q);
-        }
-    }
-
-    public static void main(String[] args)
-    {
-        int[] x = { 6, 2, 4, 1, 5, 9 };
-        mergeSort(x,0,x.length-1);
-        for (int i:x){
-            System.out.println(i);
-        }
+    if (p&amp;lt;q){
+        int t=(p+q)/2;
+        mergeSort(a,p,t);
+        mergeSort(a,t+1,q);
+        merge(a,p,t,q);
     }
 }
+
+public static void main(String[] args)
+{
+    int[] x = { 6, 2, 4, 1, 5, 9 };
+    mergeSort(x,0,x.length-1);
+    for (int i:x){
+        System.out.println(i);
+    }
+} } ```
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;这个代码挺简单的，但是我居然中间出了bug，就是数组的边界没搞好，导致数据混乱。这里面的哨兵比较方便，但就只是浪费了一个空间，代价不大，代码比较简洁。&lt;/p&gt;
@@ -310,7 +311,7 @@ public class mergeSort {
 
 &lt;p&gt;最近在写堆外操作的代码，需要用到unsafe 类，记录下。&lt;/p&gt;
 
-&lt;h1 id=&quot;unsafe-简介&quot;&gt;unsafe 简介&lt;/h1&gt;
+&lt;h1 id=&quot;unsafe-&quot;&gt;unsafe 简介&lt;/h1&gt;
 
 &lt;p&gt;unsafe类位于 sun.misc包,之所以叫unsafe是因为他操作堆外内存，即不受JVM控制的内存。由于最近要做点把数据存储在堆外的工作，所以了解了下unsafe。&lt;/p&gt;
 
@@ -318,11 +319,12 @@ public class mergeSort {
 
 &lt;p&gt;下面是关于unsafe做测试的代码。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;import sun.misc.Unsafe;
+&lt;p&gt;```JAVA
+import sun.misc.Unsafe;&lt;/p&gt;
 
-import java.lang.reflect.Field;
+&lt;p&gt;import java.lang.reflect.Field;&lt;/p&gt;
 
-/**
+&lt;p&gt;/**
  * Created by bbw on 2016/11/11.
  */
 class cat{
@@ -331,65 +333,63 @@ class cat{
     public cat(Integer name,Integer age){
         this.name=name;
         this.age=age;
-    }
+    }&lt;/p&gt;
 
-}
+&lt;p&gt;}
 public class testUnSafe {
     private static int apple = 10;
     private int orange = 10;
     private int banana=10;
-    public   cat ki=new cat(233,3);
+    public   cat ki=new cat(233,3);&lt;/p&gt;
 
- //这是获得对象里面对象field的方法，根据这个对象在类里面的偏移量来获得
+&lt;p&gt;//这是获得对象里面对象field的方法，根据这个对象在类里面的偏移量来获得
     public Object getObject(long offset) throws SecurityException, NoSuchFieldException, IllegalArgumentException,
             IllegalAccessException{
         return getUnsafeInstance().getObject(this,offset);
-    }
+    }&lt;/p&gt;
 
+&lt;pre&gt;&lt;code&gt;public static void main(String[] args) throws Exception {
+    Unsafe unsafe = getUnsafeInstance();
+    testUnSafe tus=new testUnSafe();
 
-    public static void main(String[] args) throws Exception {
-        Unsafe unsafe = getUnsafeInstance();
-        testUnSafe tus=new testUnSafe();
+    Field appleField = testUnSafe.class.getDeclaredField(&quot;apple&quot;);
+    // 获得field的偏移量
+    System.out.println(&quot;Location of Apple: &quot; + unsafe.staticFieldOffset(appleField));
 
-        Field appleField = testUnSafe.class.getDeclaredField(&quot;apple&quot;);
-        // 获得field的偏移量
-        System.out.println(&quot;Location of Apple: &quot; + unsafe.staticFieldOffset(appleField));
+    Field orangeField = testUnSafe.class.getDeclaredField(&quot;orange&quot;);
+    System.out.println(&quot;Location of Orange: &quot; + unsafe.objectFieldOffset(orangeField));
+&lt;/code&gt;&lt;/pre&gt;
 
-        Field orangeField = testUnSafe.class.getDeclaredField(&quot;orange&quot;);
-        System.out.println(&quot;Location of Orange: &quot; + unsafe.objectFieldOffset(orangeField));
-
-
-
-//这是field 是一个cat类的实例化对象，根据他的便宜地址获得对象，然后强制类型转化
-        Field catField = testUnSafe.class.getDeclaredField(&quot;ki&quot;);
-        System.out.println(&quot;Location of cat: &quot; + unsafe.objectFieldOffset(catField));
+&lt;p&gt;//这是field 是一个cat类的实例化对象，根据他的便宜地址获得对象，然后强制类型转化
+        Field catField = testUnSafe.class.getDeclaredField(“ki”);
+        System.out.println(“Location of cat: “ + unsafe.objectFieldOffset(catField));
         long offset=unsafe.objectFieldOffset(catField);
         Object rki=tus.getObject(offset);
         cat rrki=(cat)rki;
-        System.out.println(rrki.name);
+        System.out.println(rrki.name);&lt;/p&gt;
 
-        // follow is addressTest
-        cat ncat=new cat(333,444);
-        cat ncat2=new cat(555,666);
-        cat[] ca={ncat,ncat2};
-        long catArrayOffset=unsafe.arrayBaseOffset(cat[].class);
-        System.out.println(catArrayOffset+&quot; &quot;+unsafe.arrayIndexScale(cat[].class));
-        //cat rncat=((cat[])(tus.getObject(catArrayOffset)))[0];
-       // System.out.println(rncat.name+rncat.age);
-        Field bananaField = testUnSafe.class.getDeclaredField(&quot;banana&quot;);
-        System.out.println(&quot;Location of banana: &quot; + unsafe.objectFieldOffset(bananaField));
-    }
-    
-    //获得unsafe 的方法，是单例模式
-    private static Unsafe getUnsafeInstance() throws SecurityException, NoSuchFieldException, IllegalArgumentException,
-            IllegalAccessException {
-        Field theUnsafeInstance = Unsafe.class.getDeclaredField(&quot;theUnsafe&quot;);
-        theUnsafeInstance.setAccessible(true);
-        return (Unsafe) theUnsafeInstance.get(Unsafe.class);
-    }
+&lt;pre&gt;&lt;code&gt;    // follow is addressTest
+    cat ncat=new cat(333,444);
+    cat ncat2=new cat(555,666);
+    cat[] ca={ncat,ncat2};
+    long catArrayOffset=unsafe.arrayBaseOffset(cat[].class);
+    System.out.println(catArrayOffset+&quot; &quot;+unsafe.arrayIndexScale(cat[].class));
+    //cat rncat=((cat[])(tus.getObject(catArrayOffset)))[0];
+   // System.out.println(rncat.name+rncat.age);
+    Field bananaField = testUnSafe.class.getDeclaredField(&quot;banana&quot;);
+    System.out.println(&quot;Location of banana: &quot; + unsafe.objectFieldOffset(bananaField));
 }
 
+//获得unsafe 的方法，是单例模式
+private static Unsafe getUnsafeInstance() throws SecurityException, NoSuchFieldException, IllegalArgumentException,
+        IllegalAccessException {
+    Field theUnsafeInstance = Unsafe.class.getDeclaredField(&quot;theUnsafe&quot;);
+    theUnsafeInstance.setAccessible(true);
+    return (Unsafe) theUnsafeInstance.get(Unsafe.class);
+} }
 &lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;```&lt;/p&gt;
 
 &lt;p&gt;unsafe 是单例模式，所以全局就只有一个unsafe，必须用它提供的方法来获取。
 然后里面有获得里面字段 和静态字段偏移地址的方法，偏移地址是相对于在这个对象里面的偏移地址，可以根据偏移地址获得这个field。
@@ -402,226 +402,223 @@ public class testUnSafe {
 然后每次在写入数据的时候，都会判断这块内存的大小够不够写入数据，如果不够就申请一个更大的内存，然后把原来的数据拷贝到新的内存里面，重新对这块内存的前八个字节赋值，即内存的大小和使用情况。
 然后这个类的静态参数在每次传入内存的起始地址后会首先读取这块内存的前八个字节，获得内存大小以及使用情况。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;
-package org.apache.spark.unsafe;
+&lt;p&gt;```JAVA&lt;/p&gt;
+
+&lt;p&gt;package org.apache.spark.unsafe;
 import java.util.Iterator;
 /**
  * Created by bbw on 2016/11/14.
  */
-public  final class UnsafeBuffer&amp;lt;T&amp;gt; {
+public  final class UnsafeBuffer&lt;T&gt; {&lt;/T&gt;&lt;/p&gt;
 
+&lt;pre&gt;&lt;code&gt;public  static int  MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
-
-    public  static int  MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
-    public static   int  hugeCapacity(int minCapacity) {
-        if (minCapacity &amp;lt; 0) throw new OutOfMemoryError();
-        if ((minCapacity &amp;gt; MAX_ARRAY_SIZE))
-            return Integer.MAX_VALUE;
-        else
-            return MAX_ARRAY_SIZE;
-        }
-
-
-    public static long  copyBuf2New ( long baseAddress,int vType,int  minCapacity) {
-        // read the size and count of this buf(the format size,count)
-        int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-        int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
-
-
-
-        long address = PlatformDependent.UNSAFE.allocateMemory(minCapacity);
-        // write the size and count
-
-        PlatformDependent.UNSAFE.putInt(null,address,minCapacity);
-        PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount);
-
-
-        int   i= 8;
-        switch (vType) {
-            case 0 :
-        while (i &amp;lt; sizeCount) {
-        PlatformDependent.UNSAFE.putInt(null, address + i, PlatformDependent.UNSAFE.getInt(null, baseAddress + i));
-        i = i + 4;
-        }
-            case 1 :
-        while (i &amp;lt; sizeCount) {
-        PlatformDependent.UNSAFE.putLong(null, address + i, PlatformDependent.UNSAFE.getLong(null, baseAddress + i));
-        i = i + 8;
-        }
-            case 2 :
-        while (i &amp;lt; sizeCount) {
-        PlatformDependent.UNSAFE.putDouble(null, address + i, PlatformDependent.UNSAFE.getDouble(null, baseAddress + i));
-        i = i + 8;
-        }
-        default:
-            assert (1==0);
-        }
-        return address;
-
-        }
-
-
-        public static long putInt(long baseAddress, int vType,int value){
-            int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-            int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
-
-           long address= ensureCapacity(baseAddress,vType,sizeCount+4);
-
-            PlatformDependent.UNSAFE.putInt(null,address+sizeCount,value);
-
-            PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+4);
-
-            return address;
-
-
-        }
-    public static long putLong(long baseAddress, int vType,long value){
-        int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-        int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
-
-        long address= ensureCapacity(baseAddress,vType,sizeCount+8);
-
-        PlatformDependent.UNSAFE.putLong(null,address+sizeCount,value);
-
-        PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+8);
-
-        return address;
-
-
-    }
-    public static long putDouble(long baseAddress, int vType,double value){
-        int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-        int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
-
-        long address= ensureCapacity(baseAddress,vType,sizeCount+8);
-
-        PlatformDependent.UNSAFE.putDouble(null,address+sizeCount,value);
-
-        PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+8);
-
-        return address;
-
-
+public static   int  hugeCapacity(int minCapacity) {
+    if (minCapacity &amp;lt; 0) throw new OutOfMemoryError();
+    if ((minCapacity &amp;gt; MAX_ARRAY_SIZE))
+        return Integer.MAX_VALUE;
+    else
+        return MAX_ARRAY_SIZE;
     }
 
 
-public  static long grow (long  baseAddress,int vType,int minCapacity) {
-
-    int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-    int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
-        int  oldCapacity=size;
-        int  newCapacity = oldCapacity &amp;lt;&amp;lt; 1;
-        if (newCapacity - minCapacity &amp;lt; 0) newCapacity = minCapacity;
-        if (newCapacity - MAX_ARRAY_SIZE &amp;gt; 0) newCapacity = hugeCapacity(minCapacity);
-        //buf = Arrays.copyOf(buf, newCapacity)
-        //重新分配空间
-        // baseAddress=PlatformDependent.UNSAFE.allocateMemory(newCapacity)
-        long  temp=copyBuf2New(baseAddress,vType,minCapacity);
-        PlatformDependent.UNSAFE.freeMemory(baseAddress);
-
-    return temp;
-}
-
-    public static  long   ensureCapacity (long baseAddress,int vType,int minCapacity) {
-
+public static long  copyBuf2New ( long baseAddress,int vType,int  minCapacity) {
+    // read the size and count of this buf(the format size,count)
     int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
     int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
 
 
-        if (minCapacity - size &amp;gt; 0)
-           return grow(baseAddress,vType,minCapacity);
-    else return baseAddress;
-}
+
+    long address = PlatformDependent.UNSAFE.allocateMemory(minCapacity);
+    // write the size and count
+
+    PlatformDependent.UNSAFE.putInt(null,address,minCapacity);
+    PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount);
 
 
-
-
-    public static   Iterator&amp;lt;Integer&amp;gt; intIterator( long baseAddress) {
-        // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-        final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
-        final long address = baseAddress;
-        return new Iterator&amp;lt;Integer&amp;gt;() {
-            int offset = 8;
-
-            @Override
-            public boolean hasNext() {
-                if (offset &amp;lt; sizeCount)
-                    return true;
-                else {
-                    PlatformDependent.UNSAFE.freeMemory(address);
-                    return false;
-                }
-            }
-
-            @Override
-            public Integer next() {
-                offset += 4;
-                return PlatformDependent.UNSAFE.getInt(null, address + offset - 4);
-            }
-        };
+    int   i= 8;
+    switch (vType) {
+        case 0 :
+    while (i &amp;lt; sizeCount) {
+    PlatformDependent.UNSAFE.putInt(null, address + i, PlatformDependent.UNSAFE.getInt(null, baseAddress + i));
+    i = i + 4;
     }
-
-    public static   Iterator&amp;lt;Long&amp;gt; longIterator( long baseAddress) {
-        // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-        final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
-        final long address = baseAddress;
-        return new Iterator&amp;lt;Long&amp;gt;() {
-            int offset = 8;
-
-            @Override
-            public boolean hasNext() {
-                if (offset &amp;lt; sizeCount)
-                    return true;
-                else {
-                    PlatformDependent.UNSAFE.freeMemory(address);
-                    return false;
-                }
-            }
-
-            @Override
-            public Long next() {
-                offset += 8;
-                return PlatformDependent.UNSAFE.getLong(null, address + offset - 8);
-            }
-        };
+        case 1 :
+    while (i &amp;lt; sizeCount) {
+    PlatformDependent.UNSAFE.putLong(null, address + i, PlatformDependent.UNSAFE.getLong(null, baseAddress + i));
+    i = i + 8;
     }
+        case 2 :
+    while (i &amp;lt; sizeCount) {
+    PlatformDependent.UNSAFE.putDouble(null, address + i, PlatformDependent.UNSAFE.getDouble(null, baseAddress + i));
+    i = i + 8;
+    }
+    default:
+        assert (1==0);
+    }
+    return address;
 
-    public static   Iterator&amp;lt;Double&amp;gt; doubleIterator( long baseAddress) {
-        // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-        final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
-        final long address = baseAddress;
-        return new Iterator&amp;lt;Double&amp;gt;() {
-            int offset = 8;
-
-            @Override
-            public boolean hasNext() {
-                if (offset &amp;lt; sizeCount)
-                    return true;
-                else {
-                    PlatformDependent.UNSAFE.freeMemory(address);
-                    return false;
-                }
-            }
-
-            @Override
-            public Double next() {
-                offset += 8;
-                return PlatformDependent.UNSAFE.getDouble(null, address + offset - 8);
-            }
-        };
     }
 
 
-    public static  long createBuff(int size){
-        long address=PlatformDependent.UNSAFE.allocateMemory(size);
-        PlatformDependent.UNSAFE.putInt(null,address,size);
-        PlatformDependent.UNSAFE.putInt(null,address+4,8);
+    public static long putInt(long baseAddress, int vType,int value){
+        int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+       long address= ensureCapacity(baseAddress,vType,sizeCount+4);
+
+        PlatformDependent.UNSAFE.putInt(null,address+sizeCount,value);
+
+        PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+4);
+
         return address;
-    }
-}
 
+
+    }
+public static long putLong(long baseAddress, int vType,long value){
+    int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+    int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+    long address= ensureCapacity(baseAddress,vType,sizeCount+8);
+
+    PlatformDependent.UNSAFE.putLong(null,address+sizeCount,value);
+
+    PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+8);
+
+    return address;
+
+
+}
+public static long putDouble(long baseAddress, int vType,double value){
+    int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+    int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+    long address= ensureCapacity(baseAddress,vType,sizeCount+8);
+
+    PlatformDependent.UNSAFE.putDouble(null,address+sizeCount,value);
+
+    PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+8);
+
+    return address;
+
+
+}
 &lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;public  static long grow (long  baseAddress,int vType,int minCapacity) {&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+    int  oldCapacity=size;
+    int  newCapacity = oldCapacity &amp;lt;&amp;lt; 1;
+    if (newCapacity - minCapacity &amp;lt; 0) newCapacity = minCapacity;
+    if (newCapacity - MAX_ARRAY_SIZE &amp;gt; 0) newCapacity = hugeCapacity(minCapacity);
+    //buf = Arrays.copyOf(buf, newCapacity)
+    //重新分配空间
+    // baseAddress=PlatformDependent.UNSAFE.allocateMemory(newCapacity)
+    long  temp=copyBuf2New(baseAddress,vType,minCapacity);
+    PlatformDependent.UNSAFE.freeMemory(baseAddress);
+
+return temp; }
+
+public static  long   ensureCapacity (long baseAddress,int vType,int minCapacity) {
+
+int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+
+    if (minCapacity - size &amp;gt; 0)
+       return grow(baseAddress,vType,minCapacity);
+else return baseAddress; }
+
+
+
+
+public static   Iterator&amp;lt;Integer&amp;gt; intIterator( long baseAddress) {
+    // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+    final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
+    final long address = baseAddress;
+    return new Iterator&amp;lt;Integer&amp;gt;() {
+        int offset = 8;
+
+        @Override
+        public boolean hasNext() {
+            if (offset &amp;lt; sizeCount)
+                return true;
+            else {
+                PlatformDependent.UNSAFE.freeMemory(address);
+                return false;
+            }
+        }
+
+        @Override
+        public Integer next() {
+            offset += 4;
+            return PlatformDependent.UNSAFE.getInt(null, address + offset - 4);
+        }
+    };
+}
+
+public static   Iterator&amp;lt;Long&amp;gt; longIterator( long baseAddress) {
+    // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+    final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
+    final long address = baseAddress;
+    return new Iterator&amp;lt;Long&amp;gt;() {
+        int offset = 8;
+
+        @Override
+        public boolean hasNext() {
+            if (offset &amp;lt; sizeCount)
+                return true;
+            else {
+                PlatformDependent.UNSAFE.freeMemory(address);
+                return false;
+            }
+        }
+
+        @Override
+        public Long next() {
+            offset += 8;
+            return PlatformDependent.UNSAFE.getLong(null, address + offset - 8);
+        }
+    };
+}
+
+public static   Iterator&amp;lt;Double&amp;gt; doubleIterator( long baseAddress) {
+    // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+    final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
+    final long address = baseAddress;
+    return new Iterator&amp;lt;Double&amp;gt;() {
+        int offset = 8;
+
+        @Override
+        public boolean hasNext() {
+            if (offset &amp;lt; sizeCount)
+                return true;
+            else {
+                PlatformDependent.UNSAFE.freeMemory(address);
+                return false;
+            }
+        }
+
+        @Override
+        public Double next() {
+            offset += 8;
+            return PlatformDependent.UNSAFE.getDouble(null, address + offset - 8);
+        }
+    };
+}
+
+
+public static  long createBuff(int size){
+    long address=PlatformDependent.UNSAFE.allocateMemory(size);
+    PlatformDependent.UNSAFE.putInt(null,address,size);
+    PlatformDependent.UNSAFE.putInt(null,address+4,8);
+    return address;
+} }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;```&lt;/p&gt;
 </content>
  </entry>
  
@@ -771,8 +768,8 @@ DOOD: Deductive and Object-Oriented Databases
 DASFAA: Database Systems for Advanced Applications
 SSDBM: Intl Conf on Scientific and Statistical DB Mgmt
 CoopIS - Conference on Cooperative Information Systems
-ER - Intl Conf on Conceptual Modeling (ER)&lt;/p&gt;
-&lt;h2 id=&quot;rank-3-1&quot;&gt;Rank 3:&lt;/h2&gt;
+ER - Intl Conf on Conceptual Modeling (ER)
+## Rank 3:&lt;/p&gt;
 
 &lt;p&gt;COMAD: Intl Conf on Management of Data
 BNCOD: British National Conference on Databases
@@ -823,8 +820,8 @@ OODBS - Workshop on Object-Oriented Database Systems
 PDIS: Parallel and Distributed Information Systems&lt;/p&gt;
 
 &lt;h1 id=&quot;other-links&quot;&gt;Other Links&lt;/h1&gt;
-&lt;h2 id=&quot;infomation-center&quot;&gt;Infomation center&lt;/h2&gt;
-&lt;p&gt;&lt;a href=&quot;http://grid.hust.edu.cn/xhshi/TopConferences.htm&quot;&gt;List of Important Conferences (CGCL)&lt;/a&gt;
+&lt;p&gt;## Infomation center
+&lt;a href=&quot;http://grid.hust.edu.cn/xhshi/TopConferences.htm&quot;&gt;List of Important Conferences (CGCL)&lt;/a&gt;
 &lt;a href=&quot;http://citeseer.ist.psu.edu/statistics.html&quot;&gt;Publications Impacts Citeseer Statistics&lt;/a&gt;
 &lt;a href=&quot;http://www.cs.ucsb.edu/~almeroth/conf/stats/&quot;&gt;Networking Conferences Statistics&lt;/a&gt;
 &lt;a href=&quot;http://www.ntu.edu.sg/home/assourav/crank.htm&quot;&gt;Computer Science Conference Rankings&lt;/a&gt;
@@ -839,9 +836,9 @@ PDIS: Parallel and Distributed Information Systems&lt;/p&gt;
 &lt;a href=&quot;http://www.usenix.org/events/index.html&quot;&gt;USENIX Conference Calendar&lt;/a&gt;
 &lt;a href=&quot;http://www.acm.org/conferences&quot;&gt;ACM Conference Canlendar&lt;/a&gt;
 &lt;a href=&quot;http://www.cs.wisc.edu/~arch/www/&quot;&gt;WWW Computer Architecture Page&lt;/a&gt;
-&lt;a href=&quot;http://www.nesc.ac.uk/projects/&quot;&gt;Projects in UK e-Science&lt;/a&gt;&lt;/p&gt;
-&lt;h2 id=&quot;misc&quot;&gt;Misc&lt;/h2&gt;
-&lt;p&gt;&lt;a href=&quot;http://duda.imag.fr/Comer/research.html&quot;&gt;Essays about Computer Science by Douglas E. Comer&lt;/a&gt;
+&lt;a href=&quot;http://www.nesc.ac.uk/projects/&quot;&gt;Projects in UK e-Science&lt;/a&gt;
+## Misc
+&lt;a href=&quot;http://duda.imag.fr/Comer/research.html&quot;&gt;Essays about Computer Science by Douglas E. Comer&lt;/a&gt;
 &lt;a href=&quot;http://www.cs.indiana.edu/how.2b/how.2b.html&quot;&gt;How to Be a Good Graduate Student by Marie desJardins&lt;/a&gt;
 &lt;a href=&quot;https://www.usenix.org/legacy/event/samples/submit/advice.html&quot;&gt;How to write a good system paper&lt;/a&gt;
 &lt;a href=&quot;http://www.cs.utexas.edu/users/EWD/transcriptions/EWD06xx/EWD637.html&quot;&gt;Dijkstra’s Rules for Successful Scientific Research&lt;/a&gt;
@@ -864,98 +861,110 @@ PDIS: Parallel and Distributed Information Systems&lt;/p&gt;
 
 &lt;p&gt;I configured our nodes with the following hostnames using these steps. Our server is:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;3.buhpc.com
-&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;code&gt;
+3.buhpc.com
+&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;The clients are:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;1.buhpc.com
+&lt;p&gt;&lt;code&gt;
+1.buhpc.com
 2.buhpc.com
 4.buhpc.com
 5.buhpc.com
 6.buhpc.com
-&lt;/code&gt;&lt;/pre&gt;
-&lt;!--more--&gt;
+&lt;/code&gt;
+&lt;!--more--&gt;&lt;/p&gt;
 
 &lt;h1 id=&quot;installation&quot;&gt;Installation&lt;/h1&gt;
 
 &lt;p&gt;On the server, inside the shared folder of our cluster, we will first download the latest version of ganglia. For our cluster, /nfs is the folder with our network file system.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cd /nfs
+&lt;p&gt;&lt;code&gt;
+cd /nfs
 wget http://downloads.sourceforge.net/project/ganglia/ganglia%20monitoring%20core/3.7.2/ganglia-3.7.2.tar.gz
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;On the server, we will install dependencies and libconfuse.&lt;/p&gt;
+&lt;/code&gt;
+On the server, we will install dependencies and libconfuse.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
+&lt;p&gt;```
+yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
-yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
+yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y&lt;/p&gt;
 
-#建立rrd数据库
-mkdir -p /var/lib/ganglia/rrds/
+&lt;h1 id=&quot;rrd&quot;&gt;建立rrd数据库&lt;/h1&gt;
+&lt;p&gt;mkdir -p /var/lib/ganglia/rrds/
 chown nobody:nobody -R /var/lib/ganglia/rrds/
-&lt;/code&gt;&lt;/pre&gt;
+```&lt;/p&gt;
 
 &lt;p&gt;Now, we will build the rpms from ganglia-3.7.2 on the server.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;rpmbuild -tb ganglia-3.7.2.tar.gz
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;After running rpmbuild, /root/rpmbuild/RPMS/x86_64 contains the generated rpms:&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;
+rpmbuild -tb ganglia-3.7.2.tar.gz
+&lt;/code&gt;
+After running rpmbuild, /root/rpmbuild/RPMS/x86_64 contains the generated rpms:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cd /root/rpmbuild/RPMS/x86_64/
+&lt;p&gt;&lt;code&gt;
+cd /root/rpmbuild/RPMS/x86_64/
 yum install *ganglia*.rpm -y
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;We will remove gmetad because we do not need it on the clients. Send the rest of the rpms to all the clients’ /tmp folder:&lt;/p&gt;
+&lt;/code&gt;
+We will remove gmetad because we do not need it on the clients. Send the rest of the rpms to all the clients’ /tmp folder:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cd /root/rpmbuild/RPMS/x86_64/
+&lt;p&gt;&lt;code&gt;
+cd /root/rpmbuild/RPMS/x86_64/
 rm -rf ganglia-gmetad*.rpm
 scp *.rpm root@1.buhpc.com:/tmp
 scp *.rpm root@2.buhpc.com:/tmp
 scp *.rpm root@4.buhpc.com:/tmp
 scp *.rpm root@5.buhpc.com:/tmp
 scp *.rpm root@6.buhpc.com:/tmp
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;SSH onto every client and install the rpms that we will need:&lt;/p&gt;
+&lt;/code&gt;
+SSH onto every client and install the rpms that we will need:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;ssh root@#.buhpc.com
+&lt;p&gt;&lt;code&gt;
+ssh root@#.buhpc.com
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
 yum install /tmp/*ganglia*.rpm - y
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Back on the server, we will adjust the gmetad configuration file:&lt;/p&gt;
+&lt;/code&gt;
+Back on the server, we will adjust the gmetad configuration file:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cd /etc/ganglia
+&lt;p&gt;&lt;code&gt;
+cd /etc/ganglia
 vim gmetad.conf
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;buhpc will be the name of  our cluster. Find the following line and add the name of your cluster and ip address. I am using the subdomain instead of the ip address.&lt;/p&gt;
+&lt;/code&gt;
+buhpc will be the name of  our cluster. Find the following line and add the name of your cluster and ip address. I am using the subdomain instead of the ip address.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;data_source &quot;buhpc&quot; 1 3.buhpc.com
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Now, we edit the server’s gmond configuration file.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;
+data_source &quot;buhpc&quot; 1 3.buhpc.com
+&lt;/code&gt;
+Now, we edit the server’s gmond configuration file.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;vim /etc/ganglia/gmond.conf
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Make sure that these sections have the following and comment any extra lines you see that are within each section.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;
+vim /etc/ganglia/gmond.conf
+&lt;/code&gt;
+Make sure that these sections have the following and comment any extra lines you see that are within each section.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cluster {
-  name = &quot;buhpc&quot;
-  owner = &quot;unspecified&quot;
-  latlong = &quot;unspecified&quot;
-  url = &quot;unspecified&quot;
-}
+&lt;p&gt;```
+cluster {
+  name = “buhpc”
+  owner = “unspecified”
+  latlong = “unspecified”
+  url = “unspecified”
+}&lt;/p&gt;
 
-udp_send_channel {
+&lt;p&gt;udp_send_channel {
   host = 1.buhpc.com
   port = 8649
   ttl = 1
-}
+}&lt;/p&gt;
 
-udp_send_channel {
+&lt;p&gt;udp_send_channel {
   host = 2.buhpc.com
   port = 8649
   ttl = 1
-}
+}&lt;/p&gt;
 
-udp_send_channel {
+&lt;p&gt;udp_send_channel {
   host = 3.buhpc.com
   port = 8649
   ttl = 1
@@ -964,51 +973,53 @@ udp_send_channel {
   host = 4.buhpc.com
   port = 8649
   ttl = 1
-}
+}&lt;/p&gt;
 
-udp_send_channel {
+&lt;p&gt;udp_send_channel {
   host = 5.buhpc.com
   port = 8649
   ttl = 1
-}
+}&lt;/p&gt;
 
-udp_send_channel {
+&lt;p&gt;udp_send_channel {
   host = 6.buhpc.com
   port = 8649
   ttl = 1
-}
+}&lt;/p&gt;
 
-udp_recv_channel {
+&lt;p&gt;udp_recv_channel {
   port = 8649
   retry_bind = true
 }
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Now, SSH into each of the clients and do the following individually. On every client:&lt;/p&gt;
+```
+Now, SSH into each of the clients and do the following individually. On every client:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;vim /etc/ganglia/gmond.conf
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;We will change the clients’ gmond.conf in the same way as the server’s.  Make sure that these sections have the following lines and comment any extra lines you see that are within each section.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;
+vim /etc/ganglia/gmond.conf
+&lt;/code&gt;
+We will change the clients’ gmond.conf in the same way as the server’s.  Make sure that these sections have the following lines and comment any extra lines you see that are within each section.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cluster {
-  name = &quot;buhpc&quot;
-  owner = &quot;unspecified&quot;
-  latlong = &quot;unspecified&quot;
-  url = &quot;unspecified&quot;
-}
+&lt;p&gt;```
+cluster {
+  name = “buhpc”
+  owner = “unspecified”
+  latlong = “unspecified”
+  url = “unspecified”
+}&lt;/p&gt;
 
-udp_send_channel {
+&lt;p&gt;udp_send_channel {
   host = 1.buhpc.com
   port = 8649
   ttl = 1
-}
+}&lt;/p&gt;
 
-udp_send_channel {
+&lt;p&gt;udp_send_channel {
   host = 2.buhpc.com
   port = 8649
   ttl = 1
-}
+}&lt;/p&gt;
 
-udp_send_channel {
+&lt;p&gt;udp_send_channel {
   host = 3.buhpc.com
   port = 8649
   ttl = 1
@@ -1017,77 +1028,82 @@ udp_send_channel {
   host = 4.buhpc.com
   port = 8649
   ttl = 1
-}
+}&lt;/p&gt;
 
-udp_send_channel {
+&lt;p&gt;udp_send_channel {
   host = 5.buhpc.com
   port = 8649
   ttl = 1
-}
+}&lt;/p&gt;
 
-udp_send_channel {
+&lt;p&gt;udp_send_channel {
   host = 6.buhpc.com
   port = 8649
   ttl = 1
-}
+}&lt;/p&gt;
 
-udp_recv_channel {
+&lt;p&gt;udp_recv_channel {
   port = 8649
   retry_bind = true
 }
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;We will start gmond on the clients for monitoring.&lt;/p&gt;
+```
+We will start gmond on the clients for monitoring.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;chkconfig gmond on
+&lt;p&gt;&lt;code&gt;
+chkconfig gmond on
 systemctl start gmond
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;然后，安装ganglia-web 3.7.1&lt;/p&gt;
+&lt;/code&gt;
+然后，安装ganglia-web 3.7.1&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
+&lt;p&gt;```
+wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
 tar zxvf  ganglia-web-3.7.1.tar.gz
 cd  ganglia-web-3.7.1
 vim Makefile
       # Location where gweb should be installed to (excluding conf, dwoo dirs).
-      GDESTDIR = /var/www/html/ganglia
+      GDESTDIR = /var/www/html/ganglia&lt;/p&gt;
 
-      # Gweb statedir (where conf dir and Dwoo templates dir are stored)
-      GWEB_STATEDIR = /var/lib/ganglia-web
+&lt;pre&gt;&lt;code&gt;  # Gweb statedir (where conf dir and Dwoo templates dir are stored)
+  GWEB_STATEDIR = /var/lib/ganglia-web
 
-      # Gmetad rootdir (parent location of rrd folder)
-      GMETAD_ROOTDIR = /var/lib/ganglia
+  # Gmetad rootdir (parent location of rrd folder)
+  GMETAD_ROOTDIR = /var/lib/ganglia
 
-      # User by which your webserver is running
-      APACHE_USER =  apache
-
- make install
+  # User by which your webserver is running
+  APACHE_USER =  apache
 &lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;make install
+```&lt;/p&gt;
 
 &lt;p&gt;Next, we will want to disable SELinux. Change SELINUX inside /etc/sysconfig/selinux from enforcing to disabled. Then, restart the server node.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;vim /etc/sysconfig/selinux
+&lt;p&gt;```
+vim /etc/sysconfig/selinux
 SELINUX=disabled
 #如果 SELINUX本就是disable，不必reboot
 reboot
-Now, on the server, we’ll open the correct ports on the firewall.
+Now, on the server, we’ll open the correct ports on the firewall.&lt;/p&gt;
 
-#如果 firewall 没有打开，systemctl service firewalld
-firewall-cmd --permanent --zone=public --add-service=http
-firewall-cmd --permanent --zone=public --add-port=8649/udp
-firewall-cmd --permanent --zone=public --add-port=8649/tcp
-firewall-cmd --permanent --zone=public --add-port=8651/tcp
-firewall-cmd --permanent --zone=public --add-port=8652/tcp
-firewall-cmd --reload
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;On the server, we will now start httpd, gmetad, and gmond.&lt;/p&gt;
+&lt;h1 id=&quot;firewall-systemctl-service-firewalld&quot;&gt;如果 firewall 没有打开，systemctl service firewalld&lt;/h1&gt;
+&lt;p&gt;firewall-cmd –permanent –zone=public –add-service=http
+firewall-cmd –permanent –zone=public –add-port=8649/udp
+firewall-cmd –permanent –zone=public –add-port=8649/tcp
+firewall-cmd –permanent –zone=public –add-port=8651/tcp
+firewall-cmd –permanent –zone=public –add-port=8652/tcp
+firewall-cmd –reload
+```
+On the server, we will now start httpd, gmetad, and gmond.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;chkconfig httpd
+&lt;p&gt;&lt;code&gt;
+chkconfig httpd
 chkconfig gmetad on
 chkconfig gmond on
 systemctl start httpd
 systemctl start gmetad
 systemctl start gmond
-&lt;/code&gt;&lt;/pre&gt;
-&lt;p&gt;Visit http://3.buhpc.com/ganglia to see Ganglia’s monitoring. You should see something like this:&lt;/p&gt;
+&lt;/code&gt;
+Visit http://3.buhpc.com/ganglia to see Ganglia’s monitoring. You should see something like this:&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://www.slothparadise.com/wp-content/uploads/2016/03/ganglia-home-page.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 
