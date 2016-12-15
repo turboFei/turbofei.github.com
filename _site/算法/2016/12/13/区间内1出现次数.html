@@ -200,34 +200,34 @@
 
 <p>代码如下：</p>
 
-<p>public int NumberOf1Between1AndN_Solution(int n) {
+<pre><code>public int NumberOf1Between1AndN_Solution(int n) {
+
     int i=1;
-    int total=0;</p>
+    int total=0;
 
-<pre><code>int hight;
-do{
-     hight=n/(int)Math.pow(10,i);
-    int temp=n%(int)Math.pow(10,i);
-    int curr=temp/(int)Math.pow(10,i-1);
-    int low=temp%(int)Math.pow(10,i-1);
-    if (curr==1){
-        total+=hight*(int)Math.pow(10,i-1)+low+1;
+    int hight;
+    do{
+         hight=n/(int)Math.pow(10,i);
+        int temp=n%(int)Math.pow(10,i);
+        int curr=temp/(int)Math.pow(10,i-1);
+        int low=temp%(int)Math.pow(10,i-1);
+        if (curr==1){
+            total+=hight*(int)Math.pow(10,i-1)+low+1;
 
-    }
-    else if(curr&lt;1){
-        total+=hight*(int)Math.pow(10,i-1);
-    }
-    else if(curr&gt;1){
-        total+=(hight+1)*(int)Math.pow(10,i-1);
+        }
+        else if(curr&lt;1){
+            total+=hight*(int)Math.pow(10,i-1);
+        }
+        else if(curr&gt;1){
+            total+=(hight+1)*(int)Math.pow(10,i-1);
 
+        }
+        i++;
     }
-    i++;
+    while (hight!=0);
+    return total;
 }
-while (hight!=0);
-return total;
 </code></pre>
-
-<p>}</p>
 
 <h1 id="扩展">扩展</h1>
 

@@ -5,8 +5,8 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2016-12-15T15:05:32+08:00</lastBuildDate>
-        <pubDate>2016-12-15T15:05:32+08:00</pubDate>
+        <lastBuildDate>2016-12-15T15:10:36+08:00</lastBuildDate>
+        <pubDate>2016-12-15T15:10:36+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -71,34 +71,34 @@
 
 &lt;p&gt;代码如下：&lt;/p&gt;
 
-&lt;p&gt;public int NumberOf1Between1AndN_Solution(int n) {
+&lt;pre&gt;&lt;code&gt;public int NumberOf1Between1AndN_Solution(int n) {
+
     int i=1;
-    int total=0;&lt;/p&gt;
+    int total=0;
 
-&lt;pre&gt;&lt;code&gt;int hight;
-do{
-     hight=n/(int)Math.pow(10,i);
-    int temp=n%(int)Math.pow(10,i);
-    int curr=temp/(int)Math.pow(10,i-1);
-    int low=temp%(int)Math.pow(10,i-1);
-    if (curr==1){
-        total+=hight*(int)Math.pow(10,i-1)+low+1;
+    int hight;
+    do{
+         hight=n/(int)Math.pow(10,i);
+        int temp=n%(int)Math.pow(10,i);
+        int curr=temp/(int)Math.pow(10,i-1);
+        int low=temp%(int)Math.pow(10,i-1);
+        if (curr==1){
+            total+=hight*(int)Math.pow(10,i-1)+low+1;
 
-    }
-    else if(curr&amp;lt;1){
-        total+=hight*(int)Math.pow(10,i-1);
-    }
-    else if(curr&amp;gt;1){
-        total+=(hight+1)*(int)Math.pow(10,i-1);
+        }
+        else if(curr&amp;lt;1){
+            total+=hight*(int)Math.pow(10,i-1);
+        }
+        else if(curr&amp;gt;1){
+            total+=(hight+1)*(int)Math.pow(10,i-1);
 
+        }
+        i++;
     }
-    i++;
+    while (hight!=0);
+    return total;
 }
-while (hight!=0);
-return total;
 &lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;}&lt;/p&gt;
 
 &lt;h1 id=&quot;扩展&quot;&gt;扩展&lt;/h1&gt;
 
