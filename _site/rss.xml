@@ -5,8 +5,8 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2016-12-16T11:26:02+08:00</lastBuildDate>
-        <pubDate>2016-12-16T11:26:02+08:00</pubDate>
+        <lastBuildDate>2016-12-16T11:29:10+08:00</lastBuildDate>
+        <pubDate>2016-12-16T11:29:10+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -71,7 +71,7 @@
 
 &lt;p&gt;代码如下：&lt;/p&gt;
 
-&lt;div class=&quot;highlighter-rouge&quot;&gt;public int NumberOf1Between1AndN_Solution(int n) {
+&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;public int NumberOf1Between1AndN_Solution(int n) {
 
     int i=1;
     int total=0;
@@ -98,7 +98,7 @@
     while (hight!=0);
     return total;
 }
-&lt;/div&gt;
+&lt;/code&gt;&lt;/pre&gt;
 
 &lt;h1 id=&quot;扩展&quot;&gt;扩展&lt;/h1&gt;
 
