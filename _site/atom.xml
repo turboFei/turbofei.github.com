@@ -4,7 +4,7 @@
  <title>bbw's blog</title>
  <link href="http://bbwff.github.io/" rel="self"/>
  <link href="http://bbwff.github.io"/>
- <updated>2016-12-16T11:23:53+08:00</updated>
+ <updated>2016-12-16T11:26:02+08:00</updated>
  <id>http://bbwff.github.io</id>
  <author>
    <name>bbw</name>
@@ -22,7 +22,7 @@
 
 &lt;p&gt;最近在看动态规划，挺难理解的，慢慢看，把心得记录下。&lt;/p&gt;
 
-&lt;h2 id=&quot;section&quot;&gt;参考资料&lt;/h2&gt;
+&lt;h2 id=&quot;参考资料&quot;&gt;参考资料&lt;/h2&gt;
 
 &lt;p&gt;http://blog.csdn.net/pi9nc/article/details/8142876&lt;/p&gt;
 
@@ -39,12 +39,12 @@
 
 &lt;p&gt;求出1~13的整数中1出现的次数,并算出100~1300的整数中1出现的次数？为此他特别数了一下1~13中包含1的数字有1、10、11、12、13因此共出现6次,但是区间大一点怎么求呢？&lt;/p&gt;
 
-&lt;h1 id=&quot;section&quot;&gt;题目描述&lt;/h1&gt;
+&lt;h1 id=&quot;题目描述&quot;&gt;题目描述&lt;/h1&gt;
 
-&lt;p&gt;求出1~13的整数中1出现的次数,并算出100~1300的整数中1出现的次数？为此他特别数了一下1~13中包含1的数字有1、10、11、12、13因此共出现6次,但是对于后面问题他就没辙了。ACMer希望你们帮帮他,并把问题更加普遍化,可以很快的求出任意非负整数区间中1出现的次数。
+&lt;p&gt;求出1~13的整数中1出现的次数,并算出100~1300的整数中1出现的次数？为此他特别数了一下1~13中包含1的数字有1、10、11、12、13因此共出现6次,但是对于后面问题他就没辙了。ACMer希望你们帮帮他,并把问题更加普遍化,可以很快的求出任意非负整数区间中1出现的次数。&lt;br /&gt;
 &lt;!--more--&gt;&lt;/p&gt;
 
-&lt;h1 id=&quot;section-1&quot;&gt;解题思路&lt;/h1&gt;
+&lt;h1 id=&quot;解题思路&quot;&gt;解题思路&lt;/h1&gt;
 
 &lt;p&gt;刚开始没理解清楚题目的意思，理解题目很关键。&lt;/p&gt;
 
@@ -76,36 +76,36 @@
 
 &lt;p&gt;代码如下：&lt;/p&gt;
 
-&lt;p&gt;```
-public int NumberOf1Between1AndN_Solution(int n) {&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;public int NumberOf1Between1AndN_Solution(int n) {
 
-&lt;pre&gt;&lt;code&gt;int i=1;
-int total=0;
+    int i=1;
+    int total=0;
 
-int hight;
-do{
-     hight=n/(int)Math.pow(10,i);
-    int temp=n%(int)Math.pow(10,i);
-    int curr=temp/(int)Math.pow(10,i-1);
-    int low=temp%(int)Math.pow(10,i-1);
-    if (curr==1){
-        total+=hight*(int)Math.pow(10,i-1)+low+1;
+    int hight;
+    do{
+         hight=n/(int)Math.pow(10,i);
+        int temp=n%(int)Math.pow(10,i);
+        int curr=temp/(int)Math.pow(10,i-1);
+        int low=temp%(int)Math.pow(10,i-1);
+        if (curr==1){
+            total+=hight*(int)Math.pow(10,i-1)+low+1;
 
+        }
+        else if(curr&amp;lt;1){
+            total+=hight*(int)Math.pow(10,i-1);
+        }
+        else if(curr&amp;gt;1){
+            total+=(hight+1)*(int)Math.pow(10,i-1);
+
+        }
+        i++;
     }
-    else if(curr&amp;lt;1){
-        total+=hight*(int)Math.pow(10,i-1);
-    }
-    else if(curr&amp;gt;1){
-        total+=(hight+1)*(int)Math.pow(10,i-1);
-
-    }
-    i++;
+    while (hight!=0);
+    return total;
 }
-while (hight!=0);
-return total; } ```
-&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;h1 id=&quot;section-2&quot;&gt;扩展&lt;/h1&gt;
+&lt;h1 id=&quot;扩展&quot;&gt;扩展&lt;/h1&gt;
 
 &lt;p&gt;以上思路可以扩展到区间内x出现的次数。&lt;/p&gt;
 </content>
@@ -121,39 +121,38 @@ return total; } ```
 
 &lt;p&gt;最近在做一些牛客网上的题，遇到一道题，是对一个字符串，按字典序输出它的全排列。&lt;/p&gt;
 
-&lt;h2 id=&quot;section&quot;&gt;题目描述&lt;/h2&gt;
+&lt;h2 id=&quot;题目描述&quot;&gt;题目描述&lt;/h2&gt;
 
-&lt;p&gt;输入一个字符串,按字典序打印出该字符串中字符的所有排列。例如输入字符串abc,则打印出由字符a,b,c所能排列出来的所有字符串abc,acb,bac,bca,cab和cba。 
-&lt;!--more--&gt;
-## 解题过程
-一开始受数学的思想影响严重，总是觉得全排列是先从n个字符里面随机取出一个，然后再从n-1里面随机取出一个字符，直到取完为止。但是这样直接分支来写，很难写出来的。 
-可以把这个过程转为递归的过程。像数学归纳法一样，一步一步化繁为简。
-数学归纳法的思想如下：
-一般地，证明一个与自然数n有关的命题P(n），有如下步骤：
-（1）证明当n取第一个值n0时命题成立。n0对于一般数列取值为0或1，但也有特殊情况；
-（2）假设当n=k（k≥n0，k为自然数）时命题成立，证明当n=k+1时命题也成立。
+&lt;p&gt;输入一个字符串,按字典序打印出该字符串中字符的所有排列。例如输入字符串abc,则打印出由字符a,b,c所能排列出来的所有字符串abc,acb,bac,bca,cab和cba。 &lt;br /&gt;
+&lt;!--more--&gt;&lt;/p&gt;
+&lt;h2 id=&quot;解题过程&quot;&gt;解题过程&lt;/h2&gt;
+&lt;p&gt;一开始受数学的思想影响严重，总是觉得全排列是先从n个字符里面随机取出一个，然后再从n-1里面随机取出一个字符，直到取完为止。但是这样直接分支来写，很难写出来的。 &lt;br /&gt;
+可以把这个过程转为递归的过程。像数学归纳法一样，一步一步化繁为简。&lt;br /&gt;
+数学归纳法的思想如下：&lt;br /&gt;
+一般地，证明一个与自然数n有关的命题P(n），有如下步骤：&lt;br /&gt;
+（1）证明当n取第一个值n0时命题成立。n0对于一般数列取值为0或1，但也有特殊情况；&lt;br /&gt;
+（2）假设当n=k（k≥n0，k为自然数）时命题成立，证明当n=k+1时命题也成立。&lt;br /&gt;
 综合（1）（2），对一切自然数n（≥n0），命题P(n）都成立。&lt;/p&gt;
 
-&lt;p&gt;然后运用到此处，
-初始条件：当只有一个字符的时候，他的全排列就是他本身。
-1）当有两个字符的时候，他的全排列就是所有字符和第一个字符交换之后的第一个字符加后面一个字符的全排列。
-2）当有K+1字符的时候，他的全排列就是所有字符分别与第一个字符交换之后的第一个字符加后面k个字符的全排列。
+&lt;p&gt;然后运用到此处，&lt;br /&gt;
+初始条件：当只有一个字符的时候，他的全排列就是他本身。&lt;br /&gt;
+1）当有两个字符的时候，他的全排列就是所有字符和第一个字符交换之后的第一个字符加后面一个字符的全排列。&lt;br /&gt;
+2）当有K+1字符的时候，他的全排列就是所有字符分别与第一个字符交换之后的第一个字符加后面k个字符的全排列。&lt;br /&gt;
 综合 (1) (2)，对一切自然数n(n&amp;gt;0),这个命题都成立。&lt;/p&gt;
 
 &lt;p&gt;然后数学归纳法，一般是由初始条件到一般条件的归纳，跟递归的过程刚好相反，但只要我们归纳出了这个规律，写递归就简单了。&lt;/p&gt;
 
-&lt;p&gt;设一组数p = {r1, r2, r3, … ,rn}, 全排列为perm(p)，pn = p - {rn}。
-因此perm(p) = r1perm(p1), r2perm(p2), r3perm(p3), … , rnperm(pn)。当n = 1时perm(p} = r1。
+&lt;p&gt;设一组数p = {r1, r2, r3, … ,rn}, 全排列为perm(p)，pn = p - {rn}。&lt;br /&gt;
+因此perm(p) = r1perm(p1), r2perm(p2), r3perm(p3), … , rnperm(pn)。当n = 1时perm(p} = r1。&lt;br /&gt;
 其实就是跟归纳一个反的过程。代码如下&lt;/p&gt;
 
-&lt;p&gt;```JAVA
-import java.util.*;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;import java.util.*;
 
-&lt;p&gt;/**
+/**
  * Created by bbw on 16/12/11.
  */
 public class Permutation {
-    TreeSet&lt;String&gt; treeSet=new TreeSet&lt;String&gt;();
+    TreeSet&amp;lt;String&amp;gt; treeSet=new TreeSet&amp;lt;String&amp;gt;();
     public  void  swap(char[] str,int a,int b){
         char c=str[a];
         str[a]=str[b];
@@ -163,28 +162,29 @@ public class Permutation {
         if (a==b){
             String t=&quot;&quot;;
             for (int i=0;i&amp;lt;=b;i++){
-                t=t+str[i];&lt;/String&gt;&lt;/String&gt;&lt;/p&gt;
+                t=t+str[i];
 
-&lt;pre&gt;&lt;code&gt;        }
-        treeSet.add(t);
-    }
-    else {
-        for (int i=a;i&amp;lt;=b;i++){
-            swap(str,i,a);
-            perm(str,a+1,b);
-            swap(str,i,a);
+            }
+            treeSet.add(t);
         }
+        else {
+            for (int i=a;i&amp;lt;=b;i++){
+                swap(str,i,a);
+                perm(str,a+1,b);
+                swap(str,i,a);
+            }
+
+        }
+    }
+    public ArrayList&amp;lt;String&amp;gt; Permutation(String str) {
+        perm(str.toCharArray(),0,str.length()-1);
+        ArrayList&amp;lt;String&amp;gt; r=new ArrayList&amp;lt;String&amp;gt;();
+        for (String s:treeSet)
+            r.add(s);
+        return r;
 
     }
 }
-public ArrayList&amp;lt;String&amp;gt; Permutation(String str) {
-    perm(str.toCharArray(),0,str.length()-1);
-    ArrayList&amp;lt;String&amp;gt; r=new ArrayList&amp;lt;String&amp;gt;();
-    for (String s:treeSet)
-        r.add(s);
-    return r;
-
-} } ```
 &lt;/code&gt;&lt;/pre&gt;
 
 </content>
@@ -200,7 +200,7 @@ public ArrayList&amp;lt;String&amp;gt; Permutation(String str) {
 
 &lt;p&gt;最近在看算法导论，想记录一个读书笔记之类的东西自己看。就是会记载的很乱，写的很随意，自己看，反正这个博客也不会公开，hhhh。&lt;/p&gt;
 
-&lt;h2 id=&quot;section&quot;&gt;第二章-算法入门&lt;/h2&gt;
+&lt;h2 id=&quot;第二章-算法入门&quot;&gt;第二章-算法入门&lt;/h2&gt;
 
 &lt;p&gt;算法这种东西，有些思想是比较简单的，最好是把算法写成代码实现。&lt;/p&gt;
 
@@ -210,8 +210,7 @@ public ArrayList&amp;lt;String&amp;gt; Permutation(String str) {
 
 &lt;p&gt;下面是我写的分治法排序的代码，是递归归并排序。&lt;/p&gt;
 
-&lt;p&gt;```
-package Introduction2Algorithms.chapter2;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;package Introduction2Algorithms.chapter2;
 import java.io.Console;
 /**
  * Created by bbw on 2016/11/28.
@@ -232,13 +231,12 @@ public class mergeSort {
             a2[i]=a[q+1+i];
         }
         //此处是一个哨兵，无穷大的
-        a2[l2]=Integer.MAX_VALUE;&lt;/p&gt;
+        a2[l2]=Integer.MAX_VALUE;
 
-&lt;pre&gt;&lt;code&gt;    int i1=0;
-    int i2=0;
-&lt;/code&gt;&lt;/pre&gt;
+        int i1=0;
+        int i2=0;
 
-&lt;p&gt;//此处出现过bug，就是我把i从0开始了，应该是从p开始
+//此处出现过bug，就是我把i从0开始了，应该是从p开始
         for (int i=p;i&amp;lt;=r;i++){
             if (a1[i1]&amp;lt;a2[i2]) {
                 a[i] = a1[i1];
@@ -249,27 +247,28 @@ public class mergeSort {
                 i2++;
             }
         }
-    }&lt;/p&gt;
+    }
 
-&lt;pre&gt;&lt;code&gt;static void mergeSort(int[]a,int p,int q){
+    static void mergeSort(int[]a,int p,int q){
 
-    if (p&amp;lt;q){
-        int t=(p+q)/2;
-        mergeSort(a,p,t);
-        mergeSort(a,t+1,q);
-        merge(a,p,t,q);
+        if (p&amp;lt;q){
+            int t=(p+q)/2;
+            mergeSort(a,p,t);
+            mergeSort(a,t+1,q);
+            merge(a,p,t,q);
+        }
+    }
+
+    public static void main(String[] args)
+    {
+        int[] x = { 6, 2, 4, 1, 5, 9 };
+        mergeSort(x,0,x.length-1);
+        for (int i:x){
+            System.out.println(i);
+        }
     }
 }
-
-public static void main(String[] args)
-{
-    int[] x = { 6, 2, 4, 1, 5, 9 };
-    mergeSort(x,0,x.length-1);
-    for (int i:x){
-        System.out.println(i);
-    }
-} } ```
-&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;这个代码挺简单的，但是我居然中间出了bug，就是数组的边界没搞好，导致数据混乱。这里面的哨兵比较方便，但就只是浪费了一个空间，代价不大，代码比较简洁。&lt;/p&gt;
 
@@ -277,7 +276,7 @@ public static void main(String[] args)
 
 &lt;p&gt;所以T(n)=2T(n/2)+cn。&lt;/p&gt;
 
-&lt;p&gt;然后一般这种时间复杂度就是按照递归拆开，可以拆成logN层。然后每一层都有一个cn，拆logN次就有 CnLogN，然后  那个 logN.T(1)就被舍去，时间复杂度就是O(nlogN)。具体类似递归时间复杂度计算方法看&lt;a href=&quot;http://blog.csdn.net/xiaoxian8023/article/details/8134260&quot;&gt;这个网页&lt;/a&gt;。
+&lt;p&gt;然后一般这种时间复杂度就是按照递归拆开，可以拆成logN层。然后每一层都有一个cn，拆logN次就有 CnLogN，然后  那个 logN.T(1)就被舍去，时间复杂度就是O(nlogN)。具体类似递归时间复杂度计算方法看&lt;a href=&quot;http://blog.csdn.net/xiaoxian8023/article/details/8134260&quot;&gt;这个网页&lt;/a&gt;。&lt;br /&gt;
 然后算法导论第二章留了一道习题，是用归并排序的思想求一个数组的逆序对的数目。在归并排序的过程中，整个过程递归到底就是先对两个只有一个的数组进行归并，然后再对归并之后归并，其实就是二路归并。然后我们只要在merge的时候计算是否前面数组的树大于后面数组的数，用一个全局变量来记录所有出现的次数就是逆序对的个数。&lt;/p&gt;
 
 </content>
@@ -311,7 +310,7 @@ public static void main(String[] args)
 
 &lt;p&gt;最近在写堆外操作的代码，需要用到unsafe 类，记录下。&lt;/p&gt;
 
-&lt;h1 id=&quot;unsafe-&quot;&gt;unsafe 简介&lt;/h1&gt;
+&lt;h1 id=&quot;unsafe-简介&quot;&gt;unsafe 简介&lt;/h1&gt;
 
 &lt;p&gt;unsafe类位于 sun.misc包,之所以叫unsafe是因为他操作堆外内存，即不受JVM控制的内存。由于最近要做点把数据存储在堆外的工作，所以了解了下unsafe。&lt;/p&gt;
 
@@ -319,12 +318,11 @@ public static void main(String[] args)
 
 &lt;p&gt;下面是关于unsafe做测试的代码。&lt;/p&gt;
 
-&lt;p&gt;```JAVA
-import sun.misc.Unsafe;&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;import sun.misc.Unsafe;
 
-&lt;p&gt;import java.lang.reflect.Field;&lt;/p&gt;
+import java.lang.reflect.Field;
 
-&lt;p&gt;/**
+/**
  * Created by bbw on 2016/11/11.
  */
 class cat{
@@ -333,292 +331,297 @@ class cat{
     public cat(Integer name,Integer age){
         this.name=name;
         this.age=age;
-    }&lt;/p&gt;
+    }
 
-&lt;p&gt;}
+}
 public class testUnSafe {
     private static int apple = 10;
     private int orange = 10;
     private int banana=10;
-    public   cat ki=new cat(233,3);&lt;/p&gt;
+    public   cat ki=new cat(233,3);
 
-&lt;p&gt;//这是获得对象里面对象field的方法，根据这个对象在类里面的偏移量来获得
+ //这是获得对象里面对象field的方法，根据这个对象在类里面的偏移量来获得
     public Object getObject(long offset) throws SecurityException, NoSuchFieldException, IllegalArgumentException,
             IllegalAccessException{
         return getUnsafeInstance().getObject(this,offset);
-    }&lt;/p&gt;
+    }
 
-&lt;pre&gt;&lt;code&gt;public static void main(String[] args) throws Exception {
-    Unsafe unsafe = getUnsafeInstance();
-    testUnSafe tus=new testUnSafe();
 
-    Field appleField = testUnSafe.class.getDeclaredField(&quot;apple&quot;);
-    // 获得field的偏移量
-    System.out.println(&quot;Location of Apple: &quot; + unsafe.staticFieldOffset(appleField));
+    public static void main(String[] args) throws Exception {
+        Unsafe unsafe = getUnsafeInstance();
+        testUnSafe tus=new testUnSafe();
 
-    Field orangeField = testUnSafe.class.getDeclaredField(&quot;orange&quot;);
-    System.out.println(&quot;Location of Orange: &quot; + unsafe.objectFieldOffset(orangeField));
-&lt;/code&gt;&lt;/pre&gt;
+        Field appleField = testUnSafe.class.getDeclaredField(&quot;apple&quot;);
+        // 获得field的偏移量
+        System.out.println(&quot;Location of Apple: &quot; + unsafe.staticFieldOffset(appleField));
 
-&lt;p&gt;//这是field 是一个cat类的实例化对象，根据他的便宜地址获得对象，然后强制类型转化
-        Field catField = testUnSafe.class.getDeclaredField(“ki”);
-        System.out.println(“Location of cat: “ + unsafe.objectFieldOffset(catField));
+        Field orangeField = testUnSafe.class.getDeclaredField(&quot;orange&quot;);
+        System.out.println(&quot;Location of Orange: &quot; + unsafe.objectFieldOffset(orangeField));
+
+
+
+//这是field 是一个cat类的实例化对象，根据他的便宜地址获得对象，然后强制类型转化
+        Field catField = testUnSafe.class.getDeclaredField(&quot;ki&quot;);
+        System.out.println(&quot;Location of cat: &quot; + unsafe.objectFieldOffset(catField));
         long offset=unsafe.objectFieldOffset(catField);
         Object rki=tus.getObject(offset);
         cat rrki=(cat)rki;
-        System.out.println(rrki.name);&lt;/p&gt;
+        System.out.println(rrki.name);
 
-&lt;pre&gt;&lt;code&gt;    // follow is addressTest
-    cat ncat=new cat(333,444);
-    cat ncat2=new cat(555,666);
-    cat[] ca={ncat,ncat2};
-    long catArrayOffset=unsafe.arrayBaseOffset(cat[].class);
-    System.out.println(catArrayOffset+&quot; &quot;+unsafe.arrayIndexScale(cat[].class));
-    //cat rncat=((cat[])(tus.getObject(catArrayOffset)))[0];
-   // System.out.println(rncat.name+rncat.age);
-    Field bananaField = testUnSafe.class.getDeclaredField(&quot;banana&quot;);
-    System.out.println(&quot;Location of banana: &quot; + unsafe.objectFieldOffset(bananaField));
+        // follow is addressTest
+        cat ncat=new cat(333,444);
+        cat ncat2=new cat(555,666);
+        cat[] ca={ncat,ncat2};
+        long catArrayOffset=unsafe.arrayBaseOffset(cat[].class);
+        System.out.println(catArrayOffset+&quot; &quot;+unsafe.arrayIndexScale(cat[].class));
+        //cat rncat=((cat[])(tus.getObject(catArrayOffset)))[0];
+       // System.out.println(rncat.name+rncat.age);
+        Field bananaField = testUnSafe.class.getDeclaredField(&quot;banana&quot;);
+        System.out.println(&quot;Location of banana: &quot; + unsafe.objectFieldOffset(bananaField));
+    }
+    
+    //获得unsafe 的方法，是单例模式
+    private static Unsafe getUnsafeInstance() throws SecurityException, NoSuchFieldException, IllegalArgumentException,
+            IllegalAccessException {
+        Field theUnsafeInstance = Unsafe.class.getDeclaredField(&quot;theUnsafe&quot;);
+        theUnsafeInstance.setAccessible(true);
+        return (Unsafe) theUnsafeInstance.get(Unsafe.class);
+    }
 }
 
-//获得unsafe 的方法，是单例模式
-private static Unsafe getUnsafeInstance() throws SecurityException, NoSuchFieldException, IllegalArgumentException,
-        IllegalAccessException {
-    Field theUnsafeInstance = Unsafe.class.getDeclaredField(&quot;theUnsafe&quot;);
-    theUnsafeInstance.setAccessible(true);
-    return (Unsafe) theUnsafeInstance.get(Unsafe.class);
-} }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;```&lt;/p&gt;
-
-&lt;p&gt;unsafe 是单例模式，所以全局就只有一个unsafe，必须用它提供的方法来获取。
-然后里面有获得里面字段 和静态字段偏移地址的方法，偏移地址是相对于在这个对象里面的偏移地址，可以根据偏移地址获得这个field。
+&lt;p&gt;unsafe 是单例模式，所以全局就只有一个unsafe，必须用它提供的方法来获取。&lt;br /&gt;
+然后里面有获得里面字段 和静态字段偏移地址的方法，偏移地址是相对于在这个对象里面的偏移地址，可以根据偏移地址获得这个field。&lt;br /&gt;
 例如，我在这个类里面声明的 cat 类 field ，就可以根据它在对象里面偏移地址来取得这个类。&lt;/p&gt;
 
 &lt;p&gt;至于如何获得方法里面变量的内存地址以及如何通过这个获得的内存地址来取得这个变量对象，我还不是很明白，只知道unsafe.arrayBaseOffset 来获得对象数据的偏移地址。&lt;/p&gt;
 
-&lt;p&gt;下面是我写的一个静态类，可以用来实现unsafe的放置变量，并且可以把这块堆外内存里面存的数据转化为迭代器。
-我是这样存数据的，首先是申请一块堆外内存，然后前四个字节存储这块内存的大小，然后紧接着四个字节存储已经使用的大小。然后存储数据的类型是从外部传进去的，0代表int,1代表long，2代表double。
-然后每次在写入数据的时候，都会判断这块内存的大小够不够写入数据，如果不够就申请一个更大的内存，然后把原来的数据拷贝到新的内存里面，重新对这块内存的前八个字节赋值，即内存的大小和使用情况。
+&lt;p&gt;下面是我写的一个静态类，可以用来实现unsafe的放置变量，并且可以把这块堆外内存里面存的数据转化为迭代器。&lt;br /&gt;
+我是这样存数据的，首先是申请一块堆外内存，然后前四个字节存储这块内存的大小，然后紧接着四个字节存储已经使用的大小。然后存储数据的类型是从外部传进去的，0代表int,1代表long，2代表double。&lt;br /&gt;
+然后每次在写入数据的时候，都会判断这块内存的大小够不够写入数据，如果不够就申请一个更大的内存，然后把原来的数据拷贝到新的内存里面，重新对这块内存的前八个字节赋值，即内存的大小和使用情况。&lt;br /&gt;
 然后这个类的静态参数在每次传入内存的起始地址后会首先读取这块内存的前八个字节，获得内存大小以及使用情况。&lt;/p&gt;
 
-&lt;p&gt;```JAVA&lt;/p&gt;
-
-&lt;p&gt;package org.apache.spark.unsafe;
+&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;
+package org.apache.spark.unsafe;
 import java.util.Iterator;
 /**
  * Created by bbw on 2016/11/14.
  */
-public  final class UnsafeBuffer&lt;T&gt; {&lt;/T&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;public  static int  MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-
-public static   int  hugeCapacity(int minCapacity) {
-    if (minCapacity &amp;lt; 0) throw new OutOfMemoryError();
-    if ((minCapacity &amp;gt; MAX_ARRAY_SIZE))
-        return Integer.MAX_VALUE;
-    else
-        return MAX_ARRAY_SIZE;
-    }
-
-
-public static long  copyBuf2New ( long baseAddress,int vType,int  minCapacity) {
-    // read the size and count of this buf(the format size,count)
-    int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-    int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+public  final class UnsafeBuffer&amp;lt;T&amp;gt; {
 
 
 
-    long address = PlatformDependent.UNSAFE.allocateMemory(minCapacity);
-    // write the size and count
+    public  static int  MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
-    PlatformDependent.UNSAFE.putInt(null,address,minCapacity);
-    PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount);
-
-
-    int   i= 8;
-    switch (vType) {
-        case 0 :
-    while (i &amp;lt; sizeCount) {
-    PlatformDependent.UNSAFE.putInt(null, address + i, PlatformDependent.UNSAFE.getInt(null, baseAddress + i));
-    i = i + 4;
-    }
-        case 1 :
-    while (i &amp;lt; sizeCount) {
-    PlatformDependent.UNSAFE.putLong(null, address + i, PlatformDependent.UNSAFE.getLong(null, baseAddress + i));
-    i = i + 8;
-    }
-        case 2 :
-    while (i &amp;lt; sizeCount) {
-    PlatformDependent.UNSAFE.putDouble(null, address + i, PlatformDependent.UNSAFE.getDouble(null, baseAddress + i));
-    i = i + 8;
-    }
-    default:
-        assert (1==0);
-    }
-    return address;
-
-    }
+    public static   int  hugeCapacity(int minCapacity) {
+        if (minCapacity &amp;lt; 0) throw new OutOfMemoryError();
+        if ((minCapacity &amp;gt; MAX_ARRAY_SIZE))
+            return Integer.MAX_VALUE;
+        else
+            return MAX_ARRAY_SIZE;
+        }
 
 
-    public static long putInt(long baseAddress, int vType,int value){
+    public static long  copyBuf2New ( long baseAddress,int vType,int  minCapacity) {
+        // read the size and count of this buf(the format size,count)
         int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
         int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
 
-       long address= ensureCapacity(baseAddress,vType,sizeCount+4);
 
-        PlatformDependent.UNSAFE.putInt(null,address+sizeCount,value);
 
-        PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+4);
+        long address = PlatformDependent.UNSAFE.allocateMemory(minCapacity);
+        // write the size and count
+
+        PlatformDependent.UNSAFE.putInt(null,address,minCapacity);
+        PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount);
+
+
+        int   i= 8;
+        switch (vType) {
+            case 0 :
+        while (i &amp;lt; sizeCount) {
+        PlatformDependent.UNSAFE.putInt(null, address + i, PlatformDependent.UNSAFE.getInt(null, baseAddress + i));
+        i = i + 4;
+        }
+            case 1 :
+        while (i &amp;lt; sizeCount) {
+        PlatformDependent.UNSAFE.putLong(null, address + i, PlatformDependent.UNSAFE.getLong(null, baseAddress + i));
+        i = i + 8;
+        }
+            case 2 :
+        while (i &amp;lt; sizeCount) {
+        PlatformDependent.UNSAFE.putDouble(null, address + i, PlatformDependent.UNSAFE.getDouble(null, baseAddress + i));
+        i = i + 8;
+        }
+        default:
+            assert (1==0);
+        }
+        return address;
+
+        }
+
+
+        public static long putInt(long baseAddress, int vType,int value){
+            int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+            int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+           long address= ensureCapacity(baseAddress,vType,sizeCount+4);
+
+            PlatformDependent.UNSAFE.putInt(null,address+sizeCount,value);
+
+            PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+4);
+
+            return address;
+
+
+        }
+    public static long putLong(long baseAddress, int vType,long value){
+        int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+        long address= ensureCapacity(baseAddress,vType,sizeCount+8);
+
+        PlatformDependent.UNSAFE.putLong(null,address+sizeCount,value);
+
+        PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+8);
 
         return address;
 
 
     }
-public static long putLong(long baseAddress, int vType,long value){
+    public static long putDouble(long baseAddress, int vType,double value){
+        int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+
+        long address= ensureCapacity(baseAddress,vType,sizeCount+8);
+
+        PlatformDependent.UNSAFE.putDouble(null,address+sizeCount,value);
+
+        PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+8);
+
+        return address;
+
+
+    }
+
+
+public  static long grow (long  baseAddress,int vType,int minCapacity) {
+
+    int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+    int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
+        int  oldCapacity=size;
+        int  newCapacity = oldCapacity &amp;lt;&amp;lt; 1;
+        if (newCapacity - minCapacity &amp;lt; 0) newCapacity = minCapacity;
+        if (newCapacity - MAX_ARRAY_SIZE &amp;gt; 0) newCapacity = hugeCapacity(minCapacity);
+        //buf = Arrays.copyOf(buf, newCapacity)
+        //重新分配空间
+        // baseAddress=PlatformDependent.UNSAFE.allocateMemory(newCapacity)
+        long  temp=copyBuf2New(baseAddress,vType,minCapacity);
+        PlatformDependent.UNSAFE.freeMemory(baseAddress);
+
+    return temp;
+}
+
+    public static  long   ensureCapacity (long baseAddress,int vType,int minCapacity) {
+
     int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
     int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
 
-    long address= ensureCapacity(baseAddress,vType,sizeCount+8);
 
-    PlatformDependent.UNSAFE.putLong(null,address+sizeCount,value);
-
-    PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+8);
-
-    return address;
-
-
+        if (minCapacity - size &amp;gt; 0)
+           return grow(baseAddress,vType,minCapacity);
+    else return baseAddress;
 }
-public static long putDouble(long baseAddress, int vType,double value){
-    int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-    int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
-
-    long address= ensureCapacity(baseAddress,vType,sizeCount+8);
-
-    PlatformDependent.UNSAFE.putDouble(null,address+sizeCount,value);
-
-    PlatformDependent.UNSAFE.putInt(null,address+4,sizeCount+8);
-
-    return address;
 
 
+
+
+    public static   Iterator&amp;lt;Integer&amp;gt; intIterator( long baseAddress) {
+        // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
+        final long address = baseAddress;
+        return new Iterator&amp;lt;Integer&amp;gt;() {
+            int offset = 8;
+
+            @Override
+            public boolean hasNext() {
+                if (offset &amp;lt; sizeCount)
+                    return true;
+                else {
+                    PlatformDependent.UNSAFE.freeMemory(address);
+                    return false;
+                }
+            }
+
+            @Override
+            public Integer next() {
+                offset += 4;
+                return PlatformDependent.UNSAFE.getInt(null, address + offset - 4);
+            }
+        };
+    }
+
+    public static   Iterator&amp;lt;Long&amp;gt; longIterator( long baseAddress) {
+        // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
+        final long address = baseAddress;
+        return new Iterator&amp;lt;Long&amp;gt;() {
+            int offset = 8;
+
+            @Override
+            public boolean hasNext() {
+                if (offset &amp;lt; sizeCount)
+                    return true;
+                else {
+                    PlatformDependent.UNSAFE.freeMemory(address);
+                    return false;
+                }
+            }
+
+            @Override
+            public Long next() {
+                offset += 8;
+                return PlatformDependent.UNSAFE.getLong(null, address + offset - 8);
+            }
+        };
+    }
+
+    public static   Iterator&amp;lt;Double&amp;gt; doubleIterator( long baseAddress) {
+        // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
+        final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
+        final long address = baseAddress;
+        return new Iterator&amp;lt;Double&amp;gt;() {
+            int offset = 8;
+
+            @Override
+            public boolean hasNext() {
+                if (offset &amp;lt; sizeCount)
+                    return true;
+                else {
+                    PlatformDependent.UNSAFE.freeMemory(address);
+                    return false;
+                }
+            }
+
+            @Override
+            public Double next() {
+                offset += 8;
+                return PlatformDependent.UNSAFE.getDouble(null, address + offset - 8);
+            }
+        };
+    }
+
+
+    public static  long createBuff(int size){
+        long address=PlatformDependent.UNSAFE.allocateMemory(size);
+        PlatformDependent.UNSAFE.putInt(null,address,size);
+        PlatformDependent.UNSAFE.putInt(null,address+4,8);
+        return address;
+    }
 }
+
 &lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;public  static long grow (long  baseAddress,int vType,int minCapacity) {&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
-    int  oldCapacity=size;
-    int  newCapacity = oldCapacity &amp;lt;&amp;lt; 1;
-    if (newCapacity - minCapacity &amp;lt; 0) newCapacity = minCapacity;
-    if (newCapacity - MAX_ARRAY_SIZE &amp;gt; 0) newCapacity = hugeCapacity(minCapacity);
-    //buf = Arrays.copyOf(buf, newCapacity)
-    //重新分配空间
-    // baseAddress=PlatformDependent.UNSAFE.allocateMemory(newCapacity)
-    long  temp=copyBuf2New(baseAddress,vType,minCapacity);
-    PlatformDependent.UNSAFE.freeMemory(baseAddress);
-
-return temp; }
-
-public static  long   ensureCapacity (long baseAddress,int vType,int minCapacity) {
-
-int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-int sizeCount=PlatformDependent.UNSAFE.getInt(null,baseAddress+4);
-
-
-    if (minCapacity - size &amp;gt; 0)
-       return grow(baseAddress,vType,minCapacity);
-else return baseAddress; }
-
-
-
-
-public static   Iterator&amp;lt;Integer&amp;gt; intIterator( long baseAddress) {
-    // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-    final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
-    final long address = baseAddress;
-    return new Iterator&amp;lt;Integer&amp;gt;() {
-        int offset = 8;
-
-        @Override
-        public boolean hasNext() {
-            if (offset &amp;lt; sizeCount)
-                return true;
-            else {
-                PlatformDependent.UNSAFE.freeMemory(address);
-                return false;
-            }
-        }
-
-        @Override
-        public Integer next() {
-            offset += 4;
-            return PlatformDependent.UNSAFE.getInt(null, address + offset - 4);
-        }
-    };
-}
-
-public static   Iterator&amp;lt;Long&amp;gt; longIterator( long baseAddress) {
-    // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-    final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
-    final long address = baseAddress;
-    return new Iterator&amp;lt;Long&amp;gt;() {
-        int offset = 8;
-
-        @Override
-        public boolean hasNext() {
-            if (offset &amp;lt; sizeCount)
-                return true;
-            else {
-                PlatformDependent.UNSAFE.freeMemory(address);
-                return false;
-            }
-        }
-
-        @Override
-        public Long next() {
-            offset += 8;
-            return PlatformDependent.UNSAFE.getLong(null, address + offset - 8);
-        }
-    };
-}
-
-public static   Iterator&amp;lt;Double&amp;gt; doubleIterator( long baseAddress) {
-    // int size=PlatformDependent.UNSAFE.getInt(null,baseAddress);
-    final int sizeCount = PlatformDependent.UNSAFE.getInt(null, baseAddress + 4);
-    final long address = baseAddress;
-    return new Iterator&amp;lt;Double&amp;gt;() {
-        int offset = 8;
-
-        @Override
-        public boolean hasNext() {
-            if (offset &amp;lt; sizeCount)
-                return true;
-            else {
-                PlatformDependent.UNSAFE.freeMemory(address);
-                return false;
-            }
-        }
-
-        @Override
-        public Double next() {
-            offset += 8;
-            return PlatformDependent.UNSAFE.getDouble(null, address + offset - 8);
-        }
-    };
-}
-
-
-public static  long createBuff(int size){
-    long address=PlatformDependent.UNSAFE.allocateMemory(size);
-    PlatformDependent.UNSAFE.putInt(null,address,size);
-    PlatformDependent.UNSAFE.putInt(null,address+4,8);
-    return address;
-} }
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;```&lt;/p&gt;
 </content>
  </entry>
  
@@ -636,212 +639,212 @@ public static  long createBuff(int size){
 
 &lt;h2 id=&quot;rank-1&quot;&gt;Rank 1:&lt;/h2&gt;
 
-&lt;p&gt;SIGCOMM: ACM Conf on Comm Architectures, Protocols &amp;amp; Apps
-INFOCOM: Annual Joint Conf IEEE Comp &amp;amp; Comm Soc
-SPAA: Symp on Parallel Algms and Architecture
-PODC: ACM Symp on Principles of Distributed Computing
-PPoPP: Principles and Practice of Parallel Programming
-RTSS: Real Time Systems Symp
-SOSP: ACM SIGOPS Symp on OS Principles
-SOSDI: Usenix Symp on OS Design and Implementation 
-CCS: ACM Conf on Comp and Communications Security
-IEEE Symposium on Security and Privacy
-MOBICOM: ACM Intl Conf on Mobile Computing and Networking
-USENIX Conf on Internet Tech and Sys
-ICNP: Intl Conf on Network Protocols
-PACT: Intl Conf on Parallel Arch and Compil Tech
-RTAS: IEEE Real-Time and Embedded Technology and Applications Symposium
+&lt;p&gt;SIGCOMM: ACM Conf on Comm Architectures, Protocols &amp;amp; Apps&lt;br /&gt;
+INFOCOM: Annual Joint Conf IEEE Comp &amp;amp; Comm Soc&lt;br /&gt;
+SPAA: Symp on Parallel Algms and Architecture&lt;br /&gt;
+PODC: ACM Symp on Principles of Distributed Computing&lt;br /&gt;
+PPoPP: Principles and Practice of Parallel Programming&lt;br /&gt;
+RTSS: Real Time Systems Symp&lt;br /&gt;
+SOSP: ACM SIGOPS Symp on OS Principles&lt;br /&gt;
+SOSDI: Usenix Symp on OS Design and Implementation &lt;br /&gt;
+CCS: ACM Conf on Comp and Communications Security&lt;br /&gt;
+IEEE Symposium on Security and Privacy&lt;br /&gt;
+MOBICOM: ACM Intl Conf on Mobile Computing and Networking&lt;br /&gt;
+USENIX Conf on Internet Tech and Sys&lt;br /&gt;
+ICNP: Intl Conf on Network Protocols&lt;br /&gt;
+PACT: Intl Conf on Parallel Arch and Compil Tech&lt;br /&gt;
+RTAS: IEEE Real-Time and Embedded Technology and Applications Symposium&lt;br /&gt;
 ICDCS: IEEE Intl Conf on Distributed Comp Systems&lt;/p&gt;
 
 &lt;!--more--&gt;
 
 &lt;h2 id=&quot;rank-2&quot;&gt;Rank 2:&lt;/h2&gt;
 
-&lt;p&gt;CC: Compiler Construction
-IPDPS: Intl Parallel and Dist Processing Symp
-IC3N: Intl Conf on Comp Comm and Networks
-ICPP: Intl Conf on Parallel Processing
-SRDS: Symp on Reliable Distributed Systems
-MPPOI: Massively Par Proc Using Opt Interconns
-ASAP: Intl Conf on Apps for Specific Array Processors
-Euro-Par: European Conf. on Parallel Computing
-Fast Software Encryption
-Usenix Security Symposium
-European Symposium on Research in Computer Security
-WCW: Web Caching Workshop
-LCN: IEEE Annual Conference on Local Computer Networks
-IPCCC: IEEE Intl Phoenix Conf on Comp &amp;amp; Communications
-CCC: Cluster Computing Conference
-ICC: Intl Conf on Comm
-WCNC: IEEE Wireless Communications and Networking Conference
+&lt;p&gt;CC: Compiler Construction&lt;br /&gt;
+IPDPS: Intl Parallel and Dist Processing Symp&lt;br /&gt;
+IC3N: Intl Conf on Comp Comm and Networks&lt;br /&gt;
+ICPP: Intl Conf on Parallel Processing&lt;br /&gt;
+SRDS: Symp on Reliable Distributed Systems&lt;br /&gt;
+MPPOI: Massively Par Proc Using Opt Interconns&lt;br /&gt;
+ASAP: Intl Conf on Apps for Specific Array Processors&lt;br /&gt;
+Euro-Par: European Conf. on Parallel Computing&lt;br /&gt;
+Fast Software Encryption&lt;br /&gt;
+Usenix Security Symposium&lt;br /&gt;
+European Symposium on Research in Computer Security&lt;br /&gt;
+WCW: Web Caching Workshop&lt;br /&gt;
+LCN: IEEE Annual Conference on Local Computer Networks&lt;br /&gt;
+IPCCC: IEEE Intl Phoenix Conf on Comp &amp;amp; Communications&lt;br /&gt;
+CCC: Cluster Computing Conference&lt;br /&gt;
+ICC: Intl Conf on Comm&lt;br /&gt;
+WCNC: IEEE Wireless Communications and Networking Conference&lt;br /&gt;
 CSFW: IEEE Computer Security Foundations Workshop&lt;/p&gt;
 
 &lt;h2 id=&quot;rank-3&quot;&gt;Rank 3:&lt;/h2&gt;
 
-&lt;p&gt;MPCS: Intl. Conf. on Massively Parallel Computing Systems
-GLOBECOM: Global Comm
-ICCC: Intl Conf on Comp Communication
-NOMS: IEEE Network Operations and Management Symp
-CONPAR: Intl Conf on Vector and Parallel Processing
-VAPP: Vector and Parallel Processing
-ICPADS: Intl Conf. on Parallel and Distributed Systems
-Public Key Cryptosystems
-Annual Workshop on Selected Areas in Cryptography
-Australasia Conference on Information Security and Privacy
-Int. Conf on Inofrm and Comm. Security
-Financial Cryptography
-Workshop on Information Hiding
-Smart Card Research and Advanced Application Conference
-ICON: Intl Conf on Networks
-NCC: Nat Conf Comm
-IN: IEEE Intell Network Workshop
-Softcomm: Conf on Software in Tcomms and Comp Networks
-INET: Internet Society Conf
+&lt;p&gt;MPCS: Intl. Conf. on Massively Parallel Computing Systems&lt;br /&gt;
+GLOBECOM: Global Comm&lt;br /&gt;
+ICCC: Intl Conf on Comp Communication&lt;br /&gt;
+NOMS: IEEE Network Operations and Management Symp&lt;br /&gt;
+CONPAR: Intl Conf on Vector and Parallel Processing&lt;br /&gt;
+VAPP: Vector and Parallel Processing&lt;br /&gt;
+ICPADS: Intl Conf. on Parallel and Distributed Systems&lt;br /&gt;
+Public Key Cryptosystems&lt;br /&gt;
+Annual Workshop on Selected Areas in Cryptography&lt;br /&gt;
+Australasia Conference on Information Security and Privacy&lt;br /&gt;
+Int. Conf on Inofrm and Comm. Security&lt;br /&gt;
+Financial Cryptography&lt;br /&gt;
+Workshop on Information Hiding&lt;br /&gt;
+Smart Card Research and Advanced Application Conference&lt;br /&gt;
+ICON: Intl Conf on Networks&lt;br /&gt;
+NCC: Nat Conf Comm&lt;br /&gt;
+IN: IEEE Intell Network Workshop&lt;br /&gt;
+Softcomm: Conf on Software in Tcomms and Comp Networks&lt;br /&gt;
+INET: Internet Society Conf&lt;br /&gt;
 Workshop on Security and Privacy in E-commerce&lt;/p&gt;
 
 &lt;h2 id=&quot;un-ranked&quot;&gt;Un-ranked:&lt;/h2&gt;
 
-&lt;p&gt;PARCO: Parallel Computing
-SE: Intl Conf on Systems Engineering (**)
-PDSECA: workshop on Parallel and Distributed Scientific and Engineering Computing with Applications
-CACS: Computer Audit, Control and Security Conference
-SREIS: Symposium on Requirements Engineering for Information Security
-SAFECOMP: International Conference on Computer Safety, Reliability and Security
-IREJVM: Workshop on Intermediate Representation Engineering for the Java Virtual Machine
-EC: ACM Conference on Electronic Commerce
-EWSPT: European Workshop on Software Process Technology
-HotOS: Workshop on Hot Topics in Operating Systems
-HPTS: High Performance Transaction Systems
-Hybrid Systems
-ICEIS: International Conference on Enterprise Information Systems
-IOPADS: I/O in Parallel and Distributed Systems
-IRREGULAR: Workshop on Parallel Algorithms for Irregularly Structured Problems
-KiVS: Kommunikation in Verteilten Systemen
-LCR: Languages, Compilers, and Run-Time Systems for Scalable Computers
-MCS: Multiple Classifier Systems
-MSS: Symposium on Mass Storage Systems
-NGITS: Next Generation Information Technologies and Systems
-OOIS: Object Oriented Information Systems
-SCM: System Configuration Management
-Security Protocols Workshop
-SIGOPS European Workshop
-SPDP: Symposium on Parallel and Distributed Processing
-TreDS: Trends in Distributed Systems
-USENIX Technical Conference
-VISUAL: Visual Information and Information Systems
-FoDS: Foundations of Distributed Systems: Design and Verification of Protocols conference
-RV: Post-CAV Workshop on Runtime Verification
-ICAIS: International ICSC-NAISO Congress on Autonomous Intelligent Systems
-ITiCSE: Conference on Integrating Technology into Computer Science Education
-CSCS: CyberSystems and Computer Science Conference
-AUIC: Australasian User Interface Conference
-ITI: Meeting of Researchers in Computer Science, Information Systems Research &amp;amp; Statistics
-European Conference on Parallel Processing
-RODLICS: Wses International Conference on Robotics, Distance Learning &amp;amp; Intelligent Communication Systems
-International Conference On Multimedia, Internet &amp;amp; Video Technologies
-PaCT: Parallel Computing Technologies workshop
-PPAM: International Conference on Parallel Processing and Applied Mathematics
-International Conference On Information Networks, Systems And Technologies
-AmiRE: Conference on Autonomous Minirobots for Research and Edutainment
-DSN: The International Conference on Dependable Systems and Networks
-IHW: Information Hiding Workshop
+&lt;p&gt;PARCO: Parallel Computing&lt;br /&gt;
+SE: Intl Conf on Systems Engineering (**)&lt;br /&gt;
+PDSECA: workshop on Parallel and Distributed Scientific and Engineering Computing with Applications&lt;br /&gt;
+CACS: Computer Audit, Control and Security Conference&lt;br /&gt;
+SREIS: Symposium on Requirements Engineering for Information Security&lt;br /&gt;
+SAFECOMP: International Conference on Computer Safety, Reliability and Security&lt;br /&gt;
+IREJVM: Workshop on Intermediate Representation Engineering for the Java Virtual Machine&lt;br /&gt;
+EC: ACM Conference on Electronic Commerce&lt;br /&gt;
+EWSPT: European Workshop on Software Process Technology&lt;br /&gt;
+HotOS: Workshop on Hot Topics in Operating Systems&lt;br /&gt;
+HPTS: High Performance Transaction Systems&lt;br /&gt;
+Hybrid Systems&lt;br /&gt;
+ICEIS: International Conference on Enterprise Information Systems&lt;br /&gt;
+IOPADS: I/O in Parallel and Distributed Systems&lt;br /&gt;
+IRREGULAR: Workshop on Parallel Algorithms for Irregularly Structured Problems&lt;br /&gt;
+KiVS: Kommunikation in Verteilten Systemen&lt;br /&gt;
+LCR: Languages, Compilers, and Run-Time Systems for Scalable Computers&lt;br /&gt;
+MCS: Multiple Classifier Systems&lt;br /&gt;
+MSS: Symposium on Mass Storage Systems&lt;br /&gt;
+NGITS: Next Generation Information Technologies and Systems&lt;br /&gt;
+OOIS: Object Oriented Information Systems&lt;br /&gt;
+SCM: System Configuration Management&lt;br /&gt;
+Security Protocols Workshop&lt;br /&gt;
+SIGOPS European Workshop&lt;br /&gt;
+SPDP: Symposium on Parallel and Distributed Processing&lt;br /&gt;
+TreDS: Trends in Distributed Systems&lt;br /&gt;
+USENIX Technical Conference&lt;br /&gt;
+VISUAL: Visual Information and Information Systems&lt;br /&gt;
+FoDS: Foundations of Distributed Systems: Design and Verification of Protocols conference&lt;br /&gt;
+RV: Post-CAV Workshop on Runtime Verification&lt;br /&gt;
+ICAIS: International ICSC-NAISO Congress on Autonomous Intelligent Systems&lt;br /&gt;
+ITiCSE: Conference on Integrating Technology into Computer Science Education&lt;br /&gt;
+CSCS: CyberSystems and Computer Science Conference&lt;br /&gt;
+AUIC: Australasian User Interface Conference&lt;br /&gt;
+ITI: Meeting of Researchers in Computer Science, Information Systems Research &amp;amp; Statistics&lt;br /&gt;
+European Conference on Parallel Processing&lt;br /&gt;
+RODLICS: Wses International Conference on Robotics, Distance Learning &amp;amp; Intelligent Communication Systems&lt;br /&gt;
+International Conference On Multimedia, Internet &amp;amp; Video Technologies&lt;br /&gt;
+PaCT: Parallel Computing Technologies workshop&lt;br /&gt;
+PPAM: International Conference on Parallel Processing and Applied Mathematics&lt;br /&gt;
+International Conference On Information Networks, Systems And Technologies&lt;br /&gt;
+AmiRE: Conference on Autonomous Minirobots for Research and Edutainment&lt;br /&gt;
+DSN: The International Conference on Dependable Systems and Networks&lt;br /&gt;
+IHW: Information Hiding Workshop&lt;br /&gt;
 GTVMT: International Workshop on Graph Transformation and Visual Modeling Techniques&lt;/p&gt;
 
 &lt;h1 id=&quot;area-databases&quot;&gt;AREA: Databases&lt;/h1&gt;
 
 &lt;h2 id=&quot;rank-1-1&quot;&gt;Rank 1:&lt;/h2&gt;
 
-&lt;p&gt;SIGMOD: ACM SIGMOD Conf on Management of Data
-PODS: ACM SIGMOD Conf on Principles of DB Systems
-VLDB: Very Large Data Bases
-ICDE: Intl Conf on Data Engineering
-CIKM: Intl. Conf on Information and Knowledge Management
+&lt;p&gt;SIGMOD: ACM SIGMOD Conf on Management of Data&lt;br /&gt;
+PODS: ACM SIGMOD Conf on Principles of DB Systems&lt;br /&gt;
+VLDB: Very Large Data Bases&lt;br /&gt;
+ICDE: Intl Conf on Data Engineering&lt;br /&gt;
+CIKM: Intl. Conf on Information and Knowledge Management&lt;br /&gt;
 ICDT: Intl Conf on Database Theory&lt;/p&gt;
 
 &lt;h2 id=&quot;rank-2-1&quot;&gt;Rank 2:&lt;/h2&gt;
 
-&lt;p&gt;SSD: Intl Symp on Large Spatial Databases
-DEXA: Database and Expert System Applications
-FODO: Intl Conf on Foundation on Data Organization
-EDBT: Extending DB Technology
-DOOD: Deductive and Object-Oriented Databases
-DASFAA: Database Systems for Advanced Applications
-SSDBM: Intl Conf on Scientific and Statistical DB Mgmt
-CoopIS - Conference on Cooperative Information Systems
-ER - Intl Conf on Conceptual Modeling (ER)
-## Rank 3:&lt;/p&gt;
+&lt;p&gt;SSD: Intl Symp on Large Spatial Databases&lt;br /&gt;
+DEXA: Database and Expert System Applications&lt;br /&gt;
+FODO: Intl Conf on Foundation on Data Organization&lt;br /&gt;
+EDBT: Extending DB Technology&lt;br /&gt;
+DOOD: Deductive and Object-Oriented Databases&lt;br /&gt;
+DASFAA: Database Systems for Advanced Applications&lt;br /&gt;
+SSDBM: Intl Conf on Scientific and Statistical DB Mgmt&lt;br /&gt;
+CoopIS - Conference on Cooperative Information Systems&lt;br /&gt;
+ER - Intl Conf on Conceptual Modeling (ER)&lt;/p&gt;
+&lt;h2 id=&quot;rank-3-1&quot;&gt;Rank 3:&lt;/h2&gt;
 
-&lt;p&gt;COMAD: Intl Conf on Management of Data
-BNCOD: British National Conference on Databases
-ADC: Australasian Database Conference
-ADBIS: Symposium on Advances in DB and Information Systems
-DaWaK - Data Warehousing and Knowledge Discovery
-RIDE Workshop
-IFIP-DS: IFIP-DS Conference
-IFIP-DBSEC - IFIP Workshop on Database Security
-NGDB: Intl Symp on Next Generation DB Systems and Apps
-ADTI: Intl Symp on Advanced DB Technologies and Integration
-FEWFDB: Far East Workshop on Future DB Systems
-MDM - Int. Conf. on Mobile Data Access/Management (MDA/MDM)
-VDB - Visual Database Systems
+&lt;p&gt;COMAD: Intl Conf on Management of Data&lt;br /&gt;
+BNCOD: British National Conference on Databases&lt;br /&gt;
+ADC: Australasian Database Conference&lt;br /&gt;
+ADBIS: Symposium on Advances in DB and Information Systems&lt;br /&gt;
+DaWaK - Data Warehousing and Knowledge Discovery&lt;br /&gt;
+RIDE Workshop&lt;br /&gt;
+IFIP-DS: IFIP-DS Conference&lt;br /&gt;
+IFIP-DBSEC - IFIP Workshop on Database Security&lt;br /&gt;
+NGDB: Intl Symp on Next Generation DB Systems and Apps&lt;br /&gt;
+ADTI: Intl Symp on Advanced DB Technologies and Integration&lt;br /&gt;
+FEWFDB: Far East Workshop on Future DB Systems&lt;br /&gt;
+MDM - Int. Conf. on Mobile Data Access/Management (MDA/MDM)&lt;br /&gt;
+VDB - Visual Database Systems&lt;br /&gt;
 IDEAS - International Database Engineering and Application Symposium&lt;/p&gt;
 
 &lt;h2 id=&quot;others&quot;&gt;Others:&lt;/h2&gt;
 
-&lt;p&gt;ARTDB - Active and Real-Time Database Systems
-CODAS: Intl Symp on Cooperative DB Systems for Adv Apps
-DBPL - Workshop on Database Programming Languages
-EFIS/EFDBS - Engineering Federated Information (Database) Systems
-KRDB - Knowledge Representation Meets Databases
-NDB - National Database Conference (China) 
-NLDB - Applications of Natural Language to Data Bases
-FQAS - Flexible Query-Answering Systems
-IDC(W) - International Database Conference (HK CS)
-RTDB - Workshop on Real-Time Databases
-SBBD: Brazilian Symposium on Databases
-WebDB - International Workshop on the Web and Databases
-WAIM: Interational Conference on Web Age Information Management
-DASWIS - Data Semantics in Web Information Systems
-DMDW - Design and Management of Data Warehouses
-DOLAP - International Workshop on Data Warehousing and OLAP
-DMKD - Workshop on Research Issues in Data Mining and Knowledge Discovery
-KDEX - Knowledge and Data Engineering Exchange Workshop
-NRDM - Workshop on Network-Related Data Management
-MobiDE - Workshop on Data Engineering for Wireless and Mobile Access
-MDDS - Mobility in Databases and Distributed Systems
-MEWS - Mining for Enhanced Web Search
-TAKMA - Theory and Applications of Knowledge MAnagement
-WIDM: International Workshop on Web Information and Data Management
-W2GIS - International Workshop on Web and Wireless Geographical Information Systems
-CDB - Constraint Databases and Applications
-DTVE - Workshop on Database Technology for Virtual Enterprises
-IWDOM - International Workshop on Distributed Object Management 
-OODBS - Workshop on Object-Oriented Database Systems
+&lt;p&gt;ARTDB - Active and Real-Time Database Systems&lt;br /&gt;
+CODAS: Intl Symp on Cooperative DB Systems for Adv Apps&lt;br /&gt;
+DBPL - Workshop on Database Programming Languages&lt;br /&gt;
+EFIS/EFDBS - Engineering Federated Information (Database) Systems&lt;br /&gt;
+KRDB - Knowledge Representation Meets Databases&lt;br /&gt;
+NDB - National Database Conference (China) &lt;br /&gt;
+NLDB - Applications of Natural Language to Data Bases&lt;br /&gt;
+FQAS - Flexible Query-Answering Systems&lt;br /&gt;
+IDC(W) - International Database Conference (HK CS)&lt;br /&gt;
+RTDB - Workshop on Real-Time Databases&lt;br /&gt;
+SBBD: Brazilian Symposium on Databases&lt;br /&gt;
+WebDB - International Workshop on the Web and Databases&lt;br /&gt;
+WAIM: Interational Conference on Web Age Information Management&lt;br /&gt;
+DASWIS - Data Semantics in Web Information Systems&lt;br /&gt;
+DMDW - Design and Management of Data Warehouses&lt;br /&gt;
+DOLAP - International Workshop on Data Warehousing and OLAP&lt;br /&gt;
+DMKD - Workshop on Research Issues in Data Mining and Knowledge Discovery&lt;br /&gt;
+KDEX - Knowledge and Data Engineering Exchange Workshop&lt;br /&gt;
+NRDM - Workshop on Network-Related Data Management&lt;br /&gt;
+MobiDE - Workshop on Data Engineering for Wireless and Mobile Access&lt;br /&gt;
+MDDS - Mobility in Databases and Distributed Systems&lt;br /&gt;
+MEWS - Mining for Enhanced Web Search&lt;br /&gt;
+TAKMA - Theory and Applications of Knowledge MAnagement&lt;br /&gt;
+WIDM: International Workshop on Web Information and Data Management&lt;br /&gt;
+W2GIS - International Workshop on Web and Wireless Geographical Information Systems&lt;br /&gt;
+CDB - Constraint Databases and Applications&lt;br /&gt;
+DTVE - Workshop on Database Technology for Virtual Enterprises&lt;br /&gt;
+IWDOM - International Workshop on Distributed Object Management &lt;br /&gt;
+OODBS - Workshop on Object-Oriented Database Systems&lt;br /&gt;
 PDIS: Parallel and Distributed Information Systems&lt;/p&gt;
 
 &lt;h1 id=&quot;other-links&quot;&gt;Other Links&lt;/h1&gt;
-&lt;p&gt;## Infomation center
-&lt;a href=&quot;http://grid.hust.edu.cn/xhshi/TopConferences.htm&quot;&gt;List of Important Conferences (CGCL)&lt;/a&gt;
-&lt;a href=&quot;http://citeseer.ist.psu.edu/statistics.html&quot;&gt;Publications Impacts Citeseer Statistics&lt;/a&gt;
-&lt;a href=&quot;http://www.cs.ucsb.edu/~almeroth/conf/stats/&quot;&gt;Networking Conferences Statistics&lt;/a&gt;
-&lt;a href=&quot;http://www.ntu.edu.sg/home/assourav/crank.htm&quot;&gt;Computer Science Conference Rankings&lt;/a&gt;
-&lt;a href=&quot;http://www.ntu.edu.sg/home/assourav/jrank.htm&quot;&gt;Computer Science Journal Rankings&lt;/a&gt;
-&lt;a href=&quot;http://www.ee.unsw.edu.au/~timm/netconf/#icdcs&quot;&gt;Networking conference dates&lt;/a&gt;
-&lt;a href=&quot;http://www.usenix.org/&quot;&gt;USENIX Group&lt;/a&gt;
-&lt;a href=&quot;http://tab.computer.org/tcsc/&quot;&gt;IEEE Service Computing Community&lt;/a&gt;
-&lt;a href=&quot;http://www.gridcomputing.com/&quot;&gt;Grid Computing Information Centre&lt;/a&gt;
-&lt;a href=&quot;http://www.grids-center.org/&quot;&gt;Grids Center&lt;/a&gt;
-&lt;a href=&quot;http://computer.org/parascope/&quot;&gt;ParaScope&lt;/a&gt;
-&lt;a href=&quot;http://www.computer.org/portal/site/dsonline/menuitem.0e7741ff4cba82ff96d34f108bcd45f3/index.jsp?&amp;amp;pName=dsonline_grid_test&amp;amp;&quot;&gt;IEEE DS Online on Grid computing&lt;/a&gt;
-&lt;a href=&quot;http://www.usenix.org/events/index.html&quot;&gt;USENIX Conference Calendar&lt;/a&gt;
-&lt;a href=&quot;http://www.acm.org/conferences&quot;&gt;ACM Conference Canlendar&lt;/a&gt;
-&lt;a href=&quot;http://www.cs.wisc.edu/~arch/www/&quot;&gt;WWW Computer Architecture Page&lt;/a&gt;
-&lt;a href=&quot;http://www.nesc.ac.uk/projects/&quot;&gt;Projects in UK e-Science&lt;/a&gt;
-## Misc
-&lt;a href=&quot;http://duda.imag.fr/Comer/research.html&quot;&gt;Essays about Computer Science by Douglas E. Comer&lt;/a&gt;
-&lt;a href=&quot;http://www.cs.indiana.edu/how.2b/how.2b.html&quot;&gt;How to Be a Good Graduate Student by Marie desJardins&lt;/a&gt;
-&lt;a href=&quot;https://www.usenix.org/legacy/event/samples/submit/advice.html&quot;&gt;How to write a good system paper&lt;/a&gt;
-&lt;a href=&quot;http://www.cs.utexas.edu/users/EWD/transcriptions/EWD06xx/EWD637.html&quot;&gt;Dijkstra’s Rules for Successful Scientific Research&lt;/a&gt;
+&lt;h2 id=&quot;infomation-center&quot;&gt;Infomation center&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;http://grid.hust.edu.cn/xhshi/TopConferences.htm&quot;&gt;List of Important Conferences (CGCL)&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://citeseer.ist.psu.edu/statistics.html&quot;&gt;Publications Impacts Citeseer Statistics&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.cs.ucsb.edu/~almeroth/conf/stats/&quot;&gt;Networking Conferences Statistics&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.ntu.edu.sg/home/assourav/crank.htm&quot;&gt;Computer Science Conference Rankings&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.ntu.edu.sg/home/assourav/jrank.htm&quot;&gt;Computer Science Journal Rankings&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.ee.unsw.edu.au/~timm/netconf/#icdcs&quot;&gt;Networking conference dates&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.usenix.org/&quot;&gt;USENIX Group&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://tab.computer.org/tcsc/&quot;&gt;IEEE Service Computing Community&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.gridcomputing.com/&quot;&gt;Grid Computing Information Centre&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.grids-center.org/&quot;&gt;Grids Center&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://computer.org/parascope/&quot;&gt;ParaScope&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.computer.org/portal/site/dsonline/menuitem.0e7741ff4cba82ff96d34f108bcd45f3/index.jsp?&amp;amp;pName=dsonline_grid_test&amp;amp;&quot;&gt;IEEE DS Online on Grid computing&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.usenix.org/events/index.html&quot;&gt;USENIX Conference Calendar&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.acm.org/conferences&quot;&gt;ACM Conference Canlendar&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.cs.wisc.edu/~arch/www/&quot;&gt;WWW Computer Architecture Page&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.nesc.ac.uk/projects/&quot;&gt;Projects in UK e-Science&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&quot;misc&quot;&gt;Misc&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&quot;http://duda.imag.fr/Comer/research.html&quot;&gt;Essays about Computer Science by Douglas E. Comer&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.cs.indiana.edu/how.2b/how.2b.html&quot;&gt;How to Be a Good Graduate Student by Marie desJardins&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;https://www.usenix.org/legacy/event/samples/submit/advice.html&quot;&gt;How to write a good system paper&lt;/a&gt;&lt;br /&gt;
+&lt;a href=&quot;http://www.cs.utexas.edu/users/EWD/transcriptions/EWD06xx/EWD637.html&quot;&gt;Dijkstra’s Rules for Successful Scientific Research&lt;/a&gt;&lt;br /&gt;
 &lt;a href=&quot;http://www.cs.jhu.edu/~mdredze/publications/HowtoBeaSuccessfulPhDStudent.pdf&quot;&gt;How to Be a Successful PhD Student (in Computer Science (in NLP/ML))&lt;/a&gt;&lt;/p&gt;
 
 </content>
@@ -861,110 +864,98 @@ PDIS: Parallel and Distributed Information Systems&lt;/p&gt;
 
 &lt;p&gt;I configured our nodes with the following hostnames using these steps. Our server is:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-3.buhpc.com
-&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;3.buhpc.com
+&lt;/div&gt;
 
 &lt;p&gt;The clients are:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-1.buhpc.com
+&lt;div class=&quot;highlighter-rouge&quot;&gt;1.buhpc.com
 2.buhpc.com
 4.buhpc.com
 5.buhpc.com
 6.buhpc.com
-&lt;/code&gt;
-&lt;!--more--&gt;&lt;/p&gt;
+&lt;/div&gt;
+&lt;!--more--&gt;
 
 &lt;h1 id=&quot;installation&quot;&gt;Installation&lt;/h1&gt;
 
 &lt;p&gt;On the server, inside the shared folder of our cluster, we will first download the latest version of ganglia. For our cluster, /nfs is the folder with our network file system.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-cd /nfs
+&lt;div class=&quot;highlighter-rouge&quot;&gt;cd /nfs
 wget http://downloads.sourceforge.net/project/ganglia/ganglia%20monitoring%20core/3.7.2/ganglia-3.7.2.tar.gz
-&lt;/code&gt;
-On the server, we will install dependencies and libconfuse.&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;On the server, we will install dependencies and libconfuse.&lt;/p&gt;
 
-&lt;p&gt;```
-yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
+&lt;div class=&quot;highlighter-rouge&quot;&gt;yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
-yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y&lt;/p&gt;
+yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
 
-&lt;h1 id=&quot;rrd&quot;&gt;建立rrd数据库&lt;/h1&gt;
-&lt;p&gt;mkdir -p /var/lib/ganglia/rrds/
+#建立rrd数据库
+mkdir -p /var/lib/ganglia/rrds/
 chown nobody:nobody -R /var/lib/ganglia/rrds/
-```&lt;/p&gt;
+&lt;/div&gt;
 
 &lt;p&gt;Now, we will build the rpms from ganglia-3.7.2 on the server.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-rpmbuild -tb ganglia-3.7.2.tar.gz
-&lt;/code&gt;
-After running rpmbuild, /root/rpmbuild/RPMS/x86_64 contains the generated rpms:&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;rpmbuild -tb ganglia-3.7.2.tar.gz
+&lt;/div&gt;
+&lt;p&gt;After running rpmbuild, /root/rpmbuild/RPMS/x86_64 contains the generated rpms:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-cd /root/rpmbuild/RPMS/x86_64/
+&lt;div class=&quot;highlighter-rouge&quot;&gt;cd /root/rpmbuild/RPMS/x86_64/
 yum install *ganglia*.rpm -y
-&lt;/code&gt;
-We will remove gmetad because we do not need it on the clients. Send the rest of the rpms to all the clients’ /tmp folder:&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;We will remove gmetad because we do not need it on the clients. Send the rest of the rpms to all the clients’ /tmp folder:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-cd /root/rpmbuild/RPMS/x86_64/
+&lt;div class=&quot;highlighter-rouge&quot;&gt;cd /root/rpmbuild/RPMS/x86_64/
 rm -rf ganglia-gmetad*.rpm
 scp *.rpm root@1.buhpc.com:/tmp
 scp *.rpm root@2.buhpc.com:/tmp
 scp *.rpm root@4.buhpc.com:/tmp
 scp *.rpm root@5.buhpc.com:/tmp
 scp *.rpm root@6.buhpc.com:/tmp
-&lt;/code&gt;
-SSH onto every client and install the rpms that we will need:&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;SSH onto every client and install the rpms that we will need:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-ssh root@#.buhpc.com
+&lt;div class=&quot;highlighter-rouge&quot;&gt;ssh root@#.buhpc.com
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
 yum install /tmp/*ganglia*.rpm - y
-&lt;/code&gt;
-Back on the server, we will adjust the gmetad configuration file:&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;Back on the server, we will adjust the gmetad configuration file:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-cd /etc/ganglia
+&lt;div class=&quot;highlighter-rouge&quot;&gt;cd /etc/ganglia
 vim gmetad.conf
-&lt;/code&gt;
-buhpc will be the name of  our cluster. Find the following line and add the name of your cluster and ip address. I am using the subdomain instead of the ip address.&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;buhpc will be the name of  our cluster. Find the following line and add the name of your cluster and ip address. I am using the subdomain instead of the ip address.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-data_source &quot;buhpc&quot; 1 3.buhpc.com
-&lt;/code&gt;
-Now, we edit the server’s gmond configuration file.&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;data_source &quot;buhpc&quot; 1 3.buhpc.com
+&lt;/div&gt;
+&lt;p&gt;Now, we edit the server’s gmond configuration file.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-vim /etc/ganglia/gmond.conf
-&lt;/code&gt;
-Make sure that these sections have the following and comment any extra lines you see that are within each section.&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;vim /etc/ganglia/gmond.conf
+&lt;/div&gt;
+&lt;p&gt;Make sure that these sections have the following and comment any extra lines you see that are within each section.&lt;/p&gt;
 
-&lt;p&gt;```
-cluster {
-  name = “buhpc”
-  owner = “unspecified”
-  latlong = “unspecified”
-  url = “unspecified”
-}&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;cluster {
+  name = &quot;buhpc&quot;
+  owner = &quot;unspecified&quot;
+  latlong = &quot;unspecified&quot;
+  url = &quot;unspecified&quot;
+}
 
-&lt;p&gt;udp_send_channel {
+udp_send_channel {
   host = 1.buhpc.com
   port = 8649
   ttl = 1
-}&lt;/p&gt;
+}
 
-&lt;p&gt;udp_send_channel {
+udp_send_channel {
   host = 2.buhpc.com
   port = 8649
   ttl = 1
-}&lt;/p&gt;
+}
 
-&lt;p&gt;udp_send_channel {
+udp_send_channel {
   host = 3.buhpc.com
   port = 8649
   ttl = 1
@@ -973,53 +964,51 @@ udp_send_channel {
   host = 4.buhpc.com
   port = 8649
   ttl = 1
-}&lt;/p&gt;
+}
 
-&lt;p&gt;udp_send_channel {
+udp_send_channel {
   host = 5.buhpc.com
   port = 8649
   ttl = 1
-}&lt;/p&gt;
+}
 
-&lt;p&gt;udp_send_channel {
+udp_send_channel {
   host = 6.buhpc.com
   port = 8649
   ttl = 1
-}&lt;/p&gt;
+}
 
-&lt;p&gt;udp_recv_channel {
+udp_recv_channel {
   port = 8649
   retry_bind = true
 }
-```
-Now, SSH into each of the clients and do the following individually. On every client:&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;Now, SSH into each of the clients and do the following individually. On every client:&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-vim /etc/ganglia/gmond.conf
-&lt;/code&gt;
-We will change the clients’ gmond.conf in the same way as the server’s.  Make sure that these sections have the following lines and comment any extra lines you see that are within each section.&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;vim /etc/ganglia/gmond.conf
+&lt;/div&gt;
+&lt;p&gt;We will change the clients’ gmond.conf in the same way as the server’s.  Make sure that these sections have the following lines and comment any extra lines you see that are within each section.&lt;/p&gt;
 
-&lt;p&gt;```
-cluster {
-  name = “buhpc”
-  owner = “unspecified”
-  latlong = “unspecified”
-  url = “unspecified”
-}&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;cluster {
+  name = &quot;buhpc&quot;
+  owner = &quot;unspecified&quot;
+  latlong = &quot;unspecified&quot;
+  url = &quot;unspecified&quot;
+}
 
-&lt;p&gt;udp_send_channel {
+udp_send_channel {
   host = 1.buhpc.com
   port = 8649
   ttl = 1
-}&lt;/p&gt;
+}
 
-&lt;p&gt;udp_send_channel {
+udp_send_channel {
   host = 2.buhpc.com
   port = 8649
   ttl = 1
-}&lt;/p&gt;
+}
 
-&lt;p&gt;udp_send_channel {
+udp_send_channel {
   host = 3.buhpc.com
   port = 8649
   ttl = 1
@@ -1028,82 +1017,77 @@ udp_send_channel {
   host = 4.buhpc.com
   port = 8649
   ttl = 1
-}&lt;/p&gt;
+}
 
-&lt;p&gt;udp_send_channel {
+udp_send_channel {
   host = 5.buhpc.com
   port = 8649
   ttl = 1
-}&lt;/p&gt;
+}
 
-&lt;p&gt;udp_send_channel {
+udp_send_channel {
   host = 6.buhpc.com
   port = 8649
   ttl = 1
-}&lt;/p&gt;
+}
 
-&lt;p&gt;udp_recv_channel {
+udp_recv_channel {
   port = 8649
   retry_bind = true
 }
-```
-We will start gmond on the clients for monitoring.&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;We will start gmond on the clients for monitoring.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-chkconfig gmond on
+&lt;div class=&quot;highlighter-rouge&quot;&gt;chkconfig gmond on
 systemctl start gmond
-&lt;/code&gt;
-然后，安装ganglia-web 3.7.1&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;然后，安装ganglia-web 3.7.1&lt;/p&gt;
 
-&lt;p&gt;```
-wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
+&lt;div class=&quot;highlighter-rouge&quot;&gt;wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
 tar zxvf  ganglia-web-3.7.1.tar.gz
 cd  ganglia-web-3.7.1
 vim Makefile
       # Location where gweb should be installed to (excluding conf, dwoo dirs).
-      GDESTDIR = /var/www/html/ganglia&lt;/p&gt;
+      GDESTDIR = /var/www/html/ganglia
 
-&lt;pre&gt;&lt;code&gt;  # Gweb statedir (where conf dir and Dwoo templates dir are stored)
-  GWEB_STATEDIR = /var/lib/ganglia-web
+      # Gweb statedir (where conf dir and Dwoo templates dir are stored)
+      GWEB_STATEDIR = /var/lib/ganglia-web
 
-  # Gmetad rootdir (parent location of rrd folder)
-  GMETAD_ROOTDIR = /var/lib/ganglia
+      # Gmetad rootdir (parent location of rrd folder)
+      GMETAD_ROOTDIR = /var/lib/ganglia
 
-  # User by which your webserver is running
-  APACHE_USER =  apache
-&lt;/code&gt;&lt;/pre&gt;
+      # User by which your webserver is running
+      APACHE_USER =  apache
 
-&lt;p&gt;make install
-```&lt;/p&gt;
+ make install
+&lt;/div&gt;
 
 &lt;p&gt;Next, we will want to disable SELinux. Change SELINUX inside /etc/sysconfig/selinux from enforcing to disabled. Then, restart the server node.&lt;/p&gt;
 
-&lt;p&gt;```
-vim /etc/sysconfig/selinux
+&lt;div class=&quot;highlighter-rouge&quot;&gt;vim /etc/sysconfig/selinux
 SELINUX=disabled
 #如果 SELINUX本就是disable，不必reboot
 reboot
-Now, on the server, we’ll open the correct ports on the firewall.&lt;/p&gt;
+Now, on the server, we’ll open the correct ports on the firewall.
 
-&lt;h1 id=&quot;firewall-systemctl-service-firewalld&quot;&gt;如果 firewall 没有打开，systemctl service firewalld&lt;/h1&gt;
-&lt;p&gt;firewall-cmd –permanent –zone=public –add-service=http
-firewall-cmd –permanent –zone=public –add-port=8649/udp
-firewall-cmd –permanent –zone=public –add-port=8649/tcp
-firewall-cmd –permanent –zone=public –add-port=8651/tcp
-firewall-cmd –permanent –zone=public –add-port=8652/tcp
-firewall-cmd –reload
-```
-On the server, we will now start httpd, gmetad, and gmond.&lt;/p&gt;
+#如果 firewall 没有打开，systemctl service firewalld
+firewall-cmd --permanent --zone=public --add-service=http
+firewall-cmd --permanent --zone=public --add-port=8649/udp
+firewall-cmd --permanent --zone=public --add-port=8649/tcp
+firewall-cmd --permanent --zone=public --add-port=8651/tcp
+firewall-cmd --permanent --zone=public --add-port=8652/tcp
+firewall-cmd --reload
+&lt;/div&gt;
+&lt;p&gt;On the server, we will now start httpd, gmetad, and gmond.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;
-chkconfig httpd
+&lt;div class=&quot;highlighter-rouge&quot;&gt;chkconfig httpd
 chkconfig gmetad on
 chkconfig gmond on
 systemctl start httpd
 systemctl start gmetad
 systemctl start gmond
-&lt;/code&gt;
-Visit http://3.buhpc.com/ganglia to see Ganglia’s monitoring. You should see something like this:&lt;/p&gt;
+&lt;/div&gt;
+&lt;p&gt;Visit http://3.buhpc.com/ganglia to see Ganglia’s monitoring. You should see something like this:&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://www.slothparadise.com/wp-content/uploads/2016/03/ganglia-home-page.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 

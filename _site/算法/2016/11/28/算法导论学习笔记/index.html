@@ -165,7 +165,7 @@
 
 <p>最近在看算法导论，想记录一个读书笔记之类的东西自己看。就是会记载的很乱，写的很随意，自己看，反正这个博客也不会公开，hhhh。</p>
 
-<h2 id="section">第二章-算法入门</h2>
+<h2 id="第二章-算法入门">第二章-算法入门</h2>
 
 <p>算法这种东西，有些思想是比较简单的，最好是把算法写成代码实现。</p>
 
@@ -175,8 +175,7 @@
 
 <p>下面是我写的分治法排序的代码，是递归归并排序。</p>
 
-<p>```
-package Introduction2Algorithms.chapter2;
+<div class="highlighter-rouge">package Introduction2Algorithms.chapter2;
 import java.io.Console;
 /**
  * Created by bbw on 2016/11/28.
@@ -197,13 +196,12 @@ public class mergeSort {
             a2[i]=a[q+1+i];
         }
         //此处是一个哨兵，无穷大的
-        a2[l2]=Integer.MAX_VALUE;</p>
+        a2[l2]=Integer.MAX_VALUE;
 
-<pre><code>    int i1=0;
-    int i2=0;
-</code></pre>
+        int i1=0;
+        int i2=0;
 
-<p>//此处出现过bug，就是我把i从0开始了，应该是从p开始
+//此处出现过bug，就是我把i从0开始了，应该是从p开始
         for (int i=p;i&lt;=r;i++){
             if (a1[i1]&lt;a2[i2]) {
                 a[i] = a1[i1];
@@ -214,27 +212,28 @@ public class mergeSort {
                 i2++;
             }
         }
-    }</p>
+    }
 
-<pre><code>static void mergeSort(int[]a,int p,int q){
+    static void mergeSort(int[]a,int p,int q){
 
-    if (p&lt;q){
-        int t=(p+q)/2;
-        mergeSort(a,p,t);
-        mergeSort(a,t+1,q);
-        merge(a,p,t,q);
+        if (p&lt;q){
+            int t=(p+q)/2;
+            mergeSort(a,p,t);
+            mergeSort(a,t+1,q);
+            merge(a,p,t,q);
+        }
+    }
+
+    public static void main(String[] args)
+    {
+        int[] x = { 6, 2, 4, 1, 5, 9 };
+        mergeSort(x,0,x.length-1);
+        for (int i:x){
+            System.out.println(i);
+        }
     }
 }
-
-public static void main(String[] args)
-{
-    int[] x = { 6, 2, 4, 1, 5, 9 };
-    mergeSort(x,0,x.length-1);
-    for (int i:x){
-        System.out.println(i);
-    }
-} } ```
-</code></pre>
+</div>
 
 <p>这个代码挺简单的，但是我居然中间出了bug，就是数组的边界没搞好，导致数据混乱。这里面的哨兵比较方便，但就只是浪费了一个空间，代价不大，代码比较简洁。</p>
 
@@ -242,7 +241,7 @@ public static void main(String[] args)
 
 <p>所以T(n)=2T(n/2)+cn。</p>
 
-<p>然后一般这种时间复杂度就是按照递归拆开，可以拆成logN层。然后每一层都有一个cn，拆logN次就有 CnLogN，然后  那个 logN.T(1)就被舍去，时间复杂度就是O(nlogN)。具体类似递归时间复杂度计算方法看<a href="http://blog.csdn.net/xiaoxian8023/article/details/8134260">这个网页</a>。
+<p>然后一般这种时间复杂度就是按照递归拆开，可以拆成logN层。然后每一层都有一个cn，拆logN次就有 CnLogN，然后  那个 logN.T(1)就被舍去，时间复杂度就是O(nlogN)。具体类似递归时间复杂度计算方法看<a href="http://blog.csdn.net/xiaoxian8023/article/details/8134260">这个网页</a>。<br />
 然后算法导论第二章留了一道习题，是用归并排序的思想求一个数组的逆序对的数目。在归并排序的过程中，整个过程递归到底就是先对两个只有一个的数组进行归并，然后再对归并之后归并，其实就是二路归并。然后我们只要在merge的时候计算是否前面数组的树大于后面数组的数，用一个全局变量来记录所有出现的次数就是逆序对的个数。</p>
 
 

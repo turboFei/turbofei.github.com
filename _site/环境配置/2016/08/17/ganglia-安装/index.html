@@ -169,110 +169,98 @@
 
 <p>I configured our nodes with the following hostnames using these steps. Our server is:</p>
 
-<p><code>
-3.buhpc.com
-</code></p>
+<div class="highlighter-rouge">3.buhpc.com
+</div>
 
 <p>The clients are:</p>
 
-<p><code>
-1.buhpc.com
+<div class="highlighter-rouge">1.buhpc.com
 2.buhpc.com
 4.buhpc.com
 5.buhpc.com
 6.buhpc.com
-</code>
-<!--more--></p>
+</div>
+<!--more-->
 
 <h1 id="installation">Installation</h1>
 
 <p>On the server, inside the shared folder of our cluster, we will first download the latest version of ganglia. For our cluster, /nfs is the folder with our network file system.</p>
 
-<p><code>
-cd /nfs
+<div class="highlighter-rouge">cd /nfs
 wget http://downloads.sourceforge.net/project/ganglia/ganglia%20monitoring%20core/3.7.2/ganglia-3.7.2.tar.gz
-</code>
-On the server, we will install dependencies and libconfuse.</p>
+</div>
+<p>On the server, we will install dependencies and libconfuse.</p>
 
-<p>```
-yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
+<div class="highlighter-rouge">yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
-yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y</p>
+yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
 
-<h1 id="rrd">建立rrd数据库</h1>
-<p>mkdir -p /var/lib/ganglia/rrds/
+#建立rrd数据库
+mkdir -p /var/lib/ganglia/rrds/
 chown nobody:nobody -R /var/lib/ganglia/rrds/
-```</p>
+</div>
 
 <p>Now, we will build the rpms from ganglia-3.7.2 on the server.</p>
 
-<p><code>
-rpmbuild -tb ganglia-3.7.2.tar.gz
-</code>
-After running rpmbuild, /root/rpmbuild/RPMS/x86_64 contains the generated rpms:</p>
+<div class="highlighter-rouge">rpmbuild -tb ganglia-3.7.2.tar.gz
+</div>
+<p>After running rpmbuild, /root/rpmbuild/RPMS/x86_64 contains the generated rpms:</p>
 
-<p><code>
-cd /root/rpmbuild/RPMS/x86_64/
+<div class="highlighter-rouge">cd /root/rpmbuild/RPMS/x86_64/
 yum install *ganglia*.rpm -y
-</code>
-We will remove gmetad because we do not need it on the clients. Send the rest of the rpms to all the clients’ /tmp folder:</p>
+</div>
+<p>We will remove gmetad because we do not need it on the clients. Send the rest of the rpms to all the clients’ /tmp folder:</p>
 
-<p><code>
-cd /root/rpmbuild/RPMS/x86_64/
+<div class="highlighter-rouge">cd /root/rpmbuild/RPMS/x86_64/
 rm -rf ganglia-gmetad*.rpm
 scp *.rpm root@1.buhpc.com:/tmp
 scp *.rpm root@2.buhpc.com:/tmp
 scp *.rpm root@4.buhpc.com:/tmp
 scp *.rpm root@5.buhpc.com:/tmp
 scp *.rpm root@6.buhpc.com:/tmp
-</code>
-SSH onto every client and install the rpms that we will need:</p>
+</div>
+<p>SSH onto every client and install the rpms that we will need:</p>
 
-<p><code>
-ssh root@#.buhpc.com
+<div class="highlighter-rouge">ssh root@#.buhpc.com
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
 yum install /tmp/*ganglia*.rpm - y
-</code>
-Back on the server, we will adjust the gmetad configuration file:</p>
+</div>
+<p>Back on the server, we will adjust the gmetad configuration file:</p>
 
-<p><code>
-cd /etc/ganglia
+<div class="highlighter-rouge">cd /etc/ganglia
 vim gmetad.conf
-</code>
-buhpc will be the name of  our cluster. Find the following line and add the name of your cluster and ip address. I am using the subdomain instead of the ip address.</p>
+</div>
+<p>buhpc will be the name of  our cluster. Find the following line and add the name of your cluster and ip address. I am using the subdomain instead of the ip address.</p>
 
-<p><code>
-data_source "buhpc" 1 3.buhpc.com
-</code>
-Now, we edit the server’s gmond configuration file.</p>
+<div class="highlighter-rouge">data_source "buhpc" 1 3.buhpc.com
+</div>
+<p>Now, we edit the server’s gmond configuration file.</p>
 
-<p><code>
-vim /etc/ganglia/gmond.conf
-</code>
-Make sure that these sections have the following and comment any extra lines you see that are within each section.</p>
+<div class="highlighter-rouge">vim /etc/ganglia/gmond.conf
+</div>
+<p>Make sure that these sections have the following and comment any extra lines you see that are within each section.</p>
 
-<p>```
-cluster {
-  name = “buhpc”
-  owner = “unspecified”
-  latlong = “unspecified”
-  url = “unspecified”
-}</p>
+<div class="highlighter-rouge">cluster {
+  name = "buhpc"
+  owner = "unspecified"
+  latlong = "unspecified"
+  url = "unspecified"
+}
 
-<p>udp_send_channel {
+udp_send_channel {
   host = 1.buhpc.com
   port = 8649
   ttl = 1
-}</p>
+}
 
-<p>udp_send_channel {
+udp_send_channel {
   host = 2.buhpc.com
   port = 8649
   ttl = 1
-}</p>
+}
 
-<p>udp_send_channel {
+udp_send_channel {
   host = 3.buhpc.com
   port = 8649
   ttl = 1
@@ -281,53 +269,51 @@ udp_send_channel {
   host = 4.buhpc.com
   port = 8649
   ttl = 1
-}</p>
+}
 
-<p>udp_send_channel {
+udp_send_channel {
   host = 5.buhpc.com
   port = 8649
   ttl = 1
-}</p>
+}
 
-<p>udp_send_channel {
+udp_send_channel {
   host = 6.buhpc.com
   port = 8649
   ttl = 1
-}</p>
+}
 
-<p>udp_recv_channel {
+udp_recv_channel {
   port = 8649
   retry_bind = true
 }
-```
-Now, SSH into each of the clients and do the following individually. On every client:</p>
+</div>
+<p>Now, SSH into each of the clients and do the following individually. On every client:</p>
 
-<p><code>
-vim /etc/ganglia/gmond.conf
-</code>
-We will change the clients’ gmond.conf in the same way as the server’s.  Make sure that these sections have the following lines and comment any extra lines you see that are within each section.</p>
+<div class="highlighter-rouge">vim /etc/ganglia/gmond.conf
+</div>
+<p>We will change the clients’ gmond.conf in the same way as the server’s.  Make sure that these sections have the following lines and comment any extra lines you see that are within each section.</p>
 
-<p>```
-cluster {
-  name = “buhpc”
-  owner = “unspecified”
-  latlong = “unspecified”
-  url = “unspecified”
-}</p>
+<div class="highlighter-rouge">cluster {
+  name = "buhpc"
+  owner = "unspecified"
+  latlong = "unspecified"
+  url = "unspecified"
+}
 
-<p>udp_send_channel {
+udp_send_channel {
   host = 1.buhpc.com
   port = 8649
   ttl = 1
-}</p>
+}
 
-<p>udp_send_channel {
+udp_send_channel {
   host = 2.buhpc.com
   port = 8649
   ttl = 1
-}</p>
+}
 
-<p>udp_send_channel {
+udp_send_channel {
   host = 3.buhpc.com
   port = 8649
   ttl = 1
@@ -336,82 +322,77 @@ udp_send_channel {
   host = 4.buhpc.com
   port = 8649
   ttl = 1
-}</p>
+}
 
-<p>udp_send_channel {
+udp_send_channel {
   host = 5.buhpc.com
   port = 8649
   ttl = 1
-}</p>
+}
 
-<p>udp_send_channel {
+udp_send_channel {
   host = 6.buhpc.com
   port = 8649
   ttl = 1
-}</p>
+}
 
-<p>udp_recv_channel {
+udp_recv_channel {
   port = 8649
   retry_bind = true
 }
-```
-We will start gmond on the clients for monitoring.</p>
+</div>
+<p>We will start gmond on the clients for monitoring.</p>
 
-<p><code>
-chkconfig gmond on
+<div class="highlighter-rouge">chkconfig gmond on
 systemctl start gmond
-</code>
-然后，安装ganglia-web 3.7.1</p>
+</div>
+<p>然后，安装ganglia-web 3.7.1</p>
 
-<p>```
-wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
+<div class="highlighter-rouge">wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
 tar zxvf  ganglia-web-3.7.1.tar.gz
 cd  ganglia-web-3.7.1
 vim Makefile
       # Location where gweb should be installed to (excluding conf, dwoo dirs).
-      GDESTDIR = /var/www/html/ganglia</p>
+      GDESTDIR = /var/www/html/ganglia
 
-<pre><code>  # Gweb statedir (where conf dir and Dwoo templates dir are stored)
-  GWEB_STATEDIR = /var/lib/ganglia-web
+      # Gweb statedir (where conf dir and Dwoo templates dir are stored)
+      GWEB_STATEDIR = /var/lib/ganglia-web
 
-  # Gmetad rootdir (parent location of rrd folder)
-  GMETAD_ROOTDIR = /var/lib/ganglia
+      # Gmetad rootdir (parent location of rrd folder)
+      GMETAD_ROOTDIR = /var/lib/ganglia
 
-  # User by which your webserver is running
-  APACHE_USER =  apache
-</code></pre>
+      # User by which your webserver is running
+      APACHE_USER =  apache
 
-<p>make install
-```</p>
+ make install
+</div>
 
 <p>Next, we will want to disable SELinux. Change SELINUX inside /etc/sysconfig/selinux from enforcing to disabled. Then, restart the server node.</p>
 
-<p>```
-vim /etc/sysconfig/selinux
+<div class="highlighter-rouge">vim /etc/sysconfig/selinux
 SELINUX=disabled
 #如果 SELINUX本就是disable，不必reboot
 reboot
-Now, on the server, we’ll open the correct ports on the firewall.</p>
+Now, on the server, we’ll open the correct ports on the firewall.
 
-<h1 id="firewall-systemctl-service-firewalld">如果 firewall 没有打开，systemctl service firewalld</h1>
-<p>firewall-cmd –permanent –zone=public –add-service=http
-firewall-cmd –permanent –zone=public –add-port=8649/udp
-firewall-cmd –permanent –zone=public –add-port=8649/tcp
-firewall-cmd –permanent –zone=public –add-port=8651/tcp
-firewall-cmd –permanent –zone=public –add-port=8652/tcp
-firewall-cmd –reload
-```
-On the server, we will now start httpd, gmetad, and gmond.</p>
+#如果 firewall 没有打开，systemctl service firewalld
+firewall-cmd --permanent --zone=public --add-service=http
+firewall-cmd --permanent --zone=public --add-port=8649/udp
+firewall-cmd --permanent --zone=public --add-port=8649/tcp
+firewall-cmd --permanent --zone=public --add-port=8651/tcp
+firewall-cmd --permanent --zone=public --add-port=8652/tcp
+firewall-cmd --reload
+</div>
+<p>On the server, we will now start httpd, gmetad, and gmond.</p>
 
-<p><code>
-chkconfig httpd
+<div class="highlighter-rouge">chkconfig httpd
 chkconfig gmetad on
 chkconfig gmond on
 systemctl start httpd
 systemctl start gmetad
 systemctl start gmond
-</code>
-Visit http://3.buhpc.com/ganglia to see Ganglia’s monitoring. You should see something like this:</p>
+</div>
+<p>Visit http://3.buhpc.com/ganglia to see Ganglia’s monitoring. You should see something like this:</p>
 
 <p><img src="http://www.slothparadise.com/wp-content/uploads/2016/03/ganglia-home-page.png" alt="" /></p>
 
