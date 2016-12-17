@@ -17,8 +17,8 @@
     <![endif]-->
 
     <!-- Le styles -->
-    <link href="/assets/themes//bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
-    <link href="/assets/themes//css/style.css" rel="stylesheet" type="text/css" media="all">
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css" rel="stylesheet" type="text/css" media="all">
 
     <!-- code highlighting-->
     <link href="/assets/google-code-prettify/desert.css" rel="stylesheet" type="text/css" media="all">
@@ -54,7 +54,7 @@
     
       
       	
-      	<li><a href="/archive.html">Archive</a></li>
+      	<li><a href="/archive">Archive</a></li>
       	
       
     
@@ -66,7 +66,7 @@
     
       
       	
-      	<li><a href="/categories.html">Categories</a></li>
+      	<li><a href="/categories">Categories</a></li>
       	
       
     
@@ -76,7 +76,7 @@
     
       
       	
-      	<li><a href="/pages.html">Pages</a></li>
+      	<li><a href="/pages">Pages</a></li>
       	
       
     
@@ -92,7 +92,7 @@
     
       
       	
-      	<li><a href="/tags.html">Tags</a></li>
+      	<li><a href="/tags">Tags</a></li>
       	
       
     
@@ -169,16 +169,18 @@
 
 <p>I configured our nodes with the following hostnames using these steps. Our server is:</p>
 
-<div class="highlighter-rouge">3.buhpc.com
+<div class="highlighter-rouge"><pre class="highlight"><code>3.buhpc.com
+</code></pre>
 </div>
 
 <p>The clients are:</p>
 
-<div class="highlighter-rouge">1.buhpc.com
+<div class="highlighter-rouge"><pre class="highlight"><code>1.buhpc.com
 2.buhpc.com
 4.buhpc.com
 5.buhpc.com
 6.buhpc.com
+</code></pre>
 </div>
 <!--more-->
 
@@ -186,62 +188,71 @@
 
 <p>On the server, inside the shared folder of our cluster, we will first download the latest version of ganglia. For our cluster, /nfs is the folder with our network file system.</p>
 
-<div class="highlighter-rouge">cd /nfs
+<div class="highlighter-rouge"><pre class="highlight"><code>cd /nfs
 wget http://downloads.sourceforge.net/project/ganglia/ganglia%20monitoring%20core/3.7.2/ganglia-3.7.2.tar.gz
+</code></pre>
 </div>
 <p>On the server, we will install dependencies and libconfuse.</p>
 
-<div class="highlighter-rouge">yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
+<div class="highlighter-rouge"><pre class="highlight"><code>yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
 
 #建立rrd数据库
 mkdir -p /var/lib/ganglia/rrds/
 chown nobody:nobody -R /var/lib/ganglia/rrds/
+</code></pre>
 </div>
 
 <p>Now, we will build the rpms from ganglia-3.7.2 on the server.</p>
 
-<div class="highlighter-rouge">rpmbuild -tb ganglia-3.7.2.tar.gz
+<div class="highlighter-rouge"><pre class="highlight"><code>rpmbuild -tb ganglia-3.7.2.tar.gz
+</code></pre>
 </div>
 <p>After running rpmbuild, /root/rpmbuild/RPMS/x86_64 contains the generated rpms:</p>
 
-<div class="highlighter-rouge">cd /root/rpmbuild/RPMS/x86_64/
+<div class="highlighter-rouge"><pre class="highlight"><code>cd /root/rpmbuild/RPMS/x86_64/
 yum install *ganglia*.rpm -y
+</code></pre>
 </div>
 <p>We will remove gmetad because we do not need it on the clients. Send the rest of the rpms to all the clients’ /tmp folder:</p>
 
-<div class="highlighter-rouge">cd /root/rpmbuild/RPMS/x86_64/
+<div class="highlighter-rouge"><pre class="highlight"><code>cd /root/rpmbuild/RPMS/x86_64/
 rm -rf ganglia-gmetad*.rpm
 scp *.rpm root@1.buhpc.com:/tmp
 scp *.rpm root@2.buhpc.com:/tmp
 scp *.rpm root@4.buhpc.com:/tmp
 scp *.rpm root@5.buhpc.com:/tmp
 scp *.rpm root@6.buhpc.com:/tmp
+</code></pre>
 </div>
 <p>SSH onto every client and install the rpms that we will need:</p>
 
-<div class="highlighter-rouge">ssh root@#.buhpc.com
+<div class="highlighter-rouge"><pre class="highlight"><code>ssh root@#.buhpc.com
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
 yum install /tmp/*ganglia*.rpm - y
+</code></pre>
 </div>
 <p>Back on the server, we will adjust the gmetad configuration file:</p>
 
-<div class="highlighter-rouge">cd /etc/ganglia
+<div class="highlighter-rouge"><pre class="highlight"><code>cd /etc/ganglia
 vim gmetad.conf
+</code></pre>
 </div>
 <p>buhpc will be the name of  our cluster. Find the following line and add the name of your cluster and ip address. I am using the subdomain instead of the ip address.</p>
 
-<div class="highlighter-rouge">data_source "buhpc" 1 3.buhpc.com
+<div class="highlighter-rouge"><pre class="highlight"><code>data_source "buhpc" 1 3.buhpc.com
+</code></pre>
 </div>
 <p>Now, we edit the server’s gmond configuration file.</p>
 
-<div class="highlighter-rouge">vim /etc/ganglia/gmond.conf
+<div class="highlighter-rouge"><pre class="highlight"><code>vim /etc/ganglia/gmond.conf
+</code></pre>
 </div>
 <p>Make sure that these sections have the following and comment any extra lines you see that are within each section.</p>
 
-<div class="highlighter-rouge">cluster {
+<div class="highlighter-rouge"><pre class="highlight"><code>cluster {
   name = "buhpc"
   owner = "unspecified"
   latlong = "unspecified"
@@ -287,14 +298,16 @@ udp_recv_channel {
   port = 8649
   retry_bind = true
 }
+</code></pre>
 </div>
 <p>Now, SSH into each of the clients and do the following individually. On every client:</p>
 
-<div class="highlighter-rouge">vim /etc/ganglia/gmond.conf
+<div class="highlighter-rouge"><pre class="highlight"><code>vim /etc/ganglia/gmond.conf
+</code></pre>
 </div>
 <p>We will change the clients’ gmond.conf in the same way as the server’s.  Make sure that these sections have the following lines and comment any extra lines you see that are within each section.</p>
 
-<div class="highlighter-rouge">cluster {
+<div class="highlighter-rouge"><pre class="highlight"><code>cluster {
   name = "buhpc"
   owner = "unspecified"
   latlong = "unspecified"
@@ -340,15 +353,17 @@ udp_recv_channel {
   port = 8649
   retry_bind = true
 }
+</code></pre>
 </div>
 <p>We will start gmond on the clients for monitoring.</p>
 
-<div class="highlighter-rouge">chkconfig gmond on
+<div class="highlighter-rouge"><pre class="highlight"><code>chkconfig gmond on
 systemctl start gmond
+</code></pre>
 </div>
 <p>然后，安装ganglia-web 3.7.1</p>
 
-<div class="highlighter-rouge">wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
+<div class="highlighter-rouge"><pre class="highlight"><code>wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
 tar zxvf  ganglia-web-3.7.1.tar.gz
 cd  ganglia-web-3.7.1
 vim Makefile
@@ -365,11 +380,12 @@ vim Makefile
       APACHE_USER =  apache
 
  make install
+</code></pre>
 </div>
 
 <p>Next, we will want to disable SELinux. Change SELINUX inside /etc/sysconfig/selinux from enforcing to disabled. Then, restart the server node.</p>
 
-<div class="highlighter-rouge">vim /etc/sysconfig/selinux
+<div class="highlighter-rouge"><pre class="highlight"><code>vim /etc/sysconfig/selinux
 SELINUX=disabled
 #如果 SELINUX本就是disable，不必reboot
 reboot
@@ -382,15 +398,17 @@ firewall-cmd --permanent --zone=public --add-port=8649/tcp
 firewall-cmd --permanent --zone=public --add-port=8651/tcp
 firewall-cmd --permanent --zone=public --add-port=8652/tcp
 firewall-cmd --reload
+</code></pre>
 </div>
 <p>On the server, we will now start httpd, gmetad, and gmond.</p>
 
-<div class="highlighter-rouge">chkconfig httpd
+<div class="highlighter-rouge"><pre class="highlight"><code>chkconfig httpd
 chkconfig gmetad on
 chkconfig gmond on
 systemctl start httpd
 systemctl start gmetad
 systemctl start gmond
+</code></pre>
 </div>
 <p>Visit http://3.buhpc.com/ganglia to see Ganglia’s monitoring. You should see something like this:</p>
 
@@ -415,20 +433,21 @@ systemctl start gmond
       
 
 
-  <div id="disqus_thread"></div>
+  <!-- Duoshuo Comment BEGIN -->
+  <div class="ds-thread"></div>
 <script type="text/javascript">
-    var disqus_developer = 1;
-    var disqus_shortname = 'bbwff'; // required: replace example with your forum shortname
-    
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+var duoshuoQuery = {short_name:'bbw'};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = 'https://static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+  </script>
+<!-- Duoshuo Comment END -->
+
 
 
 

@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Jvm 相关</title>
+    <title>理解动态规划</title>
     
     <meta name="author" content="bbw">
 
@@ -17,8 +17,8 @@
     <![endif]-->
 
     <!-- Le styles -->
-    <link href="/assets/themes//bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
-    <link href="/assets/themes//css/style.css" rel="stylesheet" type="text/css" media="all">
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css" rel="stylesheet" type="text/css" media="all">
 
     <!-- code highlighting-->
     <link href="/assets/google-code-prettify/desert.css" rel="stylesheet" type="text/css" media="all">
@@ -54,7 +54,7 @@
     
       
       	
-      	<li><a href="/archive.html">Archive</a></li>
+      	<li><a href="/archive">Archive</a></li>
       	
       
     
@@ -66,7 +66,7 @@
     
       
       	
-      	<li><a href="/categories.html">Categories</a></li>
+      	<li><a href="/categories">Categories</a></li>
       	
       
     
@@ -76,7 +76,7 @@
     
       
       	
-      	<li><a href="/pages.html">Pages</a></li>
+      	<li><a href="/pages">Pages</a></li>
       	
       
     
@@ -92,7 +92,7 @@
     
       
       	
-      	<li><a href="/tags.html">Tags</a></li>
+      	<li><a href="/tags">Tags</a></li>
       	
       
     
@@ -112,7 +112,7 @@
 
 <div class="span9">
   <div class="page-header">
-    <h1>Jvm 相关 </h1>
+    <h1>理解动态规划 </h1>
   </div>
 
   
@@ -124,8 +124,8 @@
 
   
      
-    	<li><a href="/categories.html#java-ref">
-    		java (2)
+    	<li><a href="/categories.html#算法-ref">
+    		算法 (4)
     	</a></li>
     
   
@@ -144,7 +144,7 @@
 
   
      
-    	<li><a href="/tags.html#java-ref">java <span>2</span></a></li>
+    	<li><a href="/tags.html#algorithm-ref">algorithm <span>4</span></a></li>
     
   
 
@@ -157,19 +157,18 @@
   <div class="row-fluid post-full">
     <div class="span12">
       <div class="date">
-        <span>17 November 2016</strong>
+        <span>14 December 2016</strong>
       </div>
       <div class="content">
         
 <p><strong>Overview</strong></p>
 
-<p>想看看jvm相关的，了解下gc以及内存的分配。</p>
+<p>最近在看动态规划，挺难理解的，慢慢看，把心得记录下。</p>
 
-<h1 id="jvm">Jvm</h1>
+<h2 id="参考资料">参考资料</h2>
 
-<p>jvm内有方法区，运行时常量池是方法区的一部分。String的实例化对象在jvm中就是常量，介绍下String类的intern()方法。</p>
+<p>http://blog.csdn.net/pi9nc/article/details/8142876</p>
 
-<p>当一个String实例str调用intern()方法时，java查找常量池中是否有相同unicode的字符串常量，如果有，则返回其引用，如果没有，则在常量池中增加一个unicode等于str的字符串并返回它的引用。这样就会节省方法区常量池的空间。</p>
 
       </div>
  
@@ -177,11 +176,11 @@
         <div class="pagination">
           <ul>
           
-            <li class="prev"><a href="/java/2016/11/13/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8" title="java unsafe类的使用">&larr; Previous</a></li>
+            <li class="prev"><a href="/%E7%AE%97%E6%B3%95/2016/12/13/%E5%8C%BA%E9%97%B4%E5%86%851%E5%87%BA%E7%8E%B0%E6%AC%A1%E6%95%B0" title="区间内1出现次数">&larr; Previous</a></li>
           
             <li><a href="/archive.html">Archive</a></li>
           
-            <li class="next"><a href="/%E7%AE%97%E6%B3%95/2016/11/28/%E7%AE%97%E6%B3%95%E5%AF%BC%E8%AE%BA%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0" title="算法导论学习笔记">Next &rarr;</a></li>
+            <li class="next disabled"><a>Next &rarr;</a>
           
           </ul>
         </div>
@@ -189,20 +188,21 @@
       
 
 
-  <div id="disqus_thread"></div>
+  <!-- Duoshuo Comment BEGIN -->
+  <div class="ds-thread"></div>
 <script type="text/javascript">
-    var disqus_developer = 1;
-    var disqus_shortname = 'bbwff'; // required: replace example with your forum shortname
-    
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+var duoshuoQuery = {short_name:'bbw'};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = 'https://static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+  </script>
+<!-- Duoshuo Comment END -->
+
 
 
 

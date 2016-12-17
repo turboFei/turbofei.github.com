@@ -17,8 +17,8 @@
     <![endif]-->
 
     <!-- Le styles -->
-    <link href="/assets/themes//bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
-    <link href="/assets/themes//css/style.css" rel="stylesheet" type="text/css" media="all">
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css" rel="stylesheet" type="text/css" media="all">
 
     <!-- code highlighting-->
     <link href="/assets/google-code-prettify/desert.css" rel="stylesheet" type="text/css" media="all">
@@ -54,7 +54,7 @@
     
       
       	
-      	<li><a href="/archive.html">Archive</a></li>
+      	<li><a href="/archive">Archive</a></li>
       	
       
     
@@ -66,7 +66,7 @@
     
       
       	
-      	<li><a href="/categories.html">Categories</a></li>
+      	<li><a href="/categories">Categories</a></li>
       	
       
     
@@ -76,7 +76,7 @@
     
       
       	
-      	<li><a href="/pages.html">Pages</a></li>
+      	<li><a href="/pages">Pages</a></li>
       	
       
     
@@ -92,7 +92,7 @@
     
       
       	
-      	<li><a href="/tags.html">Tags</a></li>
+      	<li><a href="/tags">Tags</a></li>
       	
       
     
@@ -246,15 +246,15 @@ public class testUnSafe {
 
 </code></pre>
 
-<p>unsafe 是单例模式，所以全局就只有一个unsafe，必须用它提供的方法来获取。<br />
-然后里面有获得里面字段 和静态字段偏移地址的方法，偏移地址是相对于在这个对象里面的偏移地址，可以根据偏移地址获得这个field。<br />
+<p>unsafe 是单例模式，所以全局就只有一个unsafe，必须用它提供的方法来获取。
+然后里面有获得里面字段 和静态字段偏移地址的方法，偏移地址是相对于在这个对象里面的偏移地址，可以根据偏移地址获得这个field。
 例如，我在这个类里面声明的 cat 类 field ，就可以根据它在对象里面偏移地址来取得这个类。</p>
 
 <p>至于如何获得方法里面变量的内存地址以及如何通过这个获得的内存地址来取得这个变量对象，我还不是很明白，只知道unsafe.arrayBaseOffset 来获得对象数据的偏移地址。</p>
 
-<p>下面是我写的一个静态类，可以用来实现unsafe的放置变量，并且可以把这块堆外内存里面存的数据转化为迭代器。<br />
-我是这样存数据的，首先是申请一块堆外内存，然后前四个字节存储这块内存的大小，然后紧接着四个字节存储已经使用的大小。然后存储数据的类型是从外部传进去的，0代表int,1代表long，2代表double。<br />
-然后每次在写入数据的时候，都会判断这块内存的大小够不够写入数据，如果不够就申请一个更大的内存，然后把原来的数据拷贝到新的内存里面，重新对这块内存的前八个字节赋值，即内存的大小和使用情况。<br />
+<p>下面是我写的一个静态类，可以用来实现unsafe的放置变量，并且可以把这块堆外内存里面存的数据转化为迭代器。
+我是这样存数据的，首先是申请一块堆外内存，然后前四个字节存储这块内存的大小，然后紧接着四个字节存储已经使用的大小。然后存储数据的类型是从外部传进去的，0代表int,1代表long，2代表double。
+然后每次在写入数据的时候，都会判断这块内存的大小够不够写入数据，如果不够就申请一个更大的内存，然后把原来的数据拷贝到新的内存里面，重新对这块内存的前八个字节赋值，即内存的大小和使用情况。
 然后这个类的静态参数在每次传入内存的起始地址后会首先读取这块内存的前八个字节，获得内存大小以及使用情况。</p>
 
 <pre><code class="language-JAVA">
@@ -496,20 +496,21 @@ public  static long grow (long  baseAddress,int vType,int minCapacity) {
       
 
 
-  <div id="disqus_thread"></div>
+  <!-- Duoshuo Comment BEGIN -->
+  <div class="ds-thread"></div>
 <script type="text/javascript">
-    var disqus_developer = 1;
-    var disqus_shortname = 'bbwff'; // required: replace example with your forum shortname
-    
-    /* * * DON'T EDIT BELOW THIS LINE * * */
-    (function() {
-        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-        dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
-        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    })();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com" class="dsq-brlink">blog comments powered by <span class="logo-disqus">Disqus</span></a>
+var duoshuoQuery = {short_name:'bbw'};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = 'https://static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+  </script>
+<!-- Duoshuo Comment END -->
+
 
 
 
