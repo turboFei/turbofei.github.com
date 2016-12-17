@@ -272,7 +272,8 @@ public class mergeSort {
 
 <p>代码如下所示，不过<code class="highlighter-rouge">count</code>需要声明为long类型，因为使用int会溢出。java里面的int类型为32位，范围大概为4.29*pow(10,9)，也就是正负二十多亿。而题目中取模就是取十亿，所以很容易就会越界，所以以后这种题目，一定要会使用long类型，而不是一味的int。
 <code class="highlighter-rouge">代码的重点</code>是每次前面比后面大，count 就加前面剩余的个数。</p>
-<pre><code class="language-JAVA">public class Solution {
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public class Solution {
 
      public long count=0;
     public     void merge(int [] a,int p,int q, int r){
@@ -319,7 +320,9 @@ public class mergeSort {
     
     }
 }
+
 </code></pre>
+</div>
 
 
       </div>
