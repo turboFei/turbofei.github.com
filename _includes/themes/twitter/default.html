@@ -45,7 +45,10 @@
             <ul class="nav">
               {% assign pages_list = site.pages %}
               {% assign group = 'navigation' %}
-              {% include JB/pages_list %}
+
+             {% include JB/pages_list %}
+      <li><a href="/about">About</a></li>
+
             </ul>
           </div>
         </div>
@@ -68,7 +71,6 @@
 
 <!-- code highlighting -->
 
- <!--   <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>-->
 <script type="text/javascript" src="http://lib.sinaapp.com/js/jquery/1.7.2/jquery.min.js"></script>
     <script type="text/javascript" src="/assets/google-code-prettify/prettify.js"></script>
     <script type="text/javascript">
