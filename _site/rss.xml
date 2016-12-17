@@ -5,8 +5,8 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2016-12-17T11:41:17+08:00</lastBuildDate>
-        <pubDate>2016-12-17T11:41:17+08:00</pubDate>
+        <lastBuildDate>2016-12-17T17:16:49+08:00</lastBuildDate>
+        <pubDate>2016-12-17T17:16:49+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -272,8 +272,84 @@ public class mergeSort {
 
 &lt;p&gt;所以T(n)=2T(n/2)+cn。&lt;/p&gt;
 
-&lt;p&gt;然后一般这种时间复杂度就是按照递归拆开，可以拆成logN层。然后每一层都有一个cn，拆logN次就有 CnLogN，然后  那个 logN.T(1)就被舍去，时间复杂度就是O(nlogN)。具体类似递归时间复杂度计算方法看&lt;a href=&quot;http://blog.csdn.net/xiaoxian8023/article/details/8134260&quot;&gt;这个网页&lt;/a&gt;。
-然后算法导论第二章留了一道习题，是用归并排序的思想求一个数组的逆序对的数目。在归并排序的过程中，整个过程递归到底就是先对两个只有一个的数组进行归并，然后再对归并之后归并，其实就是二路归并。然后我们只要在merge的时候计算是否前面数组的树大于后面数组的数，用一个全局变量来记录所有出现的次数就是逆序对的个数。&lt;/p&gt;
+&lt;p&gt;然后一般这种时间复杂度就是按照递归拆开，可以拆成logN层。然后每一层都有一个cn，拆logN次就有 CnLogN，然后  那个 logN.T(1)就被舍去，时间复杂度就是O(nlogN)。具体类似递归时间复杂度计算方法看&lt;a href=&quot;http://blog.csdn.net/xiaoxian8023/article/details/8134260&quot;&gt;这个网页&lt;/a&gt;。&lt;/p&gt;
+
+&lt;p&gt;下面是一道利用归并排序求逆序对的题目。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;题目描述&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;在数组中的两个数字，如果前面一个数字大于后面的数字，则这两个数字组成一个逆序对。输入一个数组,求出这个数组中的逆序对的总数P。并将P对1000000007取模的结果输出。 即输出P%1000000007 &lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;输入描述:&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;题目保证输入的数组中没有的相同的数字&lt;/p&gt;
+
+&lt;p&gt;数据范围：&lt;/p&gt;
+
+&lt;p&gt;​	对于%50的数据,size&amp;lt;=10^4&lt;/p&gt;
+
+&lt;p&gt;​	对于%75的数据,size&amp;lt;=10^5&lt;/p&gt;
+
+&lt;p&gt;​	对于%100的数据,size&amp;lt;=2*10^5&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;输入例子:&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;1,2,3,4,5,6,7,0&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;输出例子:&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;7&lt;/p&gt;
+
+&lt;p&gt;代码如下所示，不过&lt;code class=&quot;highlighter-rouge&quot;&gt;count&lt;/code&gt;需要声明为long类型，因为使用int会溢出。java里面的int类型为32位，范围大概为4.29*pow(10,9)，也就是正负二十多亿。而题目中取模就是取十亿，所以很容易就会越界，所以以后这种题目，一定要会使用long类型，而不是一味的int。
+&lt;code class=&quot;highlighter-rouge&quot;&gt;代码的重点&lt;/code&gt;是每次前面比后面大，count 就加前面剩余的个数。&lt;/p&gt;
+&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;public class Solution {
+
+     public long count=0;
+    public     void merge(int [] a,int p,int q, int r){
+        int l1=q-p+1;
+        int l2=r-q;
+        int[]a1=new int[l1+1];
+        int[]a2=new int[l2+1];
+        for (int i=0;i&amp;lt;l1;i++){
+            a1[i]=a[p+i];
+        }
+        a1[l1]=Integer.MAX_VALUE;
+        for (int i=0;i&amp;lt;l2;i++){
+            a2[i]=a[q+1+i];
+        }
+        a2[l2]=Integer.MAX_VALUE;
+    
+        int i1=0;
+        int i2=0;
+       //此处边界搞错了,我去.
+        for (int i=p;i&amp;lt;=r;i++){
+            if (a1[i1]&amp;lt;a2[i2]) {
+                a[i] = a1[i1++];
+            }
+            else {
+                a[i] = a2[i2++];
+                count+=l1-i1;
+    
+            } 
+   }
+}
+    public void mergeSort(int[]a,int p,int q){
+    
+        if (p&amp;lt;q){
+            int t=(p+q)/2;
+            mergeSort(a,p,t);
+            mergeSort(a,t+1,q);
+            merge(a,p,t,q);
+    
+        }
+    }
+    public int InversePairs(int [] array) {
+        mergeSort(array,0,array.length-1);
+        return (int)(count%1000000007);
+    
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
 
 </description>
                 <link>http://bbwff.github.io/%E7%AE%97%E6%B3%95/2016/11/28/%E7%AE%97%E6%B3%95%E5%AF%BC%E8%AE%BA%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0</link>
