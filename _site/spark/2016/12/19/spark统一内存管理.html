@@ -194,7 +194,7 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 }
 </code></pre>
 </div>
-<p>可以看出，<code class="highlighter-rouge">systemMaxMemory</code>是通过参数<code class="highlighter-rouge">spark.testing.memory</code>来获得，如果这个参数没有设置，就取虚拟机内存，然后shuffle 和 storage都有安全系数，最后可用的最大内存都是：系统最大内存<em>比例系数</em>安全系数。</p>
+<p>可以看出，<code class="highlighter-rouge">systemMaxMemory</code>是通过参数<code class="highlighter-rouge">spark.testing.memory</code>来获得，如果这个参数没有设置，就取虚拟机内存，然后shuffle 和 storage都有安全系数，最后可用的最大内存都是：系统最大内存*比例系数*安全系数。</p>
 
 <h2 id="统一内存管理">统一内存管理</h2>
 

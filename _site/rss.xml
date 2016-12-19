@@ -5,8 +5,8 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2016-12-19T17:01:24+08:00</lastBuildDate>
-        <pubDate>2016-12-19T17:01:24+08:00</pubDate>
+        <lastBuildDate>2016-12-19T17:03:33+08:00</lastBuildDate>
+        <pubDate>2016-12-19T17:03:33+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -39,7 +39,7 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
-&lt;p&gt;可以看出，&lt;code class=&quot;highlighter-rouge&quot;&gt;systemMaxMemory&lt;/code&gt;是通过参数&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.testing.memory&lt;/code&gt;来获得，如果这个参数没有设置，就取虚拟机内存，然后shuffle 和 storage都有安全系数，最后可用的最大内存都是：系统最大内存&lt;em&gt;比例系数&lt;/em&gt;安全系数。&lt;/p&gt;
+&lt;p&gt;可以看出，&lt;code class=&quot;highlighter-rouge&quot;&gt;systemMaxMemory&lt;/code&gt;是通过参数&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.testing.memory&lt;/code&gt;来获得，如果这个参数没有设置，就取虚拟机内存，然后shuffle 和 storage都有安全系数，最后可用的最大内存都是：系统最大内存*比例系数*安全系数。&lt;/p&gt;
 
 &lt;h2 id=&quot;统一内存管理&quot;&gt;统一内存管理&lt;/h2&gt;
 
