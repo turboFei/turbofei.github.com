@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>字符串全排列</title>
+    <title>spark统一内存管理</title>
     
     <meta name="author" content="bbw">
 
@@ -119,7 +119,7 @@
 
 <div class="span9">
   <div class="page-header">
-    <h1>字符串全排列 </h1>
+    <h1>spark统一内存管理 <small></small></h1>
   </div>
 
   
@@ -131,8 +131,8 @@
 
   
      
-    	<li><a href="/categories.html#算法-ref">
-    		算法 (4)
+    	<li><a href="/categories.html#spark-ref">
+    		spark (1)
     	</a></li>
     
   
@@ -151,7 +151,7 @@
 
   
      
-    	<li><a href="/tags.html#algorithm-ref">algorithm <span>4</span></a></li>
+    	<li><a href="/tags.html#spark-ref">spark <span>1</span></a></li>
     
   
 
@@ -164,80 +164,100 @@
   <div class="row-fluid post-full">
     <div class="span12">
       <div class="date">
-        <span>12 December 2016</strong>
+        <span>19 December 2016</strong>
       </div>
       <div class="content">
         
-<p><strong>Overview</strong></p>
+<h3 id="background">Background</h3>
+<p>spark统一内存管理是spark1.6.0的新特性，是对shuffle memory 和 storage memory 进行统一的管理，打破了以往的参数限制。</p>
 
-<p>最近在做一些牛客网上的题，遇到一道题，是对一个字符串，按字典序输出它的全排列。</p>
+<h2 id="非统一内存管理">非统一内存管理</h2>
 
-<h2 id="题目描述">题目描述</h2>
+<p>spark在1.6 之前都是非统一内存管理，通过设置<code class="highlighter-rouge">spark.shuffle.memoryFraction</code> 和 <code class="highlighter-rouge">spark.storage.memoryFraction</code>来设置shuffle 和storage的memory 大小。看下<code class="highlighter-rouge">StaticMemoryManager</code>的获得最大shuffle和storage memory的函数。</p>
 
-<p>输入一个字符串,按字典序打印出该字符串中字符的所有排列。例如输入字符串abc,则打印出由字符a,b,c所能排列出来的所有字符串abc,acb,bac,bca,cab和cba。 
-<!--more--></p>
-<h2 id="解题过程">解题过程</h2>
-<p>一开始受数学的思想影响严重，总是觉得全排列是先从n个字符里面随机取出一个，然后再从n-1里面随机取出一个字符，直到取完为止。但是这样直接分支来写，很难写出来的。 
-可以把这个过程转为递归的过程。像数学归纳法一样，一步一步化繁为简。
-数学归纳法的思想如下：
-一般地，证明一个与自然数n有关的命题P(n），有如下步骤：
-（1）证明当n取第一个值n0时命题成立。n0对于一般数列取值为0或1，但也有特殊情况；
-（2）假设当n=k（k≥n0，k为自然数）时命题成立，证明当n=k+1时命题也成立。
-综合（1）（2），对一切自然数n（≥n0），命题P(n）都成立。</p>
-
-<p>然后运用到此处，
-初始条件：当只有一个字符的时候，他的全排列就是他本身。
-1）当有两个字符的时候，他的全排列就是所有字符和第一个字符交换之后的第一个字符加后面一个字符的全排列。
-2）当有K+1字符的时候，他的全排列就是所有字符分别与第一个字符交换之后的第一个字符加后面k个字符的全排列。
-综合 (1) (2)，对一切自然数n(n&gt;0),这个命题都成立。</p>
-
-<p>然后数学归纳法，一般是由初始条件到一般条件的归纳，跟递归的过程刚好相反，但只要我们归纳出了这个规律，写递归就简单了。</p>
-
-<p>设一组数p = {r1, r2, r3, … ,rn}, 全排列为perm(p)，pn = p - {rn}。
-因此perm(p) = r1perm(p1), r2perm(p2), r3perm(p3), … , rnperm(pn)。当n = 1时perm(p} = r1。
-其实就是跟归纳一个反的过程。代码如下</p>
-
-<pre><code class="language-JAVA">import java.util.*;
+<div class="highlighter-rouge"><pre class="highlight"><code>private def getMaxStorageMemory(conf: SparkConf): Long = {
+  val systemMaxMemory = conf.getLong("spark.testing.memory", Runtime.getRuntime.maxMemory)
+  val memoryFraction = conf.getDouble("spark.storage.memoryFraction", 0.6)
+  val safetyFraction = conf.getDouble("spark.storage.safetyFraction", 0.9)
+  (systemMaxMemory * memoryFraction * safetyFraction).toLong
+}
 
 /**
- * Created by bbw on 16/12/11.
+ * Return the total amount of memory available for the execution region, in bytes.
  */
-public class Permutation {
-    TreeSet&lt;String&gt; treeSet=new TreeSet&lt;String&gt;();
-    public  void  swap(char[] str,int a,int b){
-        char c=str[a];
-        str[a]=str[b];
-        str[b]=c;
-    }
- public void perm(char[] str, int a,int b){
-        if (a==b){
-            String t="";
-            for (int i=0;i&lt;=b;i++){
-                t=t+str[i];
-
-            }
-            treeSet.add(t);
-        }
-        else {
-            for (int i=a;i&lt;=b;i++){
-                swap(str,i,a);
-                perm(str,a+1,b);
-                swap(str,i,a);
-            }
-
-        }
-    }
-    public ArrayList&lt;String&gt; Permutation(String str) {
-        perm(str.toCharArray(),0,str.length()-1);
-        ArrayList&lt;String&gt; r=new ArrayList&lt;String&gt;();
-        for (String s:treeSet)
-            r.add(s);
-        return r;
-
-    }
+private def getMaxExecutionMemory(conf: SparkConf): Long = {
+  val systemMaxMemory = conf.getLong("spark.testing.memory", Runtime.getRuntime.maxMemory)
+...
+  val memoryFraction = conf.getDouble("spark.shuffle.memoryFraction", 0.2)
+  val safetyFraction = conf.getDouble("spark.shuffle.safetyFraction", 0.8)
+  (systemMaxMemory * memoryFraction * safetyFraction).toLong
 }
 </code></pre>
+</div>
+<p>可以看出，<code class="highlighter-rouge">systemMaxMemory</code>是通过获取运行时最大内存获得的，然后shuffle 和 storage都有安全系数，最后可用的最大内存都是：系统最大内存<em>比例系数</em>安全系数。</p>
+<h2 id="统一内存管理">统一内存管理</h2>
 
+<p>spark 1.6.0 出现了统一内存管理，是打破了shuffle 内存和storage内存的静态限制。通俗的描述，就是如果storage内存不够，而shuffle内存剩余就能借内存，如果shuffle内存不足，此时如果storage已经超出了<code class="highlighter-rouge">storageRegionSize</code>，那么就驱逐当前使用storage内存-<code class="highlighter-rouge">storageRegionSize</code>，如果storage 使用没有超过<code class="highlighter-rouge">storageRegionSize</code>，那么则把它剩余的都可以借给shuffle使用。</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>  private def getMaxMemory(conf: SparkConf): Long = {
+    val systemMemory = conf.getLong("spark.testing.memory", Runtime.getRuntime.maxMemory)
+    val reservedMemory = conf.getLong("spark.testing.reservedMemory",
+      if (conf.contains("spark.testing")) 0 else RESERVED_SYSTEM_MEMORY_BYTES)
+    val minSystemMemory = (reservedMemory * 1.5).ceil.toLong
+    if (systemMemory &lt; minSystemMemory) {
+      throw new IllegalArgumentException(s"System memory $systemMemory must " +
+        s"be at least $minSystemMemory. Please increase heap size using the --driver-memory " +
+        s"option or spark.driver.memory in Spark configuration.")
+    }
+    // SPARK-12759 Check executor memory to fail fast if memory is insufficient
+    if (conf.contains("spark.executor.memory")) {
+      val executorMemory = conf.getSizeAsBytes("spark.executor.memory")
+      if (executorMemory &lt; minSystemMemory) {
+        throw new IllegalArgumentException(s"Executor memory $executorMemory must be at least " +
+          s"$minSystemMemory. Please increase executor memory using the " +
+          s"--executor-memory option or spark.executor.memory in Spark configuration.")
+      }
+    }
+    val usableMemory = systemMemory - reservedMemory
+    val memoryFraction = conf.getDouble("spark.memory.fraction", 0.6)
+    (usableMemory * memoryFraction).toLong
+  }
+</code></pre>
+</div>
+<p>这个是统一内存管理的获得最大内存的函数，因为shuffle和storage是统一管理的，所以只有一个获得统一最大内存的函数。<code class="highlighter-rouge">usableMemory = systemMemory - reservedMemory</code>.</p>
+
+<p>最大内存=<code class="highlighter-rouge">usableMemory * memoryFraction</code>.</p>
+
+<h2 id="统一内存管理的使用">统一内存管理的使用</h2>
+
+<p><code class="highlighter-rouge">UnifiedMemoryManager</code>是在一个静态类里面的<code class="highlighter-rouge">apply</code>方法调用的。</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>def apply(conf: SparkConf, numCores: Int): UnifiedMemoryManager = {
+  val maxMemory = getMaxMemory(conf)
+  new UnifiedMemoryManager(
+    conf,
+    maxHeapMemory = maxMemory,
+    onHeapStorageRegionSize =
+      (maxMemory * conf.getDouble("spark.memory.storageFraction", 0.5)).toLong,
+    numCores = numCores)
+}
+</code></pre>
+</div>
+
+<p>然后通过 find Uages 找到是在 <code class="highlighter-rouge">sparkEnv</code>里面调用。</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>val memoryManager: MemoryManager =
+  if (useLegacyMemoryManager) {
+    new StaticMemoryManager(conf, numUsableCores)
+  } else {
+    UnifiedMemoryManager(conf, numUsableCores)
+  }
+</code></pre>
+</div>
+
+<p>是通过判断参数，判断是使用统一内存管理还是非内存管理。</p>
+
+<p>然后通过查看usages 发现是在 <code class="highlighter-rouge">CoarseGrainedExecutorBackEnd</code> 和 <code class="highlighter-rouge">MesosExecutorBackEnd</code>里面调用的，所以是每个executor都有一个统一内存管理的实例(…很显然，逻辑也是这样)。</p>
 
       </div>
  
@@ -245,11 +265,11 @@ public class Permutation {
         <div class="pagination">
           <ul>
           
-            <li class="prev"><a href="/%E7%AE%97%E6%B3%95/2016/11/28/%E7%AE%97%E6%B3%95%E5%AF%BC%E8%AE%BA%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0" title="算法导论学习笔记">&larr; Previous</a></li>
+            <li class="prev"><a href="/%E7%AE%97%E6%B3%95/2016/12/14/%E7%90%86%E8%A7%A3%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92" title="理解动态规划">&larr; Previous</a></li>
           
             <li><a href="/archive.html">Archive</a></li>
           
-            <li class="next"><a href="/%E7%AE%97%E6%B3%95/2016/12/13/%E5%8C%BA%E9%97%B4%E5%86%851%E5%87%BA%E7%8E%B0%E6%AC%A1%E6%95%B0" title="区间内1出现次数">Next &rarr;</a></li>
+            <li class="next disabled"><a>Next &rarr;</a>
           
           </ul>
         </div>
