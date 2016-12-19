@@ -4,7 +4,7 @@
  <title>bbw's blog</title>
  <link href="http://bbwff.github.io/" rel="self"/>
  <link href="http://bbwff.github.io"/>
- <updated>2016-12-19T16:47:59+08:00</updated>
+ <updated>2016-12-19T16:57:33+08:00</updated>
  <id>http://bbwff.github.io</id>
  <author>
    <name>bbw</name>
@@ -44,7 +44,7 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
-&lt;p&gt;可以看出，&lt;code class=&quot;highlighter-rouge&quot;&gt;systemMaxMemory&lt;/code&gt;是通过获取运行时最大内存获得的，然后shuffle 和 storage都有安全系数，最后可用的最大内存都是：系统最大内存&lt;em&gt;比例系数&lt;/em&gt;安全系数。&lt;/p&gt;
+&lt;p&gt;可以看出，&lt;code class=&quot;highlighter-rouge&quot;&gt;systemMaxMemory&lt;/code&gt;是通过参数&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.testing.memory&lt;/code&gt;来获得，如果这个参数没有设置，就取虚拟机内存，然后shuffle 和 storage都有安全系数，最后可用的最大内存都是：系统最大内存&lt;em&gt;比例系数&lt;/em&gt;安全系数。&lt;/p&gt;
 &lt;h2 id=&quot;统一内存管理&quot;&gt;统一内存管理&lt;/h2&gt;
 
 &lt;p&gt;spark 1.6.0 出现了统一内存管理，是打破了shuffle 内存和storage内存的静态限制。通俗的描述，就是如果storage内存不够，而shuffle内存剩余就能借内存，如果shuffle内存不足，此时如果storage已经超出了&lt;code class=&quot;highlighter-rouge&quot;&gt;storageRegionSize&lt;/code&gt;，那么就驱逐当前使用storage内存-&lt;code class=&quot;highlighter-rouge&quot;&gt;storageRegionSize&lt;/code&gt;，如果storage 使用没有超过&lt;code class=&quot;highlighter-rouge&quot;&gt;storageRegionSize&lt;/code&gt;，那么则把它剩余的都可以借给shuffle使用。&lt;/p&gt;
