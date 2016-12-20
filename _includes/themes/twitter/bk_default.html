@@ -1,12 +1,10 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>About Me</title>
-    <meta name="description" content="">
-    <meta name="author" content="bbw">
+    <title>{{ page.title }}</title>
+    {% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
+    <meta name="author" content="{{ site.author.name }}">
 
     <!-- Enable responsive viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,8 +15,8 @@
     <![endif]-->
 
     <!-- Le styles -->
-    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
-    <link href="/assets/themes/twitter/css/style.css" rel="stylesheet" type="text/css" media="all">
+    <link href="{{ ASSET_PATH }}/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="{{ ASSET_PATH }}/css/style.css" rel="stylesheet" type="text/css" media="all">
 
     <!-- code highlighting-->
     <link href="/assets/google-code-prettify/desert.css" rel="stylesheet" type="text/css" media="all">
@@ -37,137 +35,33 @@
     <div class="navbar navbar-inverse navbar-fixed-top">
       <div class="navbar-inner">
     <div class="container">
-
           <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="brand" href="/">bbw's blog</a>
+          <a class="brand" href="{{ HOME_PATH }}">{{ site.title }}</a>
           <div class="nav-collapse collapse">
-            <ul class="nav nav-nav" id="main-nav">
-              
-              
+            <ul class="nav">
+              {% assign pages_list = site.pages %}
+              {% assign group = 'navigation' %}
 
-             
-
-
-  
-    
-      
-    
-  
-    
-      
-      	
-      	<li><a href="/archive">Archive</a></li>
-      	
-      
-    
-  
-    
-      
-    
-  
-    
-      
-      	
-      	<li><a href="/categories">Categories</a></li>
-      	
-      
-    
-  
-    
-  
-    
-      
-      	
-      	<li><a href="/pages">Pages</a></li>
-      	
-      
-    
-  
-    
-      
-    
-  
-    
-      
-    
-  
-    
-      
-      	
-      	<li><a href="/tags">Tags</a></li>
-      	
-      
-    
-  
-
-
-
+             {% include JB/pages_list %}
       <li><a href="/about">About</a></li>
             </ul>
-
           </div>
-
+          </div>       
 </div>
       </div>
     </div>
     <div class="container">
       <div class="row">
-        
-
-<div class="page-header">
-  <h1>About Me </h1>
-</div>
-
-<div class="row">
-  <div class="span12">
-    
-
-
-
-
-计算机专业学生<br>
-大数据方向<br>
-未来计算机从业人员<br>
-<br>
-愿大家都有美好的未来！<br>
-
-(,,•́ . •̀,,)<br>
-
-
-
-  <!-- Duoshuo Comment BEGIN -->
-  <div class="ds-thread"></div>
-<script type="text/javascript">
-var duoshuoQuery = {short_name:'bbw'};
-  (function() {
-    var ds = document.createElement('script');
-    ds.type = 'text/javascript';ds.async = true;
-    ds.src = 'https://static.duoshuo.com/embed.js';
-    ds.charset = 'UTF-8';
-    (document.getElementsByTagName('head')[0] 
-    || document.getElementsByTagName('body')[0]).appendChild(ds);
-  })();
-  </script>
-<!-- Duoshuo Comment END -->
-
-
-
-
-
-
-  </div>
-</div>
-
-
+        {{ content }}
       </div> <!--/.row-->
 
       <hr>
       <footer>
-        <p align="center" >&copy; 2016 <i class="fa fa-heart"></i> bbw
+        <p align="center" >&copy; {{ site.time | date: '%Y' }} <i class="fa fa-heart"></i> {{ site.author.name }}
   <!--        with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>-->
 <!--          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>-->
 <link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
@@ -198,8 +92,6 @@ var duoshuoQuery = {short_name:'bbw'};
     <!-- math function -->
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
-    
-
+    {% include JB/analytics %}
   </body>
 </html>
-
