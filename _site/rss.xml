@@ -5,8 +5,8 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2016-12-24T17:14:36+08:00</lastBuildDate>
-        <pubDate>2016-12-24T17:14:36+08:00</pubDate>
+        <lastBuildDate>2016-12-24T17:15:54+08:00</lastBuildDate>
+        <pubDate>2016-12-24T17:15:54+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -73,6 +73,7 @@ object SparkWC {
 &lt;h3 id=&quot;源码剖析&quot;&gt;源码剖析&lt;/h3&gt;
 
 &lt;p&gt;从rdd链开始分析。&lt;/p&gt;
+
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def textFile(
       path: String,
       minPartitions: Int = defaultMinPartitions): RDD[String] = withScope {
@@ -82,6 +83,7 @@ object SparkWC {
   }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
+
 &lt;p&gt;textFile 这个算子的返回结果是一个RDD，然后RDD链就开始了，可以看出来他调用了一些新的函数，比如hadoopFile啥的，这些我们都不管，因为他们都没有触发 commitJob，所以这些中间过程我们就省略，直到saveAsTextFile这个action。&lt;/p&gt;
 
 &lt;h3 id=&quot;提交job&quot;&gt;提交job&lt;/h3&gt;

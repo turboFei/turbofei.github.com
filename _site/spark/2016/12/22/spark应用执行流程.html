@@ -238,6 +238,7 @@ object SparkWC {
 <h3 id="源码剖析">源码剖析</h3>
 
 <p>从rdd链开始分析。</p>
+
 <div class="highlighter-rouge"><pre class="highlight"><code>def textFile(
       path: String,
       minPartitions: Int = defaultMinPartitions): RDD[String] = withScope {
@@ -247,6 +248,7 @@ object SparkWC {
   }
 </code></pre>
 </div>
+
 <p>textFile 这个算子的返回结果是一个RDD，然后RDD链就开始了，可以看出来他调用了一些新的函数，比如hadoopFile啥的，这些我们都不管，因为他们都没有触发 commitJob，所以这些中间过程我们就省略，直到saveAsTextFile这个action。</p>
 
 <h3 id="提交job">提交job</h3>
