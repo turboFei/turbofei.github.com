@@ -3,15 +3,11 @@
 permalink: /:categories/:year/:month/:day/:title
 
 exclude: [".rvmrc", ".rbenv-version", "README.md", "Rakefile", "changelog.md"]
-#markdown: kramdown
-#kramdown:
-#  input: GFM
-#  syntax_highlighter: rouge
-#  enable_coderay: true
-markdown: rdiscount
-rdiscount:
-          extensions:
-                 - generate_toc
+markdown: kramdown
+kramdown:
+  input: GFM
+  syntax_highlighter: rouge
+  enable_coderay: true
 totop: true
 # so be sure to set them if your theme uses them.
 #

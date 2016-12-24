@@ -5,32 +5,45 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2016-12-24T18:12:42+08:00</lastBuildDate>
-        <pubDate>2016-12-24T18:12:42+08:00</pubDate>
+        <lastBuildDate>2016-12-24T18:17:21+08:00</lastBuildDate>
+        <pubDate>2016-12-24T18:17:21+08:00</pubDate>
         <ttl>1800</ttl>
 
 
         <item>
                 <title>Spark应用执行流程</title>
-                <description>&lt;p&gt;目录&lt;/p&gt;
+                <description>
+&lt;p&gt;目录&lt;/p&gt;
 
-&lt;ul&gt;
-&lt;li&gt;toc
-{:toc}&lt;/li&gt;
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#word-count&quot; id=&quot;markdown-toc-word-count&quot;&gt;Word Count&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#理论剖析&quot; id=&quot;markdown-toc-理论剖析&quot;&gt;理论剖析&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#源码剖析&quot; id=&quot;markdown-toc-源码剖析&quot;&gt;源码剖析&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#提交job&quot; id=&quot;markdown-toc-提交job&quot;&gt;提交job&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#划分stage&quot; id=&quot;markdown-toc-划分stage&quot;&gt;划分stage&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#提交tasks&quot; id=&quot;markdown-toc-提交tasks&quot;&gt;提交tasks&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#执行task&quot; id=&quot;markdown-toc-执行task&quot;&gt;执行task&lt;/a&gt;        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#shufflemaptask&quot; id=&quot;markdown-toc-shufflemaptask&quot;&gt;ShuffleMapTask&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#resulttask&quot; id=&quot;markdown-toc-resulttask&quot;&gt;ResultTask&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#rdd-迭代链&quot; id=&quot;markdown-toc-rdd-迭代链&quot;&gt;rdd 迭代链&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#检查点&quot; id=&quot;markdown-toc-检查点&quot;&gt;检查点&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#compute-链&quot; id=&quot;markdown-toc-compute-链&quot;&gt;compute 链&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#参考&quot; id=&quot;markdown-toc-参考&quot;&gt;参考&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-
-&lt;a name=&quot;Background&quot;&gt;&lt;/a&gt;
-&lt;h3&gt;Background&lt;/h3&gt;
-
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 &lt;p&gt;从最简单的spark应用WordCount入手，分析rdd链，分析job如何提交，task如何提交，从全局了解spark应用的执行流程。&lt;/p&gt;
 
-&lt;a name=&quot;Word.Count&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;Word Count&lt;/h2&gt;
+&lt;h2 id=&quot;word-count&quot;&gt;Word Count&lt;/h2&gt;
 
 &lt;p&gt;word count是spark 最基本的小程序，主要功能就是统计一个文件里面各个单词出现的个数。代码很简洁，如下。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;import org.apache.spark.{SparkConf, SparkContext}
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;import org.apache.spark.{SparkConf, SparkContext}
 
 object SparkWC {
   def main(args: Array[String]) {
@@ -44,26 +57,24 @@ object SparkWC {
   }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;a name=&quot;L............&quot;&gt;&lt;/a&gt;
-&lt;h3&gt;理论剖析&lt;/h3&gt;
+&lt;h3 id=&quot;理论剖析&quot;&gt;理论剖析&lt;/h3&gt;
+&lt;p&gt;里面的RDD链，用他们的操作表示，就是textFile-&amp;gt;flatMap-&amp;gt;map-&amp;gt;reduceBykey-&amp;gt;saveAsTextFile.&lt;/p&gt;
 
-&lt;p&gt;里面的RDD链，用他们的操作表示，就是textFile-&gt;flatMap-&gt;map-&gt;reduceBykey-&gt;saveAsTextFile.&lt;/p&gt;
-
-&lt;p&gt;spark里面有两种操作，&lt;code&gt;action&lt;/code&gt; 和&lt;code&gt;transformation&lt;/code&gt;，其中action会触发提交job的操作，transformation不会触发job，只是进行rdd的转换。而不同transformation操作的rdd链两端的依赖关系也不同，spark中的rdd依赖有两种，分别是&lt;code&gt;narrow dependency&lt;/code&gt; 和 &lt;code&gt;wide dependency&lt;/code&gt; ,这两种依赖如下图所示。
-&lt;br&gt;
+&lt;p&gt;spark里面有两种操作，&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt; 和&lt;code class=&quot;highlighter-rouge&quot;&gt;transformation&lt;/code&gt;，其中action会触发提交job的操作，transformation不会触发job，只是进行rdd的转换。而不同transformation操作的rdd链两端的依赖关系也不同，spark中的rdd依赖有两种，分别是&lt;code class=&quot;highlighter-rouge&quot;&gt;narrow dependency&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;wide dependency&lt;/code&gt; ,这两种依赖如下图所示。
+&lt;br /&gt;
 &lt;img src=&quot;http://ogk82bfkr.bkt.clouddn.com/upload/narrow-depen.png&quot; height=&quot;200&quot; width=&quot;200&quot; /&gt;
-&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;
+      
 &lt;img src=&quot;http://ogk82bfkr.bkt.clouddn.com/upload/wide-depen.png&quot; height=&quot;200&quot; width=&quot;200&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;左边图是窄依赖，右边图是宽依赖，窄依赖里面的partition的对应顺序是不变的，款依赖会涉及shuffle操作，会造成partition混洗，因此往往以款依赖划分stage。在上面的操作中，saveAsTextFile是action，reduceByKey是宽依赖，因此这个应用总共有1个job，两个stage，然后在不同的stage中会执行tasks。&lt;/p&gt;
 
-&lt;a name=&quot;L............&quot;&gt;&lt;/a&gt;
-&lt;h3&gt;源码剖析&lt;/h3&gt;
+&lt;h3 id=&quot;源码剖析&quot;&gt;源码剖析&lt;/h3&gt;
 
 &lt;p&gt;从rdd链开始分析。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;def textFile(
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def textFile(
       path: String,
       minPartitions: Int = defaultMinPartitions): RDD[String] = withScope {
     assertNotStopped()
@@ -71,13 +82,13 @@ object SparkWC {
       minPartitions).map(pair =&amp;gt; pair._2.toString).setName(path)
   }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;textFile 这个算子的返回结果是一个RDD，然后RDD链就开始了，可以看出来他调用了一些新的函数，比如hadoopFile啥的，这些我们都不管，因为他们都没有触发 commitJob，所以这些中间过程我们就省略，直到saveAsTextFile这个action。&lt;/p&gt;
 
-&lt;a name=&quot;L......job&quot;&gt;&lt;/a&gt;
-&lt;h3&gt;提交job&lt;/h3&gt;
+&lt;h3 id=&quot;提交job&quot;&gt;提交job&lt;/h3&gt;
 
-&lt;pre&gt;&lt;code&gt;  def saveAsTextFile(path: String): Unit = withScope {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  def saveAsTextFile(path: String): Unit = withScope {
     // https://issues.apache.org/jira/browse/SPARK-2075
     //
     // NullWritable is a `Comparable` in Hadoop 1.+, so the compiler cannot find an implicit
@@ -100,14 +111,14 @@ object SparkWC {
     RDD.rddToPairRDDFunctions(r)(nullWritableClassTag, textClassTag, null)
       .saveAsHadoopFile[TextOutputFormat[NullWritable, Text]](path)
   }
-
-
+  
+  
   //接下来调用这个
   def saveAsHadoopFile[F &amp;lt;: OutputFormat[K, V]](
       path: String)(implicit fm: ClassTag[F]): Unit = self.withScope {
     saveAsHadoopFile(path, keyClass, valueClass, fm.runtimeClass.asInstanceOf[Class[F]])
   }
-
+  
 //省略一部分调用过程
 ...
 ...
@@ -175,10 +186,10 @@ object SparkWC {
     writer.commitJob()
   }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;上面是saveAstextFile的调用过程，中间省略了一个函数，看代码的最后两行。可以看出调用了&lt;code class=&quot;highlighter-rouge&quot;&gt; self.context.runJob()&lt;/code&gt;可以知道这里触发了job的提交。&lt;/p&gt;
 
-&lt;p&gt;上面是saveAstextFile的调用过程，中间省略了一个函数，看代码的最后两行。可以看出调用了&lt;code&gt;self.context.runJob()&lt;/code&gt;可以知道这里触发了job的提交。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt; def runJob[T, U: ClassTag](
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; def runJob[T, U: ClassTag](
       rdd: RDD[T],
       func: (TaskContext, Iterator[T]) =&amp;gt; U,
       partitions: Seq[Int],
@@ -197,10 +208,11 @@ object SparkWC {
     rdd.doCheckpoint() //是否cache rdd
   }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;p&gt;可以看出上面代码有 &lt;code&gt;dagScheduler.runJob&lt;/code&gt;，开始进行调度。&lt;/p&gt;
+&lt;p&gt;可以看出上面代码有 &lt;code class=&quot;highlighter-rouge&quot;&gt;dagScheduler.runJob&lt;/code&gt;，开始进行调度。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;  def runJob[T, U](
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  def runJob[T, U](
       rdd: RDD[T],
       func: (TaskContext, Iterator[T]) =&amp;gt; U,
       partitions: Seq[Int],
@@ -229,55 +241,56 @@ object SparkWC {
     }
   }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;p&gt;在 dagScheduler.runJob()里面有 &lt;code&gt;submitJob&lt;/code&gt;的操作，提交job。
-看下面&lt;code&gt;submitJob&lt;/code&gt;的代码。
-```
-  def submitJob&lt;a href=&quot;rdd:%20RDD[T],%0A%20%20%20%20%20%20func:%20(TaskContext,%20Iterator[T]&quot;&gt;T, U&lt;/a&gt; =&gt; U,
+&lt;p&gt;在 dagScheduler.runJob()里面有 &lt;code class=&quot;highlighter-rouge&quot;&gt;submitJob&lt;/code&gt;的操作，提交job。
+看下面&lt;code class=&quot;highlighter-rouge&quot;&gt;submitJob&lt;/code&gt;的代码。&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  def submitJob[T, U](
+      rdd: RDD[T],
+      func: (TaskContext, Iterator[T]) =&amp;gt; U,
       partitions: Seq[Int],
       callSite: CallSite,
-      resultHandler: (Int, U) =&gt; Unit,
+      resultHandler: (Int, U) =&amp;gt; Unit,
       properties: Properties): JobWaiter[U] = {
     // Check to make sure we are not launching a task on a partition that does not exist.
     val maxPartitions = rdd.partitions.length
-    partitions.find(p =&gt; p &gt;= maxPartitions || p &amp;lt; 0).foreach { p =&gt;
+    partitions.find(p =&amp;gt; p &amp;gt;= maxPartitions || p &amp;lt; 0).foreach { p =&amp;gt;
       throw new IllegalArgumentException(
         &quot;Attempting to access a non-existent partition: &quot; + p + &quot;. &quot; +
           &quot;Total number of partitions: &quot; + maxPartitions)
-    }&lt;/p&gt;
+    }
 
-&lt;pre&gt;&lt;code&gt;val jobId = nextJobId.getAndIncrement()
-if (partitions.size == 0) {
-  // Return immediately if the job is running 0 tasks
-  return new JobWaiter[U](this, jobId, 0, resultHandler)
-}
+    val jobId = nextJobId.getAndIncrement()
+    if (partitions.size == 0) {
+      // Return immediately if the job is running 0 tasks
+      return new JobWaiter[U](this, jobId, 0, resultHandler)
+    }
 
-assert(partitions.size &amp;gt; 0)
-val func2 = func.asInstanceOf[(TaskContext, Iterator[_]) =&amp;gt; _]
-val waiter = new JobWaiter(this, jobId, partitions.size, resultHandler)
-eventProcessLoop.post(JobSubmitted(
-  jobId, rdd, func2, partitions.toArray, callSite, waiter,
-  SerializationUtils.clone(properties)))
-waiter
+    assert(partitions.size &amp;gt; 0)
+    val func2 = func.asInstanceOf[(TaskContext, Iterator[_]) =&amp;gt; _]
+    val waiter = new JobWaiter(this, jobId, partitions.size, resultHandler)
+    eventProcessLoop.post(JobSubmitted(
+      jobId, rdd, func2, partitions.toArray, callSite, waiter,
+      SerializationUtils.clone(properties)))
+    waiter
+  }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;然后eventProcessLoop.post(JobSubmitted … 然后就有循环程序处理 这个post。&lt;/p&gt;
 
-&lt;p&gt;  }
-```
-  然后eventProcessLoop.post(JobSubmitted ... 然后就有循环程序处理 这个post。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;private def doOnReceive(event: DAGSchedulerEvent): Unit = event match {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def doOnReceive(event: DAGSchedulerEvent): Unit = event match {
   case JobSubmitted(jobId, rdd, func, partitions, callSite, listener, properties) =&amp;gt;
     dagScheduler.handleJobSubmitted(jobId, rdd, func, partitions, callSite, listener, properties)
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;a name=&quot;L......stage&quot;&gt;&lt;/a&gt;
-&lt;h3&gt;划分stage&lt;/h3&gt;
+&lt;h3 id=&quot;划分stage&quot;&gt;划分stage&lt;/h3&gt;
 
 &lt;p&gt;提交完job之后，会对stage进行划分。&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;handleJobSubmitted&lt;/code&gt;,如下代码。&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;handleJobSubmitted&lt;/code&gt;,如下代码。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;private[scheduler] def handleJobSubmitted(jobId: Int,
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private[scheduler] def handleJobSubmitted(jobId: Int,
     finalRDD: RDD[_],
     func: (TaskContext, Iterator[_]) =&amp;gt; _,
     partitions: Array[Int],
@@ -317,10 +330,11 @@ waiter
   submitWaitingStages()
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;解释下这段代码，先是找到最后一个stage， finalStage，然后就生成stageId还有stage的一些信息，然后post 出job开始的消息，然后提交最后一个stage，最后一行是提交等待的stages。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;/** Submits stage, but first recursively submits any missing parents. */
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/** Submits stage, but first recursively submits any missing parents. */
 private def submitStage(stage: Stage) {
   val jobId = activeJobForStage(stage)
   if (jobId.isDefined) {
@@ -343,17 +357,17 @@ private def submitStage(stage: Stage) {
   }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;解释下这段代码，就是递归提交之前都没有提交的stage，因为之前是提交最后一个stage吗，但是前面stage也没操作，所以要不断地提交parentStage，直到job的头部。如果说这个stage没有未完成的parentStage，那就代表它前面都执行完毕。&lt;/p&gt;
 
-&lt;a name=&quot;L......tasks&quot;&gt;&lt;/a&gt;
-&lt;h3&gt;提交tasks&lt;/h3&gt;
+&lt;h3 id=&quot;提交tasks&quot;&gt;提交tasks&lt;/h3&gt;
 
-&lt;p&gt;找到最开始还没完成的stage，那么提交这个stage的Tasks。调用的函数是&lt;code&gt;submitMissingTasks(stage,jobId.get)&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;找到最开始还没完成的stage，那么提交这个stage的Tasks。调用的函数是&lt;code class=&quot;highlighter-rouge&quot;&gt;submitMissingTasks(stage,jobId.get)&lt;/code&gt;.&lt;/p&gt;
 
 &lt;p&gt;下面是 这个函数的代码，有点长。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;private def submitMissingTasks(stage: Stage, jobId: Int) {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def submitMissingTasks(stage: Stage, jobId: Int) {
   logDebug(&quot;submitMissingTasks(&quot; + stage + &quot;)&quot;)
   // Get our pending tasks and remember them in our pendingTasks entry
   stage.pendingPartitions.clear()
@@ -485,27 +499,27 @@ private def submitStage(stage: Stage) {
   }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;p&gt;上面的代码出现了多次&lt;code&gt;ResultStage&lt;/code&gt;和&lt;code&gt;ShuffleMapStage&lt;/code&gt;，先介绍一下这个stage。&lt;/p&gt;
+&lt;p&gt;上面的代码出现了多次&lt;code class=&quot;highlighter-rouge&quot;&gt;ResultStage&lt;/code&gt;和&lt;code class=&quot;highlighter-rouge&quot;&gt;ShuffleMapStage&lt;/code&gt;，先介绍一下这个stage。&lt;/p&gt;
 
-&lt;p&gt;前面我们说过，WordCount只有一个job，然后reduceByKey是shuffle操作，以这个为stage的边界。那么前面的stage就是&lt;code&gt;ShuffleMapStage&lt;/code&gt;，后面的stage就是&lt;code&gt;ResultStage&lt;/code&gt;.因为前面会有shuffle操作，而后面是整个job的计算结果，所以叫ResultStage.&lt;/p&gt;
+&lt;p&gt;前面我们说过，WordCount只有一个job，然后reduceByKey是shuffle操作，以这个为stage的边界。那么前面的stage就是&lt;code class=&quot;highlighter-rouge&quot;&gt;ShuffleMapStage&lt;/code&gt;，后面的stage就是&lt;code class=&quot;highlighter-rouge&quot;&gt;ResultStage&lt;/code&gt;.因为前面会有shuffle操作，而后面是整个job的计算结果，所以叫ResultStage.&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;ResultStage&lt;/code&gt;是有一个函数，应用于rdd的一些partition来计算出这个action的结果。但有些action并不是在每个partition都执行的，比如&lt;code&gt;first()&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ResultStage&lt;/code&gt;是有一个函数，应用于rdd的一些partition来计算出这个action的结果。但有些action并不是在每个partition都执行的，比如&lt;code class=&quot;highlighter-rouge&quot;&gt;first()&lt;/code&gt;.&lt;/p&gt;
 
 &lt;p&gt;接下来介绍下这个函数的执行流程。&lt;/p&gt;
 
 &lt;ul&gt;
-&lt;li&gt;首先是计算出 &lt;code&gt;paritionsToCompute&lt;/code&gt;，即用于计算的partition，数据。&lt;/li&gt;
-&lt;li&gt;然后就是&lt;code&gt;outputCommitCoordinator.stageStart&lt;/code&gt;,这个类是用来输出到hdfs上的，然后stageStart的两个参数，就是用于发出信息，两个参数分别是stageId和他要用于计算的partition数目。&lt;/li&gt;
-&lt;li&gt;然后就是计算这个stage用于计算的TaskId对应的task所在的location。因为TaskId和partitionId是对应的，所以也就是计算partitionId对应的taskLocation。然后taskLocation是一个host或者是一个（host,executorId）二元组。&lt;/li&gt;
-&lt;li&gt;&lt;code&gt;stage.makeNewStageAttempt(partitionsToCompute.size, taskIdToLocations.values.toSeq)&lt;/code&gt;这里创建新的attempt 就是代表这个stage执行了几次。因为stage可能会失败的。如果失败就要接着执行，这个attempt从0开始。&lt;/li&gt;
-&lt;li&gt;然后就是创建广播变量，然后braocast。广播是用于executor来解析tasks。首先要序列化，给每个task都一个完整的rdd，这样可以让task独立性更强，这对于非线程安全是有必要的。对于ShuffleMapTask我们序列化的数据是&lt;code&gt;(rdd,shuffleDep)&lt;/code&gt;，对于resultTask,序列化数据为&lt;code&gt;(rdd,func)&lt;/code&gt;。&lt;/li&gt;
-&lt;li&gt;然后是创建tasks，当然Tasks分为shuffleMapTask和resultTask，这都是跟stage类型对应的。这里创建tasks，需要用到一个参数&lt;code&gt;stage.latestInfo.attemptId&lt;/code&gt;,这里是前面提到的。&lt;/li&gt;
-&lt;li&gt;创建完tasks就是后面的&lt;code&gt;taskScheduler.submitTasks()&lt;/code&gt;，这样任务就交由taskScheduler调度了。&lt;/li&gt;
+  &lt;li&gt;首先是计算出 &lt;code class=&quot;highlighter-rouge&quot;&gt;paritionsToCompute&lt;/code&gt;，即用于计算的partition，数据。&lt;/li&gt;
+  &lt;li&gt;然后就是&lt;code class=&quot;highlighter-rouge&quot;&gt;outputCommitCoordinator.stageStart&lt;/code&gt;,这个类是用来输出到hdfs上的，然后stageStart的两个参数，就是用于发出信息，两个参数分别是stageId和他要用于计算的partition数目。&lt;/li&gt;
+  &lt;li&gt;然后就是计算这个stage用于计算的TaskId对应的task所在的location。因为TaskId和partitionId是对应的，所以也就是计算partitionId对应的taskLocation。然后taskLocation是一个host或者是一个（host,executorId）二元组。&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;stage.makeNewStageAttempt(partitionsToCompute.size, taskIdToLocations.values.toSeq)&lt;/code&gt;这里创建新的attempt 就是代表这个stage执行了几次。因为stage可能会失败的。如果失败就要接着执行，这个attempt从0开始。&lt;/li&gt;
+  &lt;li&gt;然后就是创建广播变量，然后braocast。广播是用于executor来解析tasks。首先要序列化，给每个task都一个完整的rdd，这样可以让task独立性更强，这对于非线程安全是有必要的。对于ShuffleMapTask我们序列化的数据是&lt;code class=&quot;highlighter-rouge&quot;&gt;(rdd,shuffleDep)&lt;/code&gt;，对于resultTask,序列化数据为&lt;code class=&quot;highlighter-rouge&quot;&gt;(rdd,func)&lt;/code&gt;。&lt;/li&gt;
+  &lt;li&gt;然后是创建tasks，当然Tasks分为shuffleMapTask和resultTask，这都是跟stage类型对应的。这里创建tasks，需要用到一个参数&lt;code class=&quot;highlighter-rouge&quot;&gt;stage.latestInfo.attemptId&lt;/code&gt;,这里是前面提到的。&lt;/li&gt;
+  &lt;li&gt;创建完tasks就是后面的&lt;code class=&quot;highlighter-rouge&quot;&gt;taskScheduler.submitTasks()&lt;/code&gt;，这样任务就交由taskScheduler调度了。&lt;/li&gt;
 &lt;/ul&gt;
 
-
-&lt;pre&gt;&lt;code&gt;override def submitTasks(taskSet: TaskSet) {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def submitTasks(taskSet: TaskSet) {
   val tasks = taskSet.tasks
   logInfo(&quot;Adding task set &quot; + taskSet.id + &quot; with &quot; + tasks.length + &quot; tasks&quot;)
   this.synchronized {
@@ -541,24 +555,26 @@ private def submitStage(stage: Stage) {
   backend.reviveOffers()
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;这段代码前面部分就是先创建taskManager，然后判断是否有超过一个数目的tasks存在，如果冲突就报异常。&lt;/p&gt;
 
-&lt;p&gt;然后把这个TaskSetManager加入&lt;code&gt;schedulableBuilder&lt;/code&gt;，这个变量在初始化时候会选择调度策略，比如fifo啥的，加入之后就会按照相应的策略进行调度。&lt;/p&gt;
+&lt;p&gt;然后把这个TaskSetManager加入&lt;code class=&quot;highlighter-rouge&quot;&gt;schedulableBuilder&lt;/code&gt;，这个变量在初始化时候会选择调度策略，比如fifo啥的，加入之后就会按照相应的策略进行调度。&lt;/p&gt;
 
-&lt;p&gt;然后之后的判断是否为本地，和是否已经接收过任务，&lt;code&gt;isLocal&lt;/code&gt;代表本地模式。如果非本地模式，而且还没接收到过任务，就会建立一个TimerTask，然后一直查看有没有接收到任务，因为如果没任务就是空转吗。&lt;/p&gt;
+&lt;p&gt;然后之后的判断是否为本地，和是否已经接收过任务，&lt;code class=&quot;highlighter-rouge&quot;&gt;isLocal&lt;/code&gt;代表本地模式。如果非本地模式，而且还没接收到过任务，就会建立一个TimerTask，然后一直查看有没有接收到任务，因为如果没任务就是空转吗。&lt;/p&gt;
 
-&lt;p&gt;最后backend就会让这个tasks唤醒。&lt;code&gt;backend.reviveOffers()&lt;/code&gt;,这里我们的backend通常是&lt;code&gt;CoarseGrainedSchedulerBackend&lt;/code&gt;，在执行reviveOffers之后，&lt;code&gt;driverEndpoint&lt;/code&gt;会send消息，然后backend的receive函数会接收到消息，然后执行操作。看CoarseGrainedSchedulerBackend 的receive函数。&lt;/p&gt;
+&lt;p&gt;最后backend就会让这个tasks唤醒。&lt;code class=&quot;highlighter-rouge&quot;&gt;backend.reviveOffers()&lt;/code&gt;,这里我们的backend通常是&lt;code class=&quot;highlighter-rouge&quot;&gt;CoarseGrainedSchedulerBackend&lt;/code&gt;，在执行reviveOffers之后，&lt;code class=&quot;highlighter-rouge&quot;&gt;driverEndpoint&lt;/code&gt;会send消息，然后backend的receive函数会接收到消息，然后执行操作。看CoarseGrainedSchedulerBackend 的receive函数。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;override def receive: PartialFunction[Any, Unit] = {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def receive: PartialFunction[Any, Unit] = {
 ...
 case ReviveOffers =&amp;gt;
   makeOffers()
 ...
   }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;pre&gt;&lt;code&gt;private def makeOffers() {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def makeOffers() {
   // Filter out executors under killing
   val activeExecutors = executorDataMap.filterKeys(executorIsAlive)
   val workOffers = activeExecutors.map { case (id, executorData) =&amp;gt;
@@ -567,15 +583,15 @@ case ReviveOffers =&amp;gt;
   launchTasks(scheduler.resourceOffers(workOffers))
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;p&gt;上面代码显示筛选出存活的&lt;code&gt;Executors&lt;/code&gt;，然后就创建出&lt;code&gt;workerOffers&lt;/code&gt;,参数是executorId,host,frescoers.&lt;/p&gt;
+&lt;p&gt;上面代码显示筛选出存活的&lt;code class=&quot;highlighter-rouge&quot;&gt;Executors&lt;/code&gt;，然后就创建出&lt;code class=&quot;highlighter-rouge&quot;&gt;workerOffers&lt;/code&gt;,参数是executorId,host,frescoers.&lt;/p&gt;
 
-&lt;a name=&quot;L......task&quot;&gt;&lt;/a&gt;
-&lt;h3&gt;执行task&lt;/h3&gt;
+&lt;h3 id=&quot;执行task&quot;&gt;执行task&lt;/h3&gt;
 
 &lt;p&gt;然后就launchTasks。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;private def launchTasks(tasks: Seq[Seq[TaskDescription]]) {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def launchTasks(tasks: Seq[Seq[TaskDescription]]) {
   for (task &amp;lt;- tasks.flatten) {
     val serializedTask = ser.serialize(task)
     if (serializedTask.limit &amp;gt;= maxRpcMessageSize) {
@@ -603,14 +619,15 @@ case ReviveOffers =&amp;gt;
   }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;p&gt;上面的代码显示将task序列化，然后根据task.executorId 给他分配executor，然后就&lt;code&gt;executorData.executorEndpoint.send(LaunchTask(new SerializableBuffer(serializedTask)))&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;上面的代码显示将task序列化，然后根据task.executorId 给他分配executor，然后就&lt;code class=&quot;highlighter-rouge&quot;&gt;executorData.executorEndpoint.send(LaunchTask(new SerializableBuffer(serializedTask)))&lt;/code&gt;.&lt;/p&gt;
 
-&lt;p&gt;这里有一个&lt;code&gt;executorEndPoint&lt;/code&gt;,之前前面有driverEndPoint(出现在backend.reviveOffer那里)，这两个端口的基类都是&lt;code&gt;RpcEndpointRef&lt;/code&gt;。RpcEndpointRef是RpcEndPoint的远程引用，是线程安全的。&lt;/p&gt;
+&lt;p&gt;这里有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;executorEndPoint&lt;/code&gt;,之前前面有driverEndPoint(出现在backend.reviveOffer那里)，这两个端口的基类都是&lt;code class=&quot;highlighter-rouge&quot;&gt;RpcEndpointRef&lt;/code&gt;。RpcEndpointRef是RpcEndPoint的远程引用，是线程安全的。&lt;/p&gt;
 
 &lt;p&gt;RpcEndpoint是 RPC[Remote Procedure Call ：远程过程调用]中定义了收到的消息将触发哪个方法。&lt;/p&gt;
 
-&lt;p&gt;同时清楚的阐述了生命周期，构造-&gt; onStart -&gt; receive* -&gt; onStop&lt;/p&gt;
+&lt;p&gt;同时清楚的阐述了生命周期，构造-&amp;gt; onStart -&amp;gt; receive* -&amp;gt; onStop&lt;/p&gt;
 
 &lt;p&gt;这里receive* 是指receive 和 receiveAndReply。&lt;/p&gt;
 
@@ -618,9 +635,9 @@ case ReviveOffers =&amp;gt;
 
 &lt;p&gt;receive是无需等待答复，而receiveAndReply是会阻塞线程，直至有答复的。(参考：http://www.07net01.com/2016/04/1434116.html)&lt;/p&gt;
 
-&lt;p&gt;然后这里的driverEndPoint就是代表这个信息会发给&lt;code&gt;CoarseGrainedSchedulerBackEnd&lt;/code&gt;，executorEndPoint就是发给&lt;code&gt;coarseGrainedExecutorBackEnd&lt;/code&gt;当然就是发给&lt;code&gt;coarseGrainedExecutorBackEnd&lt;/code&gt;。接下来去看相应的recieve代码。&lt;/p&gt;
+&lt;p&gt;然后这里的driverEndPoint就是代表这个信息会发给&lt;code class=&quot;highlighter-rouge&quot;&gt;CoarseGrainedSchedulerBackEnd&lt;/code&gt;，executorEndPoint就是发给&lt;code class=&quot;highlighter-rouge&quot;&gt;coarseGrainedExecutorBackEnd&lt;/code&gt;当然就是发给&lt;code class=&quot;highlighter-rouge&quot;&gt;coarseGrainedExecutorBackEnd&lt;/code&gt;。接下来去看相应的recieve代码。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;override def receive: PartialFunction[Any, Unit] = {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def receive: PartialFunction[Any, Unit] = {
 ...
 
     case LaunchTask(data) =&amp;gt;
@@ -635,10 +652,11 @@ case ReviveOffers =&amp;gt;
 ...
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;p&gt;这里先将传过来的数据反序列化，然后&lt;code&gt;executor.launchTask&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;这里先将传过来的数据反序列化，然后&lt;code class=&quot;highlighter-rouge&quot;&gt;executor.launchTask&lt;/code&gt;.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;def launchTask(
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def launchTask(
     context: ExecutorBackend,
     taskId: Long,
     attemptNumber: Int,
@@ -650,17 +668,17 @@ case ReviveOffers =&amp;gt;
   threadPool.execute(tr)
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;这里新建了taskRunner，然后之后交由线程池来运行，线程池既然要运行taskRunner，必定是运行taskRunner的run方法。看taskRunner的run方法，代码太长，懒得贴，大概描述下。&lt;/p&gt;
 
-&lt;p&gt;主要就是设置参数，属性，反序列化出task等等，之后就要调用task.runTask方法。这里的task可能是&lt;code&gt;ShuffleMapTask&lt;/code&gt;也可能是&lt;code&gt;ResultTask&lt;/code&gt;，所以我们分别看这两种task的run方法。&lt;/p&gt;
+&lt;p&gt;主要就是设置参数，属性，反序列化出task等等，之后就要调用task.runTask方法。这里的task可能是&lt;code class=&quot;highlighter-rouge&quot;&gt;ShuffleMapTask&lt;/code&gt;也可能是&lt;code class=&quot;highlighter-rouge&quot;&gt;ResultTask&lt;/code&gt;，所以我们分别看这两种task的run方法。&lt;/p&gt;
 
-&lt;a name=&quot;ShuffleMapTask&quot;&gt;&lt;/a&gt;
-&lt;h4&gt;ShuffleMapTask&lt;/h4&gt;
+&lt;h4 id=&quot;shufflemaptask&quot;&gt;ShuffleMapTask&lt;/h4&gt;
 
-&lt;p&gt;先看&lt;code&gt;ShuffleMapTask&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;先看&lt;code class=&quot;highlighter-rouge&quot;&gt;ShuffleMapTask&lt;/code&gt;。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;override def runTask(context: TaskContext): MapStatus = {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def runTask(context: TaskContext): MapStatus = {
   // Deserialize the RDD using the broadcast variable.
   val deserializeStartTime = System.currentTimeMillis()
   val ser = SparkEnv.get.closureSerializer.newInstance()
@@ -688,15 +706,15 @@ case ReviveOffers =&amp;gt;
   }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;前面部分代码就是反序列化那些，主要看中间的代码。获得shuffleManager,然后getWriter。因为shuffleMapTask有Shuffle操作，所以要shuffleWrite。&lt;/p&gt;
 
-&lt;a name=&quot;ResultTask&quot;&gt;&lt;/a&gt;
-&lt;h4&gt;ResultTask&lt;/h4&gt;
+&lt;h4 id=&quot;resulttask&quot;&gt;ResultTask&lt;/h4&gt;
 
 &lt;p&gt;看下ResultTask的runTask。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;  override def runTask(context: TaskContext): U = {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  override def runTask(context: TaskContext): U = {
     // Deserialize the RDD and the func using the broadcast variables.
     val deserializeStartTime = System.currentTimeMillis()
     val ser = SparkEnv.get.closureSerializer.newInstance()
@@ -707,15 +725,14 @@ case ReviveOffers =&amp;gt;
     func(context, rdd.iterator(partition, context))
   }
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;跟那个差不多，只不过不是shuffleWrite，是func.&lt;/p&gt;
 
-&lt;a name=&quot;rdd..........&quot;&gt;&lt;/a&gt;
-&lt;h4&gt;rdd 迭代链&lt;/h4&gt;
+&lt;h4 id=&quot;rdd-迭代链&quot;&gt;rdd 迭代链&lt;/h4&gt;
 
-&lt;p&gt;看这行代码&lt;code&gt;writer.write(rdd.iterator(partition, context).asInstanceOf[Iterator[_ &amp;lt;: Product2[Any, Any]]])&lt;/code&gt;，看write方法里面的参数，rdd.iterator方法。&lt;/p&gt;
+&lt;p&gt;看这行代码&lt;code class=&quot;highlighter-rouge&quot;&gt;writer.write(rdd.iterator(partition, context).asInstanceOf[Iterator[_ &amp;lt;: Product2[Any, Any]]])&lt;/code&gt;，看write方法里面的参数，rdd.iterator方法。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;final def iterator(split: Partition, context: TaskContext): Iterator[T] = {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;final def iterator(split: Partition, context: TaskContext): Iterator[T] = {
   if (storageLevel != StorageLevel.NONE) {
     getOrCompute(split, context)
   } else {
@@ -723,14 +740,15 @@ case ReviveOffers =&amp;gt;
   }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;这个方法，是从后面的rdd开始迭代，首先判断这个rdd是否是已经被cache。&lt;/p&gt;
 
 &lt;p&gt;如果已经被cache，getOrCompute，直接get，或者如果没找到就重算一遍，这个代码比较简单，我就不贴了。&lt;/p&gt;
 
-&lt;p&gt;如果没有被cache，则调用&lt;code&gt;computeOrReadCheckpoint&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;如果没有被cache，则调用&lt;code class=&quot;highlighter-rouge&quot;&gt;computeOrReadCheckpoint&lt;/code&gt;。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;private[spark] def computeOrReadCheckpoint(split: Partition, context: TaskContext): Iterator[T] =
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private[spark] def computeOrReadCheckpoint(split: Partition, context: TaskContext): Iterator[T] =
 {
   if (isCheckpointedAndMaterialized) {
     firstParent[T].iterator(split, context)
@@ -739,17 +757,17 @@ case ReviveOffers =&amp;gt;
   }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;如果是检查点，先介绍下检查点。&lt;/p&gt;
 
-&lt;a name=&quot;L.........&quot;&gt;&lt;/a&gt;
-&lt;h4&gt;检查点&lt;/h4&gt;
+&lt;h4 id=&quot;检查点&quot;&gt;检查点&lt;/h4&gt;
 
 &lt;p&gt;检查点机制的实现和持久化的实现有着较大的区别。检查点并非第一次计算就将结果进行存储，而是等到一个作业结束后启动专门的一个作业完成存储的操作。&lt;/p&gt;
 
 &lt;p&gt;checkPoint操作的实现在RDD类中，&lt;em&gt;checkPoint&lt;/em&gt;方法会实例化ReliableRDDCheckpointData用于标记当前的RDD&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;/**
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/**
  * Mark this RDD for checkpointing. It will be saved to a file inside the checkpoint
  * directory set with `SparkContext#setCheckpointDir` and all references to its parent
  * RDDs will be removed. This function must be called before any job has been
@@ -767,10 +785,11 @@ def checkpoint(): Unit = RDDCheckpointData.synchronized {
   }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;p&gt;RDDCheckpointData类内部有一个枚举类型 &lt;code&gt;CheckpointState &lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;RDDCheckpointData类内部有一个枚举类型 &lt;code class=&quot;highlighter-rouge&quot;&gt;CheckpointState &lt;/code&gt;&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;/** 
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/** 
  * Enumeration to manage state transitions of an RDD through checkpointing 
  * [ Initialized --&amp;gt; checkpointing in progress --&amp;gt; checkpointed ]. 
  */  
@@ -779,6 +798,7 @@ private[spark] object CheckpointState extends Enumeration {
   val Initialized, CheckpointingInProgress, Checkpointed = Value  
 } 
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;用于表示RDD检查点的当前状态，其值有Initialized 、CheckpointingInProgress、 checkpointed。其转换过程如下
 (1)Initialized状态&lt;/p&gt;
@@ -791,44 +811,44 @@ private[spark] object CheckpointState extends Enumeration {
 
 &lt;p&gt;(3)Checkpointed状态&lt;/p&gt;
 
-&lt;p&gt;新启动作业完成数据写入操作之后，将建立检查点的RDD的所有依赖全部清除，将RDD内部的RDDCheckpointData对象标记为Checkpointed，&lt;code&gt;将父RDD重新设置为一个CheckPointRDD对象，父RDD的compute方法会直接从系统中读取数据&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;新启动作业完成数据写入操作之后，将建立检查点的RDD的所有依赖全部清除，将RDD内部的RDDCheckpointData对象标记为Checkpointed，&lt;code class=&quot;highlighter-rouge&quot;&gt;将父RDD重新设置为一个CheckPointRDD对象，父RDD的compute方法会直接从系统中读取数据&lt;/code&gt;。&lt;/p&gt;
 
 &lt;p&gt;如上只简单地介绍了相关概念，详细介绍请参看：&lt;a href=&quot;https://github.com/JerryLead/SparkInternals/blob/master/markdown/6-CacheAndCheckpoint.md&quot;&gt;https://github.com/JerryLead/SparkInternals/blob/master/markdown/6-CacheAndCheckpoint.md&lt;/a&gt;&lt;/p&gt;
 
-&lt;a name=&quot;compute....&quot;&gt;&lt;/a&gt;
-&lt;h3&gt;compute 链&lt;/h3&gt;
-
+&lt;h3 id=&quot;compute-链&quot;&gt;compute 链&lt;/h3&gt;
 &lt;p&gt;上面有检查点的就直接去父Rdd的compute读取数据了。而非检查点，就compute，compute是一个链。
-拿&lt;code&gt;MapPartitionsRDD&lt;/code&gt;举个例子，看看它的compute方法。&lt;/p&gt;
+拿&lt;code class=&quot;highlighter-rouge&quot;&gt;MapPartitionsRDD&lt;/code&gt;举个例子，看看它的compute方法。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;override def compute(split: Partition, context: TaskContext): Iterator[U] =
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def compute(split: Partition, context: TaskContext): Iterator[U] =
 f(context, split.index, firstParent[T].iterator(split, context))
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;看这里 compute还是调用了iterator，所以还是接着往前找了，直到找到checkpoint或者就是到rdd头。&lt;/p&gt;
 
 &lt;p&gt;再看看其他的rdd的compute方法吧。&lt;/p&gt;
 
-&lt;p&gt;看看&lt;code&gt;ShuffleRdd&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;看看&lt;code class=&quot;highlighter-rouge&quot;&gt;ShuffleRdd&lt;/code&gt;.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;override def compute(split: Partition, context: TaskContext): Iterator[(K, C)] = {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def compute(split: Partition, context: TaskContext): Iterator[(K, C)] = {
   val dep = dependencies.head.asInstanceOf[ShuffleDependency[K, V, C]]
   SparkEnv.get.shuffleManager.getReader(dep.shuffleHandle, split.index, split.index + 1, context)
     .read()
     .asInstanceOf[Iterator[(K, C)]]
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;然后这里shuffleRdd的compute方法就是从shuffle 那里read 数据，这算是一个stage的开始了。&lt;/p&gt;
 
 &lt;p&gt;当然一个stage的开始未必是shuffleRead开始啦，比如textFile，它最终是返回一个HadoopRdd，然后他的compute方法，就是返回一个迭代器。&lt;/p&gt;
 
-&lt;a name=&quot;L......&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;参考&lt;/h2&gt;
+&lt;h2 id=&quot;参考&quot;&gt;参考&lt;/h2&gt;
 
 &lt;p&gt; &lt;a href=&quot;http://blog.csdn.net/jiangpeng59/article/details/53213694&quot;&gt;Spark核心RDD：计算函数compute&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt; &lt;a href=&quot;http://blog.csdn.net/jiangpeng59/article/details/53212416&quot;&gt;Spark基础随笔：持久化&amp;amp;检查点&lt;/a&gt;&lt;/p&gt;
+
 </description>
                 <link>http://bbwff.github.io/spark/2016/12/22/spark%E5%BA%94%E7%94%A8%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B</link>
                 <guid>http://bbwff.github.io/spark/2016/12/22/spark应用执行流程</guid>
@@ -837,17 +857,15 @@ f(context, split.index, firstParent[T].iterator(split, context))
 
         <item>
                 <title>spark统一内存管理</title>
-                <description>&lt;a name=&quot;Background&quot;&gt;&lt;/a&gt;
-&lt;h3&gt;Background&lt;/h3&gt;
-
+                <description>
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 &lt;p&gt;spark统一内存管理是spark1.6.0的新特性，是对shuffle memory 和 storage memory 进行统一的管理，打破了以往的参数限制。&lt;/p&gt;
 
-&lt;a name=&quot;L.....................&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;非统一内存管理&lt;/h2&gt;
+&lt;h2 id=&quot;非统一内存管理&quot;&gt;非统一内存管理&lt;/h2&gt;
 
-&lt;p&gt;spark在1.6 之前都是非统一内存管理，通过设置&lt;code&gt;spark.shuffle.memoryFraction&lt;/code&gt; 和 &lt;code&gt;spark.storage.memoryFraction&lt;/code&gt;来设置shuffle 和storage的memory 大小。看下&lt;code&gt;StaticMemoryManager&lt;/code&gt;的获得最大shuffle和storage memory的函数。&lt;/p&gt;
+&lt;p&gt;spark在1.6 之前都是非统一内存管理，通过设置&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.shuffle.memoryFraction&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;spark.storage.memoryFraction&lt;/code&gt;来设置shuffle 和storage的memory 大小。看下&lt;code class=&quot;highlighter-rouge&quot;&gt;StaticMemoryManager&lt;/code&gt;的获得最大shuffle和storage memory的函数。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;private def getMaxStorageMemory(conf: SparkConf): Long = {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def getMaxStorageMemory(conf: SparkConf): Long = {
   val systemMaxMemory = conf.getLong(&quot;spark.testing.memory&quot;, Runtime.getRuntime.maxMemory)
   val memoryFraction = conf.getDouble(&quot;spark.storage.memoryFraction&quot;, 0.6)
   val safetyFraction = conf.getDouble(&quot;spark.storage.safetyFraction&quot;, 0.9)
@@ -865,15 +883,14 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
   (systemMaxMemory * memoryFraction * safetyFraction).toLong
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;可以看出，&lt;code class=&quot;highlighter-rouge&quot;&gt;systemMaxMemory&lt;/code&gt;是通过参数&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.testing.memory&lt;/code&gt;来获得，如果这个参数没有设置，就取虚拟机内存，然后shuffle 和 storage都有安全系数，最后可用的最大内存都是：系统最大内存*比例系数*安全系数。&lt;/p&gt;
 
-&lt;p&gt;可以看出，&lt;code&gt;systemMaxMemory&lt;/code&gt;是通过参数&lt;code&gt;spark.testing.memory&lt;/code&gt;来获得，如果这个参数没有设置，就取虚拟机内存，然后shuffle 和 storage都有安全系数，最后可用的最大内存都是：系统最大内存*比例系数*安全系数。&lt;/p&gt;
+&lt;h2 id=&quot;统一内存管理&quot;&gt;统一内存管理&lt;/h2&gt;
 
-&lt;a name=&quot;L..................&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;统一内存管理&lt;/h2&gt;
+&lt;p&gt;spark 1.6.0 出现了统一内存管理，是打破了shuffle 内存和storage内存的静态限制。通俗的描述，就是如果storage内存不够，而shuffle内存剩余就能借内存，如果shuffle内存不足，此时如果storage已经超出了&lt;code class=&quot;highlighter-rouge&quot;&gt;storageRegionSize&lt;/code&gt;，那么就驱逐当前使用storage内存-&lt;code class=&quot;highlighter-rouge&quot;&gt;storageRegionSize&lt;/code&gt;，如果storage 使用没有超过&lt;code class=&quot;highlighter-rouge&quot;&gt;storageRegionSize&lt;/code&gt;，那么则把它剩余的都可以借给shuffle使用。&lt;/p&gt;
 
-&lt;p&gt;spark 1.6.0 出现了统一内存管理，是打破了shuffle 内存和storage内存的静态限制。通俗的描述，就是如果storage内存不够，而shuffle内存剩余就能借内存，如果shuffle内存不足，此时如果storage已经超出了&lt;code&gt;storageRegionSize&lt;/code&gt;，那么就驱逐当前使用storage内存-&lt;code&gt;storageRegionSize&lt;/code&gt;，如果storage 使用没有超过&lt;code&gt;storageRegionSize&lt;/code&gt;，那么则把它剩余的都可以借给shuffle使用。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;  private def getMaxMemory(conf: SparkConf): Long = {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  private def getMaxMemory(conf: SparkConf): Long = {
     val systemMemory = conf.getLong(&quot;spark.testing.memory&quot;, Runtime.getRuntime.maxMemory)
     val reservedMemory = conf.getLong(&quot;spark.testing.reservedMemory&quot;,
       if (conf.contains(&quot;spark.testing&quot;)) 0 else RESERVED_SYSTEM_MEMORY_BYTES)
@@ -897,17 +914,16 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
     (usableMemory * memoryFraction).toLong
   }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;这个是统一内存管理的获得最大内存的函数，因为shuffle和storage是统一管理的，所以只有一个获得统一最大内存的函数。&lt;code class=&quot;highlighter-rouge&quot;&gt;usableMemory = systemMemory - reservedMemory&lt;/code&gt;.&lt;/p&gt;
 
-&lt;p&gt;这个是统一内存管理的获得最大内存的函数，因为shuffle和storage是统一管理的，所以只有一个获得统一最大内存的函数。&lt;code&gt;usableMemory = systemMemory - reservedMemory&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;最大内存=&lt;code class=&quot;highlighter-rouge&quot;&gt;usableMemory * memoryFraction&lt;/code&gt;.&lt;/p&gt;
 
-&lt;p&gt;最大内存=&lt;code&gt;usableMemory * memoryFraction&lt;/code&gt;.&lt;/p&gt;
+&lt;h2 id=&quot;统一内存管理的使用&quot;&gt;统一内存管理的使用&lt;/h2&gt;
 
-&lt;a name=&quot;L...........................&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;统一内存管理的使用&lt;/h2&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;UnifiedMemoryManager&lt;/code&gt;是在一个静态类里面的&lt;code class=&quot;highlighter-rouge&quot;&gt;apply&lt;/code&gt;方法调用的。&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;UnifiedMemoryManager&lt;/code&gt;是在一个静态类里面的&lt;code&gt;apply&lt;/code&gt;方法调用的。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;def apply(conf: SparkConf, numCores: Int): UnifiedMemoryManager = {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def apply(conf: SparkConf, numCores: Int): UnifiedMemoryManager = {
   val maxMemory = getMaxMemory(conf)
   new UnifiedMemoryManager(
     conf,
@@ -917,20 +933,22 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
     numCores = numCores)
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
-&lt;p&gt;然后通过 find Uages 找到是在 &lt;code&gt;sparkEnv&lt;/code&gt;里面调用。&lt;/p&gt;
+&lt;p&gt;然后通过 find Uages 找到是在 &lt;code class=&quot;highlighter-rouge&quot;&gt;sparkEnv&lt;/code&gt;里面调用。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;val memoryManager: MemoryManager =
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;val memoryManager: MemoryManager =
   if (useLegacyMemoryManager) {
     new StaticMemoryManager(conf, numUsableCores)
   } else {
     UnifiedMemoryManager(conf, numUsableCores)
   }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;是通过判断参数，判断是使用统一内存管理还是非内存管理。&lt;/p&gt;
 
-&lt;p&gt;然后通过查看usages 发现是在 &lt;code&gt;CoarseGrainedExecutorBackEnd&lt;/code&gt; 和 &lt;code&gt;MesosExecutorBackEnd&lt;/code&gt;里面调用的，所以是每个executor都有一个统一内存管理的实例(...很显然，逻辑也是这样)。&lt;/p&gt;
+&lt;p&gt;然后通过查看usages 发现是在 &lt;code class=&quot;highlighter-rouge&quot;&gt;CoarseGrainedExecutorBackEnd&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;MesosExecutorBackEnd&lt;/code&gt;里面调用的，所以是每个executor都有一个统一内存管理的实例(…很显然，逻辑也是这样)。&lt;/p&gt;
 </description>
                 <link>http://bbwff.github.io/spark/2016/12/19/spark%E7%BB%9F%E4%B8%80%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86</link>
                 <guid>http://bbwff.github.io/spark/2016/12/19/spark统一内存管理</guid>
@@ -939,14 +957,15 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 
         <item>
                 <title>理解动态规划</title>
-                <description>&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
+                <description>
+&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;最近在看动态规划，挺难理解的，慢慢看，把心得记录下。&lt;/p&gt;
 
-&lt;a name=&quot;L............&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;参考资料&lt;/h2&gt;
+&lt;h2 id=&quot;参考资料&quot;&gt;参考资料&lt;/h2&gt;
 
 &lt;p&gt;http://blog.csdn.net/pi9nc/article/details/8142876&lt;/p&gt;
+
 </description>
                 <link>http://bbwff.github.io/%E7%AE%97%E6%B3%95/2016/12/14/%E7%90%86%E8%A7%A3%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92</link>
                 <guid>http://bbwff.github.io/%E7%AE%97%E6%B3%95/2016/12/14/理解动态规划</guid>
@@ -955,20 +974,17 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 
         <item>
                 <title>区间内1出现次数</title>
-                <description>&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
+                <description>
+&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;求出1~13的整数中1出现的次数,并算出100~1300的整数中1出现的次数？为此他特别数了一下1~13中包含1的数字有1、10、11、12、13因此共出现6次,但是区间大一点怎么求呢？&lt;/p&gt;
 
-&lt;a name=&quot;L............&quot;&gt;&lt;/a&gt;
-&lt;h1&gt;题目描述&lt;/h1&gt;
+&lt;h1 id=&quot;题目描述&quot;&gt;题目描述&lt;/h1&gt;
 
-&lt;p&gt;求出1~13的整数中1出现的次数,并算出100~1300的整数中1出现的次数？为此他特别数了一下1~13中包含1的数字有1、10、11、12、13因此共出现6次,但是对于后面问题他就没辙了。ACMer希望你们帮帮他,并把问题更加普遍化,可以很快的求出任意非负整数区间中1出现的次数。&lt;/p&gt;
+&lt;p&gt;求出1~13的整数中1出现的次数,并算出100~1300的整数中1出现的次数？为此他特别数了一下1~13中包含1的数字有1、10、11、12、13因此共出现6次,但是对于后面问题他就没辙了。ACMer希望你们帮帮他,并把问题更加普遍化,可以很快的求出任意非负整数区间中1出现的次数。
+&lt;!--more--&gt;&lt;/p&gt;
 
-&lt;!--more--&gt;
-
-
-&lt;a name=&quot;L............&quot;&gt;&lt;/a&gt;
-&lt;h1&gt;解题思路&lt;/h1&gt;
+&lt;h1 id=&quot;解题思路&quot;&gt;解题思路&lt;/h1&gt;
 
 &lt;p&gt;刚开始没理解清楚题目的意思，理解题目很关键。&lt;/p&gt;
 
@@ -981,21 +997,26 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 &lt;p&gt;举个例子吧，我们看十位上面为1的个数。&lt;/p&gt;
 
 &lt;ol&gt;
-&lt;li&gt;&lt;p&gt;1118这个数字，因为十位就是1，所以，高位是任意数字，还有地位是任意数字他都有1，高位是11，地位是8， 可以分为两个区间，在0-1110这个区间，前面的高位可以是0-10 任意数字和后面地位的0-9任意数字，或者前面高位是11 然后后面低位为0 ，而在1111-1118这个区间，还有8个让十位为1的，所以次数就是11*10+1+8.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;1128这个数字，十位是2，所以这个区间如果让十位为1，只能算到0-1119这个区间里面十位为1的个数。也就是高位是0-11随意，低位时0-9随意。所以这样情况出现次数就是（11+1）*10=120.&lt;/p&gt;&lt;/li&gt;
-&lt;li&gt;&lt;p&gt;1108这个数字，十位是0，所以如果十位为1，只能算到0-1019这个地方。次数应该是11*10=110.&lt;/p&gt;
+  &lt;li&gt;
+    &lt;p&gt;1118这个数字，因为十位就是1，所以，高位是任意数字，还有地位是任意数字他都有1，高位是11，地位是8， 可以分为两个区间，在0-1110这个区间，前面的高位可以是0-10 任意数字和后面地位的0-9任意数字，或者前面高位是11 然后后面低位为0 ，而在1111-1118这个区间，还有8个让十位为1的，所以次数就是11*10+1+8.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;1128这个数字，十位是2，所以这个区间如果让十位为1，只能算到0-1119这个区间里面十位为1的个数。也就是高位是0-11随意，低位时0-9随意。所以这样情况出现次数就是（11+1）*10=120.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;1108这个数字，十位是0，所以如果十位为1，只能算到0-1019这个地方。次数应该是11*10=110.&lt;/p&gt;
 
-&lt;p&gt;  所以应该可以看出来了，当前位为1，则，高位*当前位权重+低位+1。&lt;/p&gt;
+    &lt;p&gt;所以应该可以看出来了，当前位为1，则，高位*当前位权重+低位+1。&lt;/p&gt;
 
-&lt;p&gt;  当前位大于1，则（高位+1）*当前位权重。&lt;/p&gt;
+    &lt;p&gt;当前位大于1，则（高位+1）*当前位权重。&lt;/p&gt;
 
-&lt;p&gt;  当前位小于1，则高位*当前位权重。&lt;/p&gt;&lt;/li&gt;
+    &lt;p&gt;当前位小于1，则高位*当前位权重。&lt;/p&gt;
+  &lt;/li&gt;
 &lt;/ol&gt;
-
 
 &lt;p&gt;代码如下：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;JAVA&quot;&gt;public int NumberOf1Between1AndN_Solution(int n) {
+&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;public int NumberOf1Between1AndN_Solution(int n) {
 
     int i=1;
     int total=0;
@@ -1024,8 +1045,7 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;a name=&quot;L......&quot;&gt;&lt;/a&gt;
-&lt;h1&gt;扩展&lt;/h1&gt;
+&lt;h1 id=&quot;扩展&quot;&gt;扩展&lt;/h1&gt;
 
 &lt;p&gt;以上思路可以扩展到区间内x出现的次数。&lt;/p&gt;
 </description>
@@ -1036,22 +1056,17 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 
         <item>
                 <title>字符串全排列</title>
-                <description>&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
+                <description>
+&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;最近在做一些牛客网上的题，遇到一道题，是对一个字符串，按字典序输出它的全排列。&lt;/p&gt;
 
-&lt;a name=&quot;L............&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;题目描述&lt;/h2&gt;
+&lt;h2 id=&quot;题目描述&quot;&gt;题目描述&lt;/h2&gt;
 
-&lt;p&gt;输入一个字符串,按字典序打印出该字符串中字符的所有排列。例如输入字符串abc,则打印出由字符a,b,c所能排列出来的所有字符串abc,acb,bac,bca,cab和cba。 &lt;/p&gt;
-
-&lt;!--more--&gt;
-
-
-&lt;a name=&quot;L............&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;解题过程&lt;/h2&gt;
-
-&lt;p&gt;一开始受数学的思想影响严重，总是觉得全排列是先从n个字符里面随机取出一个，然后再从n-1里面随机取出一个字符，直到取完为止。但是这样直接分支来写，很难写出来的。
+&lt;p&gt;输入一个字符串,按字典序打印出该字符串中字符的所有排列。例如输入字符串abc,则打印出由字符a,b,c所能排列出来的所有字符串abc,acb,bac,bca,cab和cba。 
+&lt;!--more--&gt;&lt;/p&gt;
+&lt;h2 id=&quot;解题过程&quot;&gt;解题过程&lt;/h2&gt;
+&lt;p&gt;一开始受数学的思想影响严重，总是觉得全排列是先从n个字符里面随机取出一个，然后再从n-1里面随机取出一个字符，直到取完为止。但是这样直接分支来写，很难写出来的。 
 可以把这个过程转为递归的过程。像数学归纳法一样，一步一步化繁为简。
 数学归纳法的思想如下：
 一般地，证明一个与自然数n有关的命题P(n），有如下步骤：
@@ -1063,15 +1078,15 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 初始条件：当只有一个字符的时候，他的全排列就是他本身。
 1）当有两个字符的时候，他的全排列就是所有字符和第一个字符交换之后的第一个字符加后面一个字符的全排列。
 2）当有K+1字符的时候，他的全排列就是所有字符分别与第一个字符交换之后的第一个字符加后面k个字符的全排列。
-综合 (1) (2)，对一切自然数n(n&gt;0),这个命题都成立。&lt;/p&gt;
+综合 (1) (2)，对一切自然数n(n&amp;gt;0),这个命题都成立。&lt;/p&gt;
 
 &lt;p&gt;然后数学归纳法，一般是由初始条件到一般条件的归纳，跟递归的过程刚好相反，但只要我们归纳出了这个规律，写递归就简单了。&lt;/p&gt;
 
-&lt;p&gt;设一组数p = {r1, r2, r3, ... ,rn}, 全排列为perm(p)，pn = p - {rn}。
-因此perm(p) = r1perm(p1), r2perm(p2), r3perm(p3), ... , rnperm(pn)。当n = 1时perm(p} = r1。
+&lt;p&gt;设一组数p = {r1, r2, r3, … ,rn}, 全排列为perm(p)，pn = p - {rn}。
+因此perm(p) = r1perm(p1), r2perm(p2), r3perm(p3), … , rnperm(pn)。当n = 1时perm(p} = r1。
 其实就是跟归纳一个反的过程。代码如下&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;JAVA&quot;&gt;import java.util.*;
+&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;import java.util.*;
 
 /**
  * Created by bbw on 16/12/11.
@@ -1111,6 +1126,7 @@ public class Permutation {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
+
 </description>
                 <link>http://bbwff.github.io/%E7%AE%97%E6%B3%95/2016/12/12/%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%85%A8%E6%8E%92%E5%88%97-JAVA</link>
                 <guid>http://bbwff.github.io/%E7%AE%97%E6%B3%95/2016/12/12/字符串全排列-JAVA</guid>
@@ -1119,28 +1135,55 @@ public class Permutation {
 
         <item>
                 <title>Test</title>
-                <description>&lt;a name=&quot;Background&quot;&gt;&lt;/a&gt;
-&lt;h3&gt;Background&lt;/h3&gt;
-
+                <description>
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 &lt;p&gt;Hello World!
-&amp;lt;!DOCTYPE html&gt;
+&amp;lt;!DOCTYPE html&amp;gt;&lt;/p&gt;
 &lt;html&gt;
 &lt;head&gt;
-&lt;meta charset=&quot;UTF-8&quot;&gt;
+&lt;meta charset=&quot;UTF-8&quot; /&gt;
 &lt;title&gt;Bootstrap 附加导航（Affix）插件&lt;/title&gt;
-&lt;link rel=&quot;stylesheet&quot; href=&quot;http://cdn.static.runoob.com/libs/bootstrap/3.3.7/css/bootstrap.min.css&quot;&gt;&lt;/p&gt;
-
+&lt;link rel=&quot;stylesheet&quot; href=&quot;http://cdn.static.runoob.com/libs/bootstrap/3.3.7/css/bootstrap.min.css&quot; /&gt;
 &lt;script src=&quot;http://cdn.static.runoob.com/libs/jquery/2.1.1/jquery.min.js&quot;&gt;&lt;/script&gt;
-
-
 &lt;script src=&quot;http://cdn.static.runoob.com/libs/bootstrap/3.3.7/js/bootstrap.min.js&quot;&gt;&lt;/script&gt;
-
-
-
-
-&lt;p&gt;&lt;/head&gt;
-&lt;body data-spy=&quot;scroll&quot; data-target=&quot;#myScrollspy&quot;&gt;&lt;/p&gt;
-
+&lt;style&gt;
+/* Custom Styles */
+    ul.nav-tabs{
+        width: 140px;
+        margin-top: 20px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.067);
+    }
+    ul.nav-tabs li{
+        margin: 0;
+        border-top: 1px solid #ddd;
+    }
+    ul.nav-tabs li:first-child{
+        border-top: none;
+    }
+    ul.nav-tabs li a{
+        margin: 0;
+        padding: 8px 16px;
+        border-radius: 0;
+    }
+    ul.nav-tabs li.active a, ul.nav-tabs li.active a:hover{
+        color: #fff;
+        background: #0088cc;
+        border: 1px solid #0088cc;
+    }
+    ul.nav-tabs li:first-child a{
+        border-radius: 4px 4px 0 0;
+    }
+    ul.nav-tabs li:last-child a{
+        border-radius: 0 0 4px 4px;
+    }
+    ul.nav-tabs.affix{
+        top: 30px; /* Set the top position of pinned element */
+    }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body data-spy=&quot;scroll&quot; data-target=&quot;#myScrollspy&quot;&gt;
 &lt;div class=&quot;container&quot;&gt;
    &lt;div class=&quot;jumbotron&quot;&gt;
         &lt;h1&gt;Bootstrap Affix&lt;/h1&gt;
@@ -1159,22 +1202,22 @@ public class Permutation {
             &lt;h2 id=&quot;section-1&quot;&gt;第一部分&lt;/h2&gt;
             &lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam eu sem tempor, varius quam at, luctus dui. Mauris magna metus, dapibus nec turpis vel, semper malesuada ante. Vestibulum id metus ac nisl bibendum scelerisque non non purus. Suspendisse varius nibh non aliquet sagittis. In tincidunt orci sit amet elementum vestibulum. Vivamus fermentum in arcu in aliquam. Quisque aliquam porta odio in fringilla. Vivamus nisl leo, blandit at bibendum eu, tristique eget risus. Integer aliquet quam ut elit suscipit, id interdum neque porttitor. Integer faucibus ligula.&lt;/p&gt;
             &lt;p&gt;Vestibulum quis quam ut magna consequat faucibus. Pellentesque eget nisi a mi suscipit tincidunt. Ut tempus dictum risus. Pellentesque viverra sagittis quam at mattis. Suspendisse potenti. Aliquam sit amet gravida nibh, facilisis gravida odio. Phasellus auctor velit at lacus blandit, commodo iaculis justo viverra. Etiam vitae est arcu. Mauris vel congue dolor. Aliquam eget mi mi. Fusce quam tortor, commodo ac dui quis, bibendum viverra erat. Maecenas mattis lectus enim, quis tincidunt dui molestie euismod. Curabitur et diam tristique, accumsan nunc eu, hendrerit tellus.&lt;/p&gt;
-            &lt;hr&gt;
+            &lt;hr /&gt;
             &lt;h2 id=&quot;section-2&quot;&gt;第二部分&lt;/h2&gt;
             &lt;p&gt;Nullam hendrerit justo non leo aliquet imperdiet. Etiam in sagittis lectus. Suspendisse ultrices placerat accumsan. Mauris quis dapibus orci. In dapibus velit blandit pharetra tincidunt. Quisque non sapien nec lacus condimentum facilisis ut iaculis enim. Sed viverra interdum bibendum. Donec ac sollicitudin dolor. Sed fringilla vitae lacus at rutrum. Phasellus congue vestibulum ligula sed consequat.&lt;/p&gt;
             &lt;p&gt;Vestibulum consectetur scelerisque lacus, ac fermentum lorem convallis sed. Nam odio tortor, dictum quis malesuada at, pellentesque vitae orci. Vivamus elementum, felis eu auctor lobortis, diam velit egestas lacus, quis fermentum metus ante quis urna. Sed at facilisis libero. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum bibendum blandit dolor. Nunc orci dolor, molestie nec nibh in, hendrerit tincidunt ante. Vivamus sem augue, hendrerit non sapien in, mollis ornare augue.&lt;/p&gt;
-            &lt;hr&gt;
+            &lt;hr /&gt;
             &lt;h2 id=&quot;section-3&quot;&gt;第三部分&lt;/h2&gt;
             &lt;p&gt;Integer pulvinar leo id risus pellentesque vestibulum. Sed diam libero, sodales eget sapien vel, porttitor bibendum enim. Donec sed nibh vitae lorem porttitor blandit in nec ante. Pellentesque vitae metus ipsum. Phasellus sed nunc ac sem malesuada condimentum. Etiam in aliquam lectus. Nam vel sapien diam. Donec pharetra id arcu eget blandit. Proin imperdiet mattis augue in porttitor. Quisque tempus enim id lobortis feugiat. Suspendisse tincidunt risus quis dolor fringilla blandit. Ut sed sapien at purus lacinia porttitor. Nullam iaculis, felis a pretium ornare, dolor nisl semper tortor, vel sagittis lacus est consequat eros. Sed id pretium nisl. Curabitur dolor nisl, laoreet vitae aliquam id, tincidunt sit amet mauris.&lt;/p&gt;
             &lt;p&gt;Phasellus vitae suscipit justo. Mauris pharetra feugiat ante id lacinia. Etiam faucibus mauris id tempor egestas. Duis luctus turpis at accumsan tincidunt. Phasellus risus risus, volutpat vel tellus ac, tincidunt fringilla massa. Etiam hendrerit dolor eget ante rutrum adipiscing. Cras interdum ipsum mattis, tempus mauris vel, semper ipsum. Duis sed dolor ut enim lobortis pellentesque ultricies ac ligula. Pellentesque convallis elit nisi, id vulputate ipsum ullamcorper ut. Cras ac pulvinar purus, ac viverra est. Suspendisse potenti. Integer pellentesque neque et elementum tempus. Curabitur bibendum in ligula ut rhoncus.&lt;/p&gt;
             &lt;p&gt;Quisque pharetra velit id velit iaculis pretium. Nullam a justo sed ligula porta semper eu quis enim. Pellentesque pellentesque, metus at facilisis hendrerit, lectus velit facilisis leo, quis volutpat turpis arcu quis enim. Nulla viverra lorem elementum interdum ultricies. Suspendisse accumsan quam nec ante mollis tempus. Morbi vel accumsan diam, eget convallis tellus. Suspendisse potenti.&lt;/p&gt;
-            &lt;hr&gt;
+            &lt;hr /&gt;
             &lt;h2 id=&quot;section-4&quot;&gt;第四部分&lt;/h2&gt;
             &lt;p&gt;Suspendisse a orci facilisis, dignissim tortor vitae, ultrices mi. Vestibulum a iaculis lacus. Phasellus vitae convallis ligula, nec volutpat tellus. Vivamus scelerisque mollis nisl, nec vehicula elit egestas a. Sed luctus metus id mi gravida, faucibus convallis neque pretium. Maecenas quis sapien ut leo fringilla tempor vitae sit amet leo. Donec imperdiet tempus placerat. Pellentesque pulvinar ultrices nunc sed ultrices. Morbi vel mi pretium, fermentum lacus et, viverra tellus. Phasellus sodales libero nec dui convallis, sit amet fermentum sapien auctor. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Sed eu elementum nibh, quis varius libero.&lt;/p&gt;
             &lt;p&gt;Vestibulum quis quam ut magna consequat faucibus. Pellentesque eget nisi a mi suscipit tincidunt. Ut tempus dictum risus. Pellentesque viverra sagittis quam at mattis. Suspendisse potenti. Aliquam sit amet gravida nibh, facilisis gravida odio. Phasellus auctor velit at lacus blandit, commodo iaculis justo viverra. Etiam vitae est arcu. Mauris vel congue dolor. Aliquam eget mi mi. Fusce quam tortor, commodo ac dui quis, bibendum viverra erat. Maecenas mattis lectus enim, quis tincidunt dui molestie euismod. Curabitur et diam tristique, accumsan nunc eu, hendrerit tellus.&lt;/p&gt;
             &lt;p&gt;Phasellus fermentum, neque sit amet sodales tempor, enim ante interdum eros, eget luctus ipsum eros ut ligula. Nunc ornare erat quis faucibus molestie. Proin malesuada consequat commodo. Mauris iaculis, eros ut dapibus luctus, massa enim elementum purus, sit amet tristique purus purus nec felis. Morbi vestibulum sapien eget porta pulvinar. Nam at quam diam. Proin rhoncus, felis elementum accumsan dictum, felis nisi vestibulum tellus, et ultrices risus felis in orci. Quisque vestibulum sem nisl, vel congue leo dictum nec. Cras eget est at velit sagittis ullamcorper vel et lectus. In hac habitasse platea dictumst. Etiam interdum iaculis velit, vel sollicitudin lorem feugiat sit amet. Etiam luctus, quam sed sodales aliquam, lorem libero hendrerit urna, faucibus rhoncus massa nibh at felis. Curabitur ac tempus nulla, ut semper erat. Vivamus porta ullamcorper sem, ornare egestas mauris facilisis id.&lt;/p&gt;
             &lt;p&gt;Ut ut risus nisl. Fusce porttitor eros at magna luctus, non congue nulla eleifend. Aenean porttitor feugiat dolor sit amet facilisis. Pellentesque venenatis magna et risus commodo, a commodo turpis gravida. Nam mollis massa dapibus urna aliquet, quis iaculis elit sodales. Sed eget ornare orci, eu malesuada justo. Nunc lacus augue, dictum quis dui id, lacinia congue quam. Nulla sem sem, aliquam nec dolor ac, tempus convallis nunc. Interdum et malesuada fames ac ante ipsum primis in faucibus. Nulla suscipit convallis iaculis. Quisque eget commodo ligula. Praesent leo dui, facilisis quis eleifend in, aliquet vitae nunc. Suspendisse fermentum odio ac massa ultricies pellentesque. Fusce eu suscipit massa.&lt;/p&gt;
-            &lt;hr&gt;
+            &lt;hr /&gt;
             &lt;h2 id=&quot;section-5&quot;&gt;第五部分&lt;/h2&gt;
             &lt;p&gt;Nam eget purus nec est consectetur vehicula. Nullam ultrices nisl risus, in viverra libero egestas sit amet. Etiam porttitor dolor non eros pulvinar malesuada. Vestibulum sit amet est mollis nulla tempus aliquet. Praesent luctus hendrerit arcu non laoreet. Morbi consequat placerat magna, ac ornare odio sagittis sed. Donec vitae ullamcorper purus. Vivamus non metus ac justo porta volutpat.&lt;/p&gt;
             &lt;p&gt;Vivamus mattis accumsan erat, vel convallis risus pretium nec. Integer nunc nulla, viverra ut sem non, scelerisque vehicula arcu. Fusce bibendum convallis augue sit amet lobortis. Cras porta urna turpis, sodales lobortis purus adipiscing id. Maecenas ullamcorper, turpis suscipit pellentesque fringilla, massa lacus pulvinar mi, nec dignissim velit arcu eget purus. Nam at dapibus tellus, eget euismod nisl. Ut eget venenatis sapien. Vivamus vulputate varius mauris, vel varius nisl facilisis ac. Nulla aliquet justo a nibh ornare, eu congue neque rutrum.&lt;/p&gt;
@@ -1184,10 +1227,8 @@ public class Permutation {
         &lt;/div&gt;
     &lt;/div&gt;
 &lt;/div&gt;
-
-
-&lt;p&gt;&lt;/body&gt;
-&lt;/html&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
 </description>
                 <link>http://bbwff.github.io/test/2016/12/01/test</link>
                 <guid>http://bbwff.github.io/test/2016/12/01/test</guid>
@@ -1196,12 +1237,12 @@ public class Permutation {
 
         <item>
                 <title>算法导论学习笔记</title>
-                <description>&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
+                <description>
+&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;最近在看算法导论，想记录一个读书笔记之类的东西自己看。就是会记载的很乱，写的很随意，自己看，反正这个博客也不会公开，hhhh。&lt;/p&gt;
 
-&lt;a name=&quot;L.........-............&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;第二章-算法入门&lt;/h2&gt;
+&lt;h2 id=&quot;第二章-算法入门&quot;&gt;第二章-算法入门&lt;/h2&gt;
 
 &lt;p&gt;算法这种东西，有些思想是比较简单的，最好是把算法写成代码实现。&lt;/p&gt;
 
@@ -1209,10 +1250,9 @@ public class Permutation {
 
 &lt;!--more--&gt;
 
-
 &lt;p&gt;下面是我写的分治法排序的代码，是递归归并排序。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;package Introduction2Algorithms.chapter2;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;package Introduction2Algorithms.chapter2;
 import java.io.Console;
 /**
  * Created by bbw on 2016/11/28.
@@ -1271,6 +1311,7 @@ public class mergeSort {
     }
 }
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;这个代码挺简单的，但是我居然中间出了bug，就是数组的边界没搞好，导致数据混乱。这里面的哨兵比较方便，但就只是浪费了一个空间，代价不大，代码比较简洁。&lt;/p&gt;
 
@@ -1292,11 +1333,11 @@ public class mergeSort {
 
 &lt;p&gt;数据范围：&lt;/p&gt;
 
-&lt;p&gt;​ 对于%50的数据,size&amp;lt;=10&lt;sup&gt;4&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;​	对于%50的数据,size&amp;lt;=10^4&lt;/p&gt;
 
-&lt;p&gt;​ 对于%75的数据,size&amp;lt;=10&lt;sup&gt;5&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;​	对于%75的数据,size&amp;lt;=10^5&lt;/p&gt;
 
-&lt;p&gt;​ 对于%100的数据,size&amp;lt;=2*10&lt;sup&gt;5&lt;/sup&gt;&lt;/p&gt;
+&lt;p&gt;​	对于%100的数据,size&amp;lt;=2*10^5&lt;/p&gt;
 
 &lt;p&gt;&lt;strong&gt;输入例子:&lt;/strong&gt;&lt;/p&gt;
 
@@ -1306,10 +1347,10 @@ public class mergeSort {
 
 &lt;p&gt;7&lt;/p&gt;
 
-&lt;p&gt;代码如下所示，不过&lt;code&gt;count&lt;/code&gt;需要声明为long类型，因为使用int会溢出。java里面的int类型为32位，范围大概为4.29*pow(10,9)，也就是正负二十多亿。而题目中取模就是取十亿，所以很容易就会越界，所以以后这种题目，一定要会使用long类型，而不是一味的int。
-&lt;code&gt;代码的重点&lt;/code&gt;是每次前面比后面大，count 就加前面剩余的个数。&lt;/p&gt;
+&lt;p&gt;代码如下所示，不过&lt;code class=&quot;highlighter-rouge&quot;&gt;count&lt;/code&gt;需要声明为long类型，因为使用int会溢出。java里面的int类型为32位，范围大概为4.29*pow(10,9)，也就是正负二十多亿。而题目中取模就是取十亿，所以很容易就会越界，所以以后这种题目，一定要会使用long类型，而不是一味的int。
+&lt;code class=&quot;highlighter-rouge&quot;&gt;代码的重点&lt;/code&gt;是每次前面比后面大，count 就加前面剩余的个数。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;public class Solution {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class Solution {
 
      public long count=0;
     public     void merge(int [] a,int p,int q, int r){
@@ -1325,7 +1366,7 @@ public class mergeSort {
             a2[i]=a[q+1+i];
         }
         a2[l2]=Integer.MAX_VALUE;
-
+    
         int i1=0;
         int i2=0;
        //此处边界搞错了,我去.
@@ -1336,27 +1377,30 @@ public class mergeSort {
             else {
                 a[i] = a2[i2++];
                 count+=l1-i1;
-
+    
             } 
    }
 }
     public void mergeSort(int[]a,int p,int q){
-
+    
         if (p&amp;lt;q){
             int t=(p+q)/2;
             mergeSort(a,p,t);
             mergeSort(a,t+1,q);
             merge(a,p,t,q);
-
+    
         }
     }
     public int InversePairs(int [] array) {
         mergeSort(array,0,array.length-1);
         return (int)(count%1000000007);
-
+    
     }
 }
+
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
 </description>
                 <link>http://bbwff.github.io/%E7%AE%97%E6%B3%95/2016/11/28/%E7%AE%97%E6%B3%95%E5%AF%BC%E8%AE%BA%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0</link>
                 <guid>http://bbwff.github.io/%E7%AE%97%E6%B3%95/2016/11/28/算法导论学习笔记</guid>
@@ -1365,12 +1409,12 @@ public class mergeSort {
 
         <item>
                 <title>Jvm 相关</title>
-                <description>&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
+                <description>
+&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;想看看jvm相关的，了解下gc以及内存的分配。&lt;/p&gt;
 
-&lt;a name=&quot;Jvm&quot;&gt;&lt;/a&gt;
-&lt;h1&gt;Jvm&lt;/h1&gt;
+&lt;h1 id=&quot;jvm&quot;&gt;Jvm&lt;/h1&gt;
 
 &lt;p&gt;jvm内有方法区，运行时常量池是方法区的一部分。String的实例化对象在jvm中就是常量，介绍下String类的intern()方法。&lt;/p&gt;
 
@@ -1383,21 +1427,20 @@ public class mergeSort {
 
         <item>
                 <title>java unsafe类的使用</title>
-                <description>&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
+                <description>
+&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;最近在写堆外操作的代码，需要用到unsafe 类，记录下。&lt;/p&gt;
 
-&lt;a name=&quot;unsafe.......&quot;&gt;&lt;/a&gt;
-&lt;h1&gt;unsafe 简介&lt;/h1&gt;
+&lt;h1 id=&quot;unsafe-简介&quot;&gt;unsafe 简介&lt;/h1&gt;
 
 &lt;p&gt;unsafe类位于 sun.misc包,之所以叫unsafe是因为他操作堆外内存，即不受JVM控制的内存。由于最近要做点把数据存储在堆外的工作，所以了解了下unsafe。&lt;/p&gt;
 
 &lt;!--more--&gt;
 
-
 &lt;p&gt;下面是关于unsafe做测试的代码。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;JAVA&quot;&gt;import sun.misc.Unsafe;
+&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
@@ -1458,7 +1501,7 @@ public class testUnSafe {
         Field bananaField = testUnSafe.class.getDeclaredField(&quot;banana&quot;);
         System.out.println(&quot;Location of banana: &quot; + unsafe.objectFieldOffset(bananaField));
     }
-
+    
     //获得unsafe 的方法，是单例模式
     private static Unsafe getUnsafeInstance() throws SecurityException, NoSuchFieldException, IllegalArgumentException,
             IllegalAccessException {
@@ -1467,6 +1510,7 @@ public class testUnSafe {
         return (Unsafe) theUnsafeInstance.get(Unsafe.class);
     }
 }
+
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;unsafe 是单例模式，所以全局就只有一个unsafe，必须用它提供的方法来获取。
@@ -1480,7 +1524,7 @@ public class testUnSafe {
 然后每次在写入数据的时候，都会判断这块内存的大小够不够写入数据，如果不够就申请一个更大的内存，然后把原来的数据拷贝到新的内存里面，重新对这块内存的前八个字节赋值，即内存的大小和使用情况。
 然后这个类的静态参数在每次传入内存的起始地址后会首先读取这块内存的前八个字节，获得内存大小以及使用情况。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&quot;JAVA&quot;&gt;
+&lt;pre&gt;&lt;code class=&quot;language-JAVA&quot;&gt;
 package org.apache.spark.unsafe;
 import java.util.Iterator;
 /**
@@ -1698,6 +1742,7 @@ public  static long grow (long  baseAddress,int vType,int minCapacity) {
         return address;
     }
 }
+
 &lt;/code&gt;&lt;/pre&gt;
 </description>
                 <link>http://bbwff.github.io/java/2016/11/13/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8</link>
@@ -1707,15 +1752,14 @@ public  static long grow (long  baseAddress,int vType,int minCapacity) {
 
         <item>
                 <title>计算机会议</title>
-                <description>&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
+                <description>
+&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;从老板主页搞到的会议列表，用于查找会议论文。&lt;/p&gt;
 
-&lt;a name=&quot;AREA:.System.Technology&quot;&gt;&lt;/a&gt;
-&lt;h1&gt;AREA: System Technology&lt;/h1&gt;
+&lt;h1 id=&quot;area-system-technology&quot;&gt;AREA: System Technology&lt;/h1&gt;
 
-&lt;a name=&quot;Rank.1:&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;Rank 1:&lt;/h2&gt;
+&lt;h2 id=&quot;rank-1&quot;&gt;Rank 1:&lt;/h2&gt;
 
 &lt;p&gt;SIGCOMM: ACM Conf on Comm Architectures, Protocols &amp;amp; Apps
 INFOCOM: Annual Joint Conf IEEE Comp &amp;amp; Comm Soc
@@ -1724,7 +1768,7 @@ PODC: ACM Symp on Principles of Distributed Computing
 PPoPP: Principles and Practice of Parallel Programming
 RTSS: Real Time Systems Symp
 SOSP: ACM SIGOPS Symp on OS Principles
-SOSDI: Usenix Symp on OS Design and Implementation
+SOSDI: Usenix Symp on OS Design and Implementation 
 CCS: ACM Conf on Comp and Communications Security
 IEEE Symposium on Security and Privacy
 MOBICOM: ACM Intl Conf on Mobile Computing and Networking
@@ -1736,9 +1780,7 @@ ICDCS: IEEE Intl Conf on Distributed Comp Systems&lt;/p&gt;
 
 &lt;!--more--&gt;
 
-
-&lt;a name=&quot;Rank.2:&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;Rank 2:&lt;/h2&gt;
+&lt;h2 id=&quot;rank-2&quot;&gt;Rank 2:&lt;/h2&gt;
 
 &lt;p&gt;CC: Compiler Construction
 IPDPS: Intl Parallel and Dist Processing Symp
@@ -1759,8 +1801,7 @@ ICC: Intl Conf on Comm
 WCNC: IEEE Wireless Communications and Networking Conference
 CSFW: IEEE Computer Security Foundations Workshop&lt;/p&gt;
 
-&lt;a name=&quot;Rank.3:&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;Rank 3:&lt;/h2&gt;
+&lt;h2 id=&quot;rank-3&quot;&gt;Rank 3:&lt;/h2&gt;
 
 &lt;p&gt;MPCS: Intl. Conf. on Massively Parallel Computing Systems
 GLOBECOM: Global Comm
@@ -1783,8 +1824,7 @@ Softcomm: Conf on Software in Tcomms and Comp Networks
 INET: Internet Society Conf
 Workshop on Security and Privacy in E-commerce&lt;/p&gt;
 
-&lt;a name=&quot;Un-ranked:&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;Un-ranked:&lt;/h2&gt;
+&lt;h2 id=&quot;un-ranked&quot;&gt;Un-ranked:&lt;/h2&gt;
 
 &lt;p&gt;PARCO: Parallel Computing
 SE: Intl Conf on Systems Engineering (**)
@@ -1832,11 +1872,9 @@ DSN: The International Conference on Dependable Systems and Networks
 IHW: Information Hiding Workshop
 GTVMT: International Workshop on Graph Transformation and Visual Modeling Techniques&lt;/p&gt;
 
-&lt;a name=&quot;AREA:.Databases&quot;&gt;&lt;/a&gt;
-&lt;h1&gt;AREA: Databases&lt;/h1&gt;
+&lt;h1 id=&quot;area-databases&quot;&gt;AREA: Databases&lt;/h1&gt;
 
-&lt;a name=&quot;Rank.1:&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;Rank 1:&lt;/h2&gt;
+&lt;h2 id=&quot;rank-1-1&quot;&gt;Rank 1:&lt;/h2&gt;
 
 &lt;p&gt;SIGMOD: ACM SIGMOD Conf on Management of Data
 PODS: ACM SIGMOD Conf on Principles of DB Systems
@@ -1845,8 +1883,7 @@ ICDE: Intl Conf on Data Engineering
 CIKM: Intl. Conf on Information and Knowledge Management
 ICDT: Intl Conf on Database Theory&lt;/p&gt;
 
-&lt;a name=&quot;Rank.2:&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;Rank 2:&lt;/h2&gt;
+&lt;h2 id=&quot;rank-2-1&quot;&gt;Rank 2:&lt;/h2&gt;
 
 &lt;p&gt;SSD: Intl Symp on Large Spatial Databases
 DEXA: Database and Expert System Applications
@@ -1857,9 +1894,7 @@ DASFAA: Database Systems for Advanced Applications
 SSDBM: Intl Conf on Scientific and Statistical DB Mgmt
 CoopIS - Conference on Cooperative Information Systems
 ER - Intl Conf on Conceptual Modeling (ER)&lt;/p&gt;
-
-&lt;a name=&quot;Rank.3:&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;Rank 3:&lt;/h2&gt;
+&lt;h2 id=&quot;rank-3-1&quot;&gt;Rank 3:&lt;/h2&gt;
 
 &lt;p&gt;COMAD: Intl Conf on Management of Data
 BNCOD: British National Conference on Databases
@@ -1876,15 +1911,14 @@ MDM - Int. Conf. on Mobile Data Access/Management (MDA/MDM)
 VDB - Visual Database Systems
 IDEAS - International Database Engineering and Application Symposium&lt;/p&gt;
 
-&lt;a name=&quot;Others:&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;Others:&lt;/h2&gt;
+&lt;h2 id=&quot;others&quot;&gt;Others:&lt;/h2&gt;
 
 &lt;p&gt;ARTDB - Active and Real-Time Database Systems
 CODAS: Intl Symp on Cooperative DB Systems for Adv Apps
 DBPL - Workshop on Database Programming Languages
 EFIS/EFDBS - Engineering Federated Information (Database) Systems
 KRDB - Knowledge Representation Meets Databases
-NDB - National Database Conference (China)
+NDB - National Database Conference (China) 
 NLDB - Applications of Natural Language to Data Bases
 FQAS - Flexible Query-Answering Systems
 IDC(W) - International Database Conference (HK CS)
@@ -1906,16 +1940,12 @@ WIDM: International Workshop on Web Information and Data Management
 W2GIS - International Workshop on Web and Wireless Geographical Information Systems
 CDB - Constraint Databases and Applications
 DTVE - Workshop on Database Technology for Virtual Enterprises
-IWDOM - International Workshop on Distributed Object Management
+IWDOM - International Workshop on Distributed Object Management 
 OODBS - Workshop on Object-Oriented Database Systems
 PDIS: Parallel and Distributed Information Systems&lt;/p&gt;
 
-&lt;a name=&quot;Other.Links&quot;&gt;&lt;/a&gt;
-&lt;h1&gt;Other Links&lt;/h1&gt;
-
-&lt;a name=&quot;Infomation.center&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;Infomation center&lt;/h2&gt;
-
+&lt;h1 id=&quot;other-links&quot;&gt;Other Links&lt;/h1&gt;
+&lt;h2 id=&quot;infomation-center&quot;&gt;Infomation center&lt;/h2&gt;
 &lt;p&gt;&lt;a href=&quot;http://grid.hust.edu.cn/xhshi/TopConferences.htm&quot;&gt;List of Important Conferences (CGCL)&lt;/a&gt;
 &lt;a href=&quot;http://citeseer.ist.psu.edu/statistics.html&quot;&gt;Publications Impacts Citeseer Statistics&lt;/a&gt;
 &lt;a href=&quot;http://www.cs.ucsb.edu/~almeroth/conf/stats/&quot;&gt;Networking Conferences Statistics&lt;/a&gt;
@@ -1932,15 +1962,13 @@ PDIS: Parallel and Distributed Information Systems&lt;/p&gt;
 &lt;a href=&quot;http://www.acm.org/conferences&quot;&gt;ACM Conference Canlendar&lt;/a&gt;
 &lt;a href=&quot;http://www.cs.wisc.edu/~arch/www/&quot;&gt;WWW Computer Architecture Page&lt;/a&gt;
 &lt;a href=&quot;http://www.nesc.ac.uk/projects/&quot;&gt;Projects in UK e-Science&lt;/a&gt;&lt;/p&gt;
-
-&lt;a name=&quot;Misc&quot;&gt;&lt;/a&gt;
-&lt;h2&gt;Misc&lt;/h2&gt;
-
+&lt;h2 id=&quot;misc&quot;&gt;Misc&lt;/h2&gt;
 &lt;p&gt;&lt;a href=&quot;http://duda.imag.fr/Comer/research.html&quot;&gt;Essays about Computer Science by Douglas E. Comer&lt;/a&gt;
 &lt;a href=&quot;http://www.cs.indiana.edu/how.2b/how.2b.html&quot;&gt;How to Be a Good Graduate Student by Marie desJardins&lt;/a&gt;
 &lt;a href=&quot;https://www.usenix.org/legacy/event/samples/submit/advice.html&quot;&gt;How to write a good system paper&lt;/a&gt;
-&lt;a href=&quot;http://www.cs.utexas.edu/users/EWD/transcriptions/EWD06xx/EWD637.html&quot;&gt;Dijkstra's Rules for Successful Scientific Research&lt;/a&gt;
+&lt;a href=&quot;http://www.cs.utexas.edu/users/EWD/transcriptions/EWD06xx/EWD637.html&quot;&gt;Dijkstra’s Rules for Successful Scientific Research&lt;/a&gt;
 &lt;a href=&quot;http://www.cs.jhu.edu/~mdredze/publications/HowtoBeaSuccessfulPhDStudent.pdf&quot;&gt;How to Be a Successful PhD Student (in Computer Science (in NLP/ML))&lt;/a&gt;&lt;/p&gt;
+
 </description>
                 <link>http://bbwff.github.io/%E7%A7%91%E7%A0%94%E7%9B%B8%E5%85%B3/2016/08/30/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BC%9A%E8%AE%AE</link>
                 <guid>http://bbwff.github.io/%E7%A7%91%E7%A0%94%E7%9B%B8%E5%85%B3/2016/08/30/计算机会议</guid>
@@ -1949,42 +1977,41 @@ PDIS: Parallel and Distributed Information Systems&lt;/p&gt;
 
         <item>
                 <title>ganglia 安装</title>
-                <description>&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
+                <description>
+&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
 
 &lt;p&gt;最近帮大菠萝安装ganglia，记录下，方便以后安装。&lt;/p&gt;
 
-&lt;a name=&quot;Cluster.Server.and.Clients&quot;&gt;&lt;/a&gt;
-&lt;h1&gt;Cluster Server and Clients&lt;/h1&gt;
+&lt;h1 id=&quot;cluster-server-and-clients&quot;&gt;Cluster Server and Clients&lt;/h1&gt;
 
 &lt;p&gt;I configured our nodes with the following hostnames using these steps. Our server is:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;3.buhpc.com
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;3.buhpc.com
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;The clients are:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;1.buhpc.com
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;1.buhpc.com
 2.buhpc.com
 4.buhpc.com
 5.buhpc.com
 6.buhpc.com
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;!--more--&gt;
 
-&lt;!--more--&gt; 
-
-
-&lt;a name=&quot;Installation&quot;&gt;&lt;/a&gt;
-&lt;h1&gt;Installation&lt;/h1&gt;
+&lt;h1 id=&quot;installation&quot;&gt;Installation&lt;/h1&gt;
 
 &lt;p&gt;On the server, inside the shared folder of our cluster, we will first download the latest version of ganglia. For our cluster, /nfs is the folder with our network file system.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cd /nfs
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cd /nfs
 wget http://downloads.sourceforge.net/project/ganglia/ganglia%20monitoring%20core/3.7.2/ganglia-3.7.2.tar.gz
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;On the server, we will install dependencies and libconfuse.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
 
@@ -1992,21 +2019,22 @@ yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.
 mkdir -p /var/lib/ganglia/rrds/
 chown nobody:nobody -R /var/lib/ganglia/rrds/
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;Now, we will build the rpms from ganglia-3.7.2 on the server.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;rpmbuild -tb ganglia-3.7.2.tar.gz
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;rpmbuild -tb ganglia-3.7.2.tar.gz
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;After running rpmbuild, /root/rpmbuild/RPMS/x86_64 contains the generated rpms:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cd /root/rpmbuild/RPMS/x86_64/
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cd /root/rpmbuild/RPMS/x86_64/
 yum install *ganglia*.rpm -y
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;We will remove gmetad because we do not need it on the clients. Send the rest of the rpms to all the clients’ /tmp folder:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cd /root/rpmbuild/RPMS/x86_64/
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cd /root/rpmbuild/RPMS/x86_64/
 rm -rf ganglia-gmetad*.rpm
 scp *.rpm root@1.buhpc.com:/tmp
 scp *.rpm root@2.buhpc.com:/tmp
@@ -2014,34 +2042,34 @@ scp *.rpm root@4.buhpc.com:/tmp
 scp *.rpm root@5.buhpc.com:/tmp
 scp *.rpm root@6.buhpc.com:/tmp
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;SSH onto every client and install the rpms that we will need:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;ssh root@#.buhpc.com
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;ssh root@#.buhpc.com
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
 yum install /tmp/*ganglia*.rpm - y
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;Back on the server, we will adjust the gmetad configuration file:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cd /etc/ganglia
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cd /etc/ganglia
 vim gmetad.conf
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;buhpc will be the name of  our cluster. Find the following line and add the name of your cluster and ip address. I am using the subdomain instead of the ip address.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;data_source &quot;buhpc&quot; 1 3.buhpc.com
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;data_source &quot;buhpc&quot; 1 3.buhpc.com
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;Now, we edit the server’s gmond configuration file.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;vim /etc/ganglia/gmond.conf
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;vim /etc/ganglia/gmond.conf
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;Make sure that these sections have the following and comment any extra lines you see that are within each section.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cluster {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cluster {
   name = &quot;buhpc&quot;
   owner = &quot;unspecified&quot;
   latlong = &quot;unspecified&quot;
@@ -2088,15 +2116,15 @@ udp_recv_channel {
   retry_bind = true
 }
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;Now, SSH into each of the clients and do the following individually. On every client:&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;vim /etc/ganglia/gmond.conf
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;vim /etc/ganglia/gmond.conf
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;We will change the clients’ gmond.conf in the same way as the server’s.  Make sure that these sections have the following lines and comment any extra lines you see that are within each section.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;cluster {
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cluster {
   name = &quot;buhpc&quot;
   owner = &quot;unspecified&quot;
   latlong = &quot;unspecified&quot;
@@ -2143,16 +2171,16 @@ udp_recv_channel {
   retry_bind = true
 }
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;We will start gmond on the clients for monitoring.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;chkconfig gmond on
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;chkconfig gmond on
 systemctl start gmond
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;然后，安装ganglia-web 3.7.1&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
 tar zxvf  ganglia-web-3.7.1.tar.gz
 cd  ganglia-web-3.7.1
 vim Makefile
@@ -2170,10 +2198,11 @@ vim Makefile
 
  make install
 &lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
 
 &lt;p&gt;Next, we will want to disable SELinux. Change SELINUX inside /etc/sysconfig/selinux from enforcing to disabled. Then, restart the server node.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;vim /etc/sysconfig/selinux
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;vim /etc/sysconfig/selinux
 SELINUX=disabled
 #如果 SELINUX本就是disable，不必reboot
 reboot
@@ -2187,20 +2216,21 @@ firewall-cmd --permanent --zone=public --add-port=8651/tcp
 firewall-cmd --permanent --zone=public --add-port=8652/tcp
 firewall-cmd --reload
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;On the server, we will now start httpd, gmetad, and gmond.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;chkconfig httpd
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;chkconfig httpd
 chkconfig gmetad on
 chkconfig gmond on
 systemctl start httpd
 systemctl start gmetad
 systemctl start gmond
 &lt;/code&gt;&lt;/pre&gt;
-
+&lt;/div&gt;
 &lt;p&gt;Visit http://3.buhpc.com/ganglia to see Ganglia’s monitoring. You should see something like this:&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;http://www.slothparadise.com/wp-content/uploads/2016/03/ganglia-home-page.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
 </description>
                 <link>http://bbwff.github.io/%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/2016/08/17/ganglia-%E5%AE%89%E8%A3%85</link>
                 <guid>http://bbwff.github.io/%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/2016/08/17/ganglia-安装</guid>
@@ -2209,19 +2239,17 @@ systemctl start gmond
 
         <item>
                 <title>Hello World</title>
-                <description>&lt;a name=&quot;Background&quot;&gt;&lt;/a&gt;
-&lt;h3&gt;Background&lt;/h3&gt;
-
+                <description>
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 &lt;p&gt;Hello World!&lt;/p&gt;
 
 &lt;p&gt;&lt;strong&gt;Black&lt;/strong&gt;&lt;/p&gt;
 
 &lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;list&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;list&lt;/strong&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-
-&lt;p&gt;&lt;code&gt;mark&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;mark&lt;/code&gt;&lt;/p&gt;
 </description>
                 <link>http://bbwff.github.io/test/1995/07/22/hello-world</link>
                 <guid>http://bbwff.github.io/test/1995/07/22/hello-world</guid>
