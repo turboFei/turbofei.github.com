@@ -1,11 +1,16 @@
 ---
 layout: post
 category: test
-tagline: "Supporting tagline"
-summary: Hello World!
+tagline: ""
+summary: 模板
 tags: [test]
 ---
 {% include JB/setup %}
+目录
+
+* toc
+{:toc}
+
 ### Background ###
 {{ page.summary }}
 

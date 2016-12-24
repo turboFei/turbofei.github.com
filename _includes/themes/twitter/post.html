@@ -33,7 +33,6 @@
       </div>
 
 <script src="/js/jquery.min.js"></script>
-
 <div class="content">
         {{ content }}
       </div>
@@ -62,10 +61,11 @@
 </div>
 
 
-<script src="/js/jquery.toTop.min.js"></script>    
-<a class="to-top">Top ↑</a>                
+<script src="/js/jquery.toTop.min.js"></script>   
+<link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css"> 
+<a class="fa fa-arrow-up fa-2x" id="top"  ></a>                
 <script>
-$('.to-top').toTop({
+$('#top').toTop({
     //options with default values
     autohide: true,
     offset: 420,
