@@ -123,6 +123,7 @@
     <meta charset='utf-8' />
 </head>
 <body>
+
 <div class="span9">
   <div class="page-header">
     <h1>Hello World <small>Supporting tagline</small></h1>
@@ -173,21 +174,22 @@
         <span>22 July 1995</strong>
       </div>
 
-
-<div id="main_content"></div>
+<script src="/js/jquery.min.js"></script>
 
 <div class="content">
-        
-<h3 id="background">Background</h3>
+        <a name="Background"></a>
+<h3>Background</h3>
+
 <p>Hello World!</p>
 
 <p><strong>Black</strong></p>
 
 <ul>
-  <li><strong>list</strong></li>
+<li><strong>list</strong></li>
 </ul>
 
-<p><code class="highlighter-rouge">mark</code></p>
+
+<p><code>mark</code></p>
 
       </div>
  
@@ -242,6 +244,21 @@ var duoshuoQuery = {short_name:'feiwang'};
     </div>
   </div>
 </div>
+
+
+<script src="/js/jquery.toTop.min.js"></script>    
+<a class="to-top">Top ↑</a>                
+<script>
+$('.to-top').toTop({
+    //options with default values
+    autohide: true,
+    offset: 420,
+    speed: 500,
+    right: 15,
+    bottom: 30
+});      </script>
+
+
 <div class="span3">
   <div class="well sidebar-nav">
   <div class="content">

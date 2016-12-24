@@ -123,6 +123,7 @@
     <meta charset='utf-8' />
 </head>
 <body>
+
 <div class="span9">
   <div class="page-header">
     <h1>算法导论学习笔记 </h1>
@@ -173,16 +174,15 @@
         <span>28 November 2016</strong>
       </div>
 
-
-<div id="main_content"></div>
+<script src="/js/jquery.min.js"></script>
 
 <div class="content">
-        
-<p><strong>Overview</strong></p>
+        <p><strong>Overview</strong></p>
 
 <p>最近在看算法导论，想记录一个读书笔记之类的东西自己看。就是会记载的很乱，写的很随意，自己看，反正这个博客也不会公开，hhhh。</p>
 
-<h2 id="第二章-算法入门">第二章-算法入门</h2>
+<a name="L.........-............"></a>
+<h2>第二章-算法入门</h2>
 
 <p>算法这种东西，有些思想是比较简单的，最好是把算法写成代码实现。</p>
 
@@ -190,9 +190,10 @@
 
 <!--more-->
 
+
 <p>下面是我写的分治法排序的代码，是递归归并排序。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>package Introduction2Algorithms.chapter2;
+<pre><code>package Introduction2Algorithms.chapter2;
 import java.io.Console;
 /**
  * Created by bbw on 2016/11/28.
@@ -251,7 +252,6 @@ public class mergeSort {
     }
 }
 </code></pre>
-</div>
 
 <p>这个代码挺简单的，但是我居然中间出了bug，就是数组的边界没搞好，导致数据混乱。这里面的哨兵比较方便，但就只是浪费了一个空间，代价不大，代码比较简洁。</p>
 
@@ -273,11 +273,11 @@ public class mergeSort {
 
 <p>数据范围：</p>
 
-<p>​	对于%50的数据,size&lt;=10^4</p>
+<p>​ 对于%50的数据,size&lt;=10<sup>4</sup></p>
 
-<p>​	对于%75的数据,size&lt;=10^5</p>
+<p>​ 对于%75的数据,size&lt;=10<sup>5</sup></p>
 
-<p>​	对于%100的数据,size&lt;=2*10^5</p>
+<p>​ 对于%100的数据,size&lt;=2*10<sup>5</sup></p>
 
 <p><strong>输入例子:</strong></p>
 
@@ -287,10 +287,10 @@ public class mergeSort {
 
 <p>7</p>
 
-<p>代码如下所示，不过<code class="highlighter-rouge">count</code>需要声明为long类型，因为使用int会溢出。java里面的int类型为32位，范围大概为4.29*pow(10,9)，也就是正负二十多亿。而题目中取模就是取十亿，所以很容易就会越界，所以以后这种题目，一定要会使用long类型，而不是一味的int。
-<code class="highlighter-rouge">代码的重点</code>是每次前面比后面大，count 就加前面剩余的个数。</p>
+<p>代码如下所示，不过<code>count</code>需要声明为long类型，因为使用int会溢出。java里面的int类型为32位，范围大概为4.29*pow(10,9)，也就是正负二十多亿。而题目中取模就是取十亿，所以很容易就会越界，所以以后这种题目，一定要会使用long类型，而不是一味的int。
+<code>代码的重点</code>是每次前面比后面大，count 就加前面剩余的个数。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public class Solution {
+<pre><code>public class Solution {
 
      public long count=0;
     public     void merge(int [] a,int p,int q, int r){
@@ -306,7 +306,7 @@ public class mergeSort {
             a2[i]=a[q+1+i];
         }
         a2[l2]=Integer.MAX_VALUE;
-    
+
         int i1=0;
         int i2=0;
        //此处边界搞错了,我去.
@@ -317,30 +317,27 @@ public class mergeSort {
             else {
                 a[i] = a2[i2++];
                 count+=l1-i1;
-    
+
             } 
    }
 }
     public void mergeSort(int[]a,int p,int q){
-    
+
         if (p&lt;q){
             int t=(p+q)/2;
             mergeSort(a,p,t);
             mergeSort(a,t+1,q);
             merge(a,p,t,q);
-    
+
         }
     }
     public int InversePairs(int [] array) {
         mergeSort(array,0,array.length-1);
         return (int)(count%1000000007);
-    
+
     }
 }
-
 </code></pre>
-</div>
-
 
       </div>
  
@@ -395,6 +392,21 @@ var duoshuoQuery = {short_name:'feiwang'};
     </div>
   </div>
 </div>
+
+
+<script src="/js/jquery.toTop.min.js"></script>    
+<a class="to-top">Top ↑</a>                
+<script>
+$('.to-top').toTop({
+    //options with default values
+    autohide: true,
+    offset: 420,
+    speed: 500,
+    right: 15,
+    bottom: 30
+});      </script>
+
+
 <div class="span3">
   <div class="well sidebar-nav">
   <div class="content">

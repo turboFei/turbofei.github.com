@@ -3,6 +3,7 @@
     <meta charset='utf-8' />
 </head>
 <body>
+
 <div class="span9">
   <div class="page-header">
     <h1>{{ page.title }} {% if page.tagline %}<small>{{page.tagline}}</small>{% endif %}</h1>
@@ -31,8 +32,7 @@
         <span>{{ page.date | date_to_long_string }}</strong>
       </div>
 
-
-<div id="main_content"></div>
+<script src="/js/jquery.min.js"></script>
 
 <div class="content">
         {{ content }}
@@ -60,6 +60,21 @@
     </div>
   </div>
 </div>
+
+
+<script src="/js/jquery.toTop.min.js"></script>    
+<a class="to-top">Top ↑</a>                
+<script>
+$('.to-top').toTop({
+    //options with default values
+    autohide: true,
+    offset: 420,
+    speed: 500,
+    right: 15,
+    bottom: 30
+});      </script>
+
+
 <div class="span3">
   {% include JB/sidebar_list %}
 </div>
