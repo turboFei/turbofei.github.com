@@ -1,0 +1,473 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Test</title>
+    
+    <meta name="author" content="bbw">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css" rel="stylesheet" type="text/css" media="all">
+
+    <!-- code highlighting-->
+    <link href="/assets/google-code-prettify/desert.css" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images -->
+    <link rel="shortcut icon" href="/img/logo.ico">
+   <!-- <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+  </head>
+
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+    <div class="container">
+
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="/">bbw's blog</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav nav-nav" id="main-nav">
+              
+              
+
+             
+
+
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/archive">Archive</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/categories">Categories</a></li>
+      	
+      
+    
+  
+    
+  
+    
+      
+      	
+      	<li><a href="/pages">Pages</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/tags">Tags</a></li>
+      	
+      
+    
+  
+
+
+
+      <li><a href="/about">About</a></li>
+            </ul>
+
+          </div>
+
+</div>
+      </div>
+    </div>
+    <div class="container">
+      <div class="row">
+        
+
+<html>
+<head>
+    <meta charset='utf-8' />
+</head>
+<body>
+<div class="span9">
+  <div class="page-header">
+    <h1>Test <small>Supporting tagline</small></h1>
+  </div>
+
+  
+    <ul class="tag_box inline">
+      <li><i class="icon-folder-open"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/categories.html#test-ref">
+    		test (2)
+    	</a></li>
+    
+  
+
+
+
+    </ul>
+    
+
+  
+    <ul class="tag_box inline">
+      <li><i class="icon-tags"></i></li>
+      
+      
+
+
+  
+     
+    	<li><a href="/tags.html#test-ref">test <span>2</span></a></li>
+    
+  
+
+
+
+    </ul>
+  
+  <hr>
+
+  <div class="row-fluid post-full">
+    <div class="span12">
+      <div class="date">
+        <span>01 December 2016</strong>
+      </div>
+
+
+<div id="main_content"></div>
+
+<div class="content">
+        
+<h3 id="background">Background</h3>
+<p>Hello World!
+&lt;!DOCTYPE html&gt;</p>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Bootstrap 附加导航（Affix）插件</title>
+<link rel="stylesheet" href="http://cdn.static.runoob.com/libs/bootstrap/3.3.7/css/bootstrap.min.css" />
+<script src="http://cdn.static.runoob.com/libs/jquery/2.1.1/jquery.min.js"></script>
+<script src="http://cdn.static.runoob.com/libs/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<style>
+/* Custom Styles */
+    ul.nav-tabs{
+        width: 140px;
+        margin-top: 20px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.067);
+    }
+    ul.nav-tabs li{
+        margin: 0;
+        border-top: 1px solid #ddd;
+    }
+    ul.nav-tabs li:first-child{
+        border-top: none;
+    }
+    ul.nav-tabs li a{
+        margin: 0;
+        padding: 8px 16px;
+        border-radius: 0;
+    }
+    ul.nav-tabs li.active a, ul.nav-tabs li.active a:hover{
+        color: #fff;
+        background: #0088cc;
+        border: 1px solid #0088cc;
+    }
+    ul.nav-tabs li:first-child a{
+        border-radius: 4px 4px 0 0;
+    }
+    ul.nav-tabs li:last-child a{
+        border-radius: 0 0 4px 4px;
+    }
+    ul.nav-tabs.affix{
+        top: 30px; /* Set the top position of pinned element */
+    }
+</style>
+</head>
+<body data-spy="scroll" data-target="#myScrollspy">
+<div class="container">
+   <div class="jumbotron">
+        <h1>Bootstrap Affix</h1>
+    </div>
+    <div class="row">
+        <div class="col-xs-3" id="myScrollspy">
+            <ul class="nav nav-tabs nav-stacked" data-spy="affix" data-offset-top="125">
+                <li class="active"><a href="#section-1">第一部分</a></li>
+                <li><a href="#section-2">第二部分</a></li>
+                <li><a href="#section-3">第三部分</a></li>
+                <li><a href="#section-4">第四部分</a></li>
+                <li><a href="#section-5">第五部分</a></li>
+            </ul>
+        </div>
+        <div class="col-xs-9">
+            <h2 id="section-1">第一部分</h2>
+            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam eu sem tempor, varius quam at, luctus dui. Mauris magna metus, dapibus nec turpis vel, semper malesuada ante. Vestibulum id metus ac nisl bibendum scelerisque non non purus. Suspendisse varius nibh non aliquet sagittis. In tincidunt orci sit amet elementum vestibulum. Vivamus fermentum in arcu in aliquam. Quisque aliquam porta odio in fringilla. Vivamus nisl leo, blandit at bibendum eu, tristique eget risus. Integer aliquet quam ut elit suscipit, id interdum neque porttitor. Integer faucibus ligula.</p>
+            <p>Vestibulum quis quam ut magna consequat faucibus. Pellentesque eget nisi a mi suscipit tincidunt. Ut tempus dictum risus. Pellentesque viverra sagittis quam at mattis. Suspendisse potenti. Aliquam sit amet gravida nibh, facilisis gravida odio. Phasellus auctor velit at lacus blandit, commodo iaculis justo viverra. Etiam vitae est arcu. Mauris vel congue dolor. Aliquam eget mi mi. Fusce quam tortor, commodo ac dui quis, bibendum viverra erat. Maecenas mattis lectus enim, quis tincidunt dui molestie euismod. Curabitur et diam tristique, accumsan nunc eu, hendrerit tellus.</p>
+            <hr />
+            <h2 id="section-2">第二部分</h2>
+            <p>Nullam hendrerit justo non leo aliquet imperdiet. Etiam in sagittis lectus. Suspendisse ultrices placerat accumsan. Mauris quis dapibus orci. In dapibus velit blandit pharetra tincidunt. Quisque non sapien nec lacus condimentum facilisis ut iaculis enim. Sed viverra interdum bibendum. Donec ac sollicitudin dolor. Sed fringilla vitae lacus at rutrum. Phasellus congue vestibulum ligula sed consequat.</p>
+            <p>Vestibulum consectetur scelerisque lacus, ac fermentum lorem convallis sed. Nam odio tortor, dictum quis malesuada at, pellentesque vitae orci. Vivamus elementum, felis eu auctor lobortis, diam velit egestas lacus, quis fermentum metus ante quis urna. Sed at facilisis libero. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Vestibulum bibendum blandit dolor. Nunc orci dolor, molestie nec nibh in, hendrerit tincidunt ante. Vivamus sem augue, hendrerit non sapien in, mollis ornare augue.</p>
+            <hr />
+            <h2 id="section-3">第三部分</h2>
+            <p>Integer pulvinar leo id risus pellentesque vestibulum. Sed diam libero, sodales eget sapien vel, porttitor bibendum enim. Donec sed nibh vitae lorem porttitor blandit in nec ante. Pellentesque vitae metus ipsum. Phasellus sed nunc ac sem malesuada condimentum. Etiam in aliquam lectus. Nam vel sapien diam. Donec pharetra id arcu eget blandit. Proin imperdiet mattis augue in porttitor. Quisque tempus enim id lobortis feugiat. Suspendisse tincidunt risus quis dolor fringilla blandit. Ut sed sapien at purus lacinia porttitor. Nullam iaculis, felis a pretium ornare, dolor nisl semper tortor, vel sagittis lacus est consequat eros. Sed id pretium nisl. Curabitur dolor nisl, laoreet vitae aliquam id, tincidunt sit amet mauris.</p>
+            <p>Phasellus vitae suscipit justo. Mauris pharetra feugiat ante id lacinia. Etiam faucibus mauris id tempor egestas. Duis luctus turpis at accumsan tincidunt. Phasellus risus risus, volutpat vel tellus ac, tincidunt fringilla massa. Etiam hendrerit dolor eget ante rutrum adipiscing. Cras interdum ipsum mattis, tempus mauris vel, semper ipsum. Duis sed dolor ut enim lobortis pellentesque ultricies ac ligula. Pellentesque convallis elit nisi, id vulputate ipsum ullamcorper ut. Cras ac pulvinar purus, ac viverra est. Suspendisse potenti. Integer pellentesque neque et elementum tempus. Curabitur bibendum in ligula ut rhoncus.</p>
+            <p>Quisque pharetra velit id velit iaculis pretium. Nullam a justo sed ligula porta semper eu quis enim. Pellentesque pellentesque, metus at facilisis hendrerit, lectus velit facilisis leo, quis volutpat turpis arcu quis enim. Nulla viverra lorem elementum interdum ultricies. Suspendisse accumsan quam nec ante mollis tempus. Morbi vel accumsan diam, eget convallis tellus. Suspendisse potenti.</p>
+            <hr />
+            <h2 id="section-4">第四部分</h2>
+            <p>Suspendisse a orci facilisis, dignissim tortor vitae, ultrices mi. Vestibulum a iaculis lacus. Phasellus vitae convallis ligula, nec volutpat tellus. Vivamus scelerisque mollis nisl, nec vehicula elit egestas a. Sed luctus metus id mi gravida, faucibus convallis neque pretium. Maecenas quis sapien ut leo fringilla tempor vitae sit amet leo. Donec imperdiet tempus placerat. Pellentesque pulvinar ultrices nunc sed ultrices. Morbi vel mi pretium, fermentum lacus et, viverra tellus. Phasellus sodales libero nec dui convallis, sit amet fermentum sapien auctor. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Sed eu elementum nibh, quis varius libero.</p>
+            <p>Vestibulum quis quam ut magna consequat faucibus. Pellentesque eget nisi a mi suscipit tincidunt. Ut tempus dictum risus. Pellentesque viverra sagittis quam at mattis. Suspendisse potenti. Aliquam sit amet gravida nibh, facilisis gravida odio. Phasellus auctor velit at lacus blandit, commodo iaculis justo viverra. Etiam vitae est arcu. Mauris vel congue dolor. Aliquam eget mi mi. Fusce quam tortor, commodo ac dui quis, bibendum viverra erat. Maecenas mattis lectus enim, quis tincidunt dui molestie euismod. Curabitur et diam tristique, accumsan nunc eu, hendrerit tellus.</p>
+            <p>Phasellus fermentum, neque sit amet sodales tempor, enim ante interdum eros, eget luctus ipsum eros ut ligula. Nunc ornare erat quis faucibus molestie. Proin malesuada consequat commodo. Mauris iaculis, eros ut dapibus luctus, massa enim elementum purus, sit amet tristique purus purus nec felis. Morbi vestibulum sapien eget porta pulvinar. Nam at quam diam. Proin rhoncus, felis elementum accumsan dictum, felis nisi vestibulum tellus, et ultrices risus felis in orci. Quisque vestibulum sem nisl, vel congue leo dictum nec. Cras eget est at velit sagittis ullamcorper vel et lectus. In hac habitasse platea dictumst. Etiam interdum iaculis velit, vel sollicitudin lorem feugiat sit amet. Etiam luctus, quam sed sodales aliquam, lorem libero hendrerit urna, faucibus rhoncus massa nibh at felis. Curabitur ac tempus nulla, ut semper erat. Vivamus porta ullamcorper sem, ornare egestas mauris facilisis id.</p>
+            <p>Ut ut risus nisl. Fusce porttitor eros at magna luctus, non congue nulla eleifend. Aenean porttitor feugiat dolor sit amet facilisis. Pellentesque venenatis magna et risus commodo, a commodo turpis gravida. Nam mollis massa dapibus urna aliquet, quis iaculis elit sodales. Sed eget ornare orci, eu malesuada justo. Nunc lacus augue, dictum quis dui id, lacinia congue quam. Nulla sem sem, aliquam nec dolor ac, tempus convallis nunc. Interdum et malesuada fames ac ante ipsum primis in faucibus. Nulla suscipit convallis iaculis. Quisque eget commodo ligula. Praesent leo dui, facilisis quis eleifend in, aliquet vitae nunc. Suspendisse fermentum odio ac massa ultricies pellentesque. Fusce eu suscipit massa.</p>
+            <hr />
+            <h2 id="section-5">第五部分</h2>
+            <p>Nam eget purus nec est consectetur vehicula. Nullam ultrices nisl risus, in viverra libero egestas sit amet. Etiam porttitor dolor non eros pulvinar malesuada. Vestibulum sit amet est mollis nulla tempus aliquet. Praesent luctus hendrerit arcu non laoreet. Morbi consequat placerat magna, ac ornare odio sagittis sed. Donec vitae ullamcorper purus. Vivamus non metus ac justo porta volutpat.</p>
+            <p>Vivamus mattis accumsan erat, vel convallis risus pretium nec. Integer nunc nulla, viverra ut sem non, scelerisque vehicula arcu. Fusce bibendum convallis augue sit amet lobortis. Cras porta urna turpis, sodales lobortis purus adipiscing id. Maecenas ullamcorper, turpis suscipit pellentesque fringilla, massa lacus pulvinar mi, nec dignissim velit arcu eget purus. Nam at dapibus tellus, eget euismod nisl. Ut eget venenatis sapien. Vivamus vulputate varius mauris, vel varius nisl facilisis ac. Nulla aliquet justo a nibh ornare, eu congue neque rutrum.</p>
+            <p>Suspendisse a orci facilisis, dignissim tortor vitae, ultrices mi. Vestibulum a iaculis lacus. Phasellus vitae convallis ligula, nec volutpat tellus. Vivamus scelerisque mollis nisl, nec vehicula elit egestas a. Sed luctus metus id mi gravida, faucibus convallis neque pretium. Maecenas quis sapien ut leo fringilla tempor vitae sit amet leo. Donec imperdiet tempus placerat. Pellentesque pulvinar ultrices nunc sed ultrices. Morbi vel mi pretium, fermentum lacus et, viverra tellus. Phasellus sodales libero nec dui convallis, sit amet fermentum sapien auctor. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Sed eu elementum nibh, quis varius libero.</p>
+            <p>Morbi sed fermentum ipsum. Morbi a orci vulputate tortor ornare blandit a quis orci. Donec aliquam sodales gravida. In ut ullamcorper nisi, ac pretium velit. Vestibulum vitae lectus volutpat, consequat lorem sit amet, pulvinar tellus. In tincidunt vel leo eget pulvinar. Curabitur a eros non lacus malesuada aliquam. Praesent et tempus odio. Integer a quam nunc. In hac habitasse platea dictumst. Aliquam porta nibh nulla, et mattis turpis placerat eget. Pellentesque dui diam, pellentesque vel gravida id, accumsan eu magna. Sed a semper arcu, ut dignissim leo.</p>
+            <p>Sed vitae lobortis diam, id molestie magna. Aliquam consequat ipsum quis est dictum ultrices. Aenean nibh velit, fringilla in diam id, blandit hendrerit lacus. Donec vehicula rutrum tellus eget fermentum. Pellentesque ac erat et arcu ornare tincidunt. Aliquam erat volutpat. Vivamus lobortis urna quis gravida semper. In condimentum, est a faucibus luctus, mi dolor cursus mi, id vehicula arcu risus a nibh. Pellentesque blandit sapien lacus, vel vehicula nunc feugiat sit amet.</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>
+
+      </div>
+ 
+      <hr>
+        <div class="pagination">
+          <ul>
+          
+            <li class="prev"><a href="/%E7%AE%97%E6%B3%95/2016/11/28/%E7%AE%97%E6%B3%95%E5%AF%BC%E8%AE%BA%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0" title="算法导论学习笔记">&larr; Previous</a></li>
+          
+            <li><a href="/archive.html">Archive</a></li>
+          
+            <li class="next"><a href="/%E7%AE%97%E6%B3%95/2016/12/12/%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%85%A8%E6%8E%92%E5%88%97-JAVA" title="字符串全排列">Next &rarr;</a></li>
+          
+          </ul>
+        </div>
+      <hr>
+      <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style_24x24">
+	<a class="jiathis_button_weixin"></a>
+	<a class="jiathis_button_tsina"></a>
+	<a class="jiathis_button_qzone"></a>
+<a class="jiathis_button_tqq"></a>
+	
+<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank"></a>
+</div>
+<script type="text/javascript" src="http://v3.jiathis.com/code_mini/jia.js" charset="utf-8"></script>
+<br><hr>
+<!-- JiaThis Button END -->
+
+      
+
+
+  <!-- Duoshuo Comment BEGIN -->
+  <div class="ds-thread"></div>
+<script type="text/javascript">
+var duoshuoQuery = {short_name:'feiwang'};
+  (function() {
+    var ds = document.createElement('script');
+    ds.type = 'text/javascript';ds.async = true;
+    ds.src = 'http://static.duoshuo.com/embed.js';
+    ds.charset = 'UTF-8';
+    (document.getElementsByTagName('head')[0] 
+    || document.getElementsByTagName('body')[0]).appendChild(ds);
+  })();
+  </script>
+<!-- Duoshuo Comment END -->
+
+
+
+
+
+    </div>
+  </div>
+</div>
+<div class="span3">
+  <div class="well sidebar-nav">
+  <div class="content">
+    <p style="text-align:center;">
+      <img src="/img/smg.jpg" alt="myself" width="120"> 
+    </p>
+  </div>
+  <HR>
+  <ul class="nav nav-list">
+    <li class="nav-header">Categories</li>
+      
+      
+
+
+  
+     
+    	<li><a href="/categories.html#test-ref">
+    		test (2)
+    	</a></li>
+     
+    	<li><a href="/categories.html#环境配置-ref">
+    		环境配置 (1)
+    	</a></li>
+     
+    	<li><a href="/categories.html#科研相关-ref">
+    		科研相关 (1)
+    	</a></li>
+     
+    	<li><a href="/categories.html#java-ref">
+    		java (2)
+    	</a></li>
+     
+    	<li><a href="/categories.html#算法-ref">
+    		算法 (4)
+    	</a></li>
+     
+    	<li><a href="/categories.html#spark-ref">
+    		spark (2)
+    	</a></li>
+    
+  
+
+
+
+<HR>
+    <li class="nav-header">Tags</li>
+      
+      
+
+
+  
+     
+    	<li><a href="/tags.html#test-ref">test <span>(2)</span></a></li>
+     
+    	<li><a href="/tags.html#env-ref">env <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#related-ref">related <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#java-ref">java <span>(2)</span></a></li>
+     
+    	<li><a href="/tags.html#algorithm-ref">algorithm <span>(4)</span></a></li>
+     
+    	<li><a href="/tags.html#spark-ref">spark <span>(2)</span></a></li>
+    
+  
+
+
+
+<HR>   
+ <li class="nav-header">Links</li>
+    <li><a href="http://www.ruanyifeng.com/blog/">阮一峰的网络日志</a></li>
+    <li><a href="http://mindhacks.cn/">刘未鹏</a></li>
+    <li><a href="http://coolshell.cn/">酷壳</a></li>
+    <li><a href="http://dplord.com/">dplord</a></li>
+  <HR>
+    <li class="nav-header">Recent Comments</li>
+   <div class="widget-wrap">
+    <h3 class="widget-title"> </h3>
+    <div class="widget">
+      <!-- 多说最新评论 start -->
+      <div class="ds-recent-comments" data-num-items="3" data-show-avatars="0" data-show-time="1" data-show-title="1" data-show-admin="1" data-excerpt-length="70"></div>
+      <!-- 多说最新评论 end -->
+      <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
+      <script type="text/javascript">
+        var duoshuoQuery = {short_name:"feiwang"};
+        (function() {
+          var ds = document.createElement('script');
+          ds.type = 'text/javascript';ds.async = true;
+          ds.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') + '//static.duoshuo.com/embed.js';
+          ds.charset = 'UTF-8';
+          (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(ds);
+        })();
+      </script>
+      <!-- 多说公共JS代码 end -->
+    </div>
+  </div>
+
+</ul>
+  
+</div>
+
+</div>
+</body>
+</html>
+
+
+      </div> <!--/.row-->
+
+      <hr>
+      <footer>
+        <p align="center" >&copy; 2016 <i class="fa fa-heart"></i> bbw
+  <!--        with help from <a href="http://jekyllbootstrap.com" target="_blank" title="The Definitive Jekyll Blogging Framework">Jekyll Bootstrap</a>-->
+<!--          and <a href="http://twitter.github.com/bootstrap/" target="_blank">Twitter Bootstrap</a>-->
+<link rel="stylesheet" href="/font-awesome/css/font-awesome.min.css">
+
+<a href="https://github.com" class="fa fa-github"></a>
+<a href="https://twitter.com" class="fa fa-twitter"></a>
+<a href="https://facebook.com" class="fa fa-facebook"></a>
+
+
+
+
+ </p>
+      </footer>
+    </div>
+
+<!-- code highlighting -->
+
+<script type="text/javascript" src="http://lib.sinaapp.com/js/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript" src="/assets/google-code-prettify/prettify.js"></script>
+    <script type="text/javascript">
+      !function ($) {
+        $(function(){
+            $('pre').addClass('prettyprint linenums').attr('style', 'overflow:auto');
+            window.prettyPrint && prettyPrint();
+        });
+      }(window.jQuery);
+    </script>
+    <!-- math function -->
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+    
+
+  </body>
+</html>
+

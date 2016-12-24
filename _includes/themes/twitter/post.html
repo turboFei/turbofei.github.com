@@ -1,3 +1,8 @@
+<html>
+<head>
+    <meta charset='utf-8' />
+</head>
+<body>
 <div class="span9">
   <div class="page-header">
     <h1>{{ page.title }} {% if page.tagline %}<small>{{page.tagline}}</small>{% endif %}</h1>
@@ -25,7 +30,11 @@
       <div class="date">
         <span>{{ page.date | date_to_long_string }}</strong>
       </div>
-      <div class="content">
+
+
+<div id="main_content"></div>
+
+<div class="content">
         {{ content }}
       </div>
  
@@ -54,3 +63,5 @@
 <div class="span3">
   {% include JB/sidebar_list %}
 </div>
+</body>
+</html>

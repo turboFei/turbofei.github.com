@@ -7,10 +7,13 @@ markdown: kramdown
 kramdown:
   input: GFM
   syntax_highlighter: rouge
+  enable_coderay: true
+totop: true
 # so be sure to set them if your theme uses them.
 #
 title : bbw's blog
 tagline: Site Tagline
+assets: /assets
 author :
   name : bbw
   email : cn.feiwang@gmail.com
