@@ -5,8 +5,8 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2016-12-24T16:48:26+08:00</lastBuildDate>
-        <pubDate>2016-12-24T16:48:26+08:00</pubDate>
+        <lastBuildDate>2016-12-24T16:51:15+08:00</lastBuildDate>
+        <pubDate>2016-12-24T16:51:15+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -14,6 +14,7 @@
                 <title>Spark应用执行流程</title>
                 <description>
 &lt;p&gt;目录&lt;/p&gt;
+
 &lt;ul id=&quot;markdown-toc&quot;&gt;
   &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#word-count&quot; id=&quot;markdown-toc-word-count&quot;&gt;Word Count&lt;/a&gt;    &lt;ul&gt;
@@ -34,6 +35,7 @@
   &lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#参考&quot; id=&quot;markdown-toc-参考&quot;&gt;参考&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
+
 &lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 &lt;p&gt;从最简单的spark应用WordCount入手，分析rdd链，分析job如何提交，task如何提交，从全局了解spark应用的执行流程。&lt;/p&gt;
 
