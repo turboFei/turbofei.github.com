@@ -5,8 +5,8 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2016-12-24T16:51:15+08:00</lastBuildDate>
-        <pubDate>2016-12-24T16:51:15+08:00</pubDate>
+        <lastBuildDate>2016-12-24T17:14:36+08:00</lastBuildDate>
+        <pubDate>2016-12-24T17:14:36+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -69,7 +69,9 @@ object SparkWC {
 &lt;img src=&quot;http://ogk82bfkr.bkt.clouddn.com/upload/wide-depen.png&quot; height=&quot;200&quot; width=&quot;200&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;左边图是窄依赖，右边图是宽依赖，窄依赖里面的partition的对应顺序是不变的，款依赖会涉及shuffle操作，会造成partition混洗，因此往往以款依赖划分stage。在上面的操作中，saveAsTextFile是action，reduceByKey是宽依赖，因此这个应用总共有1个job，两个stage，然后在不同的stage中会执行tasks。&lt;/p&gt;
+
 &lt;h3 id=&quot;源码剖析&quot;&gt;源码剖析&lt;/h3&gt;
+
 &lt;p&gt;从rdd链开始分析。&lt;/p&gt;
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def textFile(
       path: String,
@@ -184,6 +186,7 @@ object SparkWC {
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
 &lt;p&gt;上面是saveAstextFile的调用过程，中间省略了一个函数，看代码的最后两行。可以看出调用了&lt;code class=&quot;highlighter-rouge&quot;&gt; self.context.runJob()&lt;/code&gt;可以知道这里触发了job的提交。&lt;/p&gt;
+
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt; def runJob[T, U: ClassTag](
       rdd: RDD[T],
       func: (TaskContext, Iterator[T]) =&amp;gt; U,
@@ -204,7 +207,9 @@ object SparkWC {
   }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
+
 &lt;p&gt;可以看出上面代码有 &lt;code class=&quot;highlighter-rouge&quot;&gt;dagScheduler.runJob&lt;/code&gt;，开始进行调度。&lt;/p&gt;
+
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  def runJob[T, U](
       rdd: RDD[T],
       func: (TaskContext, Iterator[T]) =&amp;gt; U,
@@ -235,6 +240,7 @@ object SparkWC {
   }
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
+
 &lt;p&gt;在 dagScheduler.runJob()里面有 &lt;code class=&quot;highlighter-rouge&quot;&gt;submitJob&lt;/code&gt;的操作，提交job。
 看下面&lt;code class=&quot;highlighter-rouge&quot;&gt;submitJob&lt;/code&gt;的代码。&lt;/p&gt;
 &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  def submitJob[T, U](

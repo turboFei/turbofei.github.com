@@ -234,7 +234,9 @@ object SparkWC {
 <img src="http://ogk82bfkr.bkt.clouddn.com/upload/wide-depen.png" height="200" width="200" /></p>
 
 <p>左边图是窄依赖，右边图是宽依赖，窄依赖里面的partition的对应顺序是不变的，款依赖会涉及shuffle操作，会造成partition混洗，因此往往以款依赖划分stage。在上面的操作中，saveAsTextFile是action，reduceByKey是宽依赖，因此这个应用总共有1个job，两个stage，然后在不同的stage中会执行tasks。</p>
+
 <h3 id="源码剖析">源码剖析</h3>
+
 <p>从rdd链开始分析。</p>
 <div class="highlighter-rouge"><pre class="highlight"><code>def textFile(
       path: String,
@@ -349,6 +351,7 @@ object SparkWC {
 </code></pre>
 </div>
 <p>上面是saveAstextFile的调用过程，中间省略了一个函数，看代码的最后两行。可以看出调用了<code class="highlighter-rouge"> self.context.runJob()</code>可以知道这里触发了job的提交。</p>
+
 <div class="highlighter-rouge"><pre class="highlight"><code> def runJob[T, U: ClassTag](
       rdd: RDD[T],
       func: (TaskContext, Iterator[T]) =&gt; U,
@@ -369,7 +372,9 @@ object SparkWC {
   }
 </code></pre>
 </div>
+
 <p>可以看出上面代码有 <code class="highlighter-rouge">dagScheduler.runJob</code>，开始进行调度。</p>
+
 <div class="highlighter-rouge"><pre class="highlight"><code>  def runJob[T, U](
       rdd: RDD[T],
       func: (TaskContext, Iterator[T]) =&gt; U,
@@ -400,6 +405,7 @@ object SparkWC {
   }
 </code></pre>
 </div>
+
 <p>在 dagScheduler.runJob()里面有 <code class="highlighter-rouge">submitJob</code>的操作，提交job。
 看下面<code class="highlighter-rouge">submitJob</code>的代码。</p>
 <div class="highlighter-rouge"><pre class="highlight"><code>  def submitJob[T, U](
