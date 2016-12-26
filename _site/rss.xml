@@ -5,10 +5,40 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2016-12-26T15:23:30+08:00</lastBuildDate>
-        <pubDate>2016-12-26T15:23:30+08:00</pubDate>
+        <lastBuildDate>2016-12-26T17:31:57+08:00</lastBuildDate>
+        <pubDate>2016-12-26T17:31:57+08:00</pubDate>
         <ttl>1800</ttl>
 
+
+        <item>
+                <title>Spark源码分析shuffle实现</title>
+                <description>
+&lt;p&gt;目录&lt;/p&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#shuffle&quot; id=&quot;markdown-toc-shuffle&quot;&gt;Shuffle&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#bypassmergesortshufflewriter&quot; id=&quot;markdown-toc-bypassmergesortshufflewriter&quot;&gt;BypassMergeSortShuffleWriter&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+&lt;p&gt;spark shuff部分是spark源码的重要组成部分，shuffle发生在stage的交界处，对于spark的性能有重要影响，源码更新后，spark的shuffle机制也不一样，本文分析spark2.0的shuffle实现。&lt;/p&gt;
+
+&lt;h2 id=&quot;shuffle&quot;&gt;Shuffle&lt;/h2&gt;
+
+&lt;p&gt;shuffle是Mapreduce框架中一个特定的phase，介于Map和Reduce之间。shuffle的英文意思是混洗，包含两个部分，shuffle write 和shuffle read。这里有一篇文章:&lt;a href=&quot;http://jerryshao.me/architecture/2014/01/04/spark-shuffle-detail-investigation/&quot;&gt;详细探究Spark的shuffle实现&lt;/a&gt;，这篇文章写于2014年，讲的是早期版本的shuffle实现。随着源码的更新，shuffle机制也做出了相应的优化，下面分析spark-2.0的shuffle机制。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;shuffleWriter&lt;/code&gt;是一个抽象类，具体实现有三种，&lt;code class=&quot;highlighter-rouge&quot;&gt;BypassMergeSortShuffleWriter&lt;/code&gt;,&lt;code class=&quot;highlighter-rouge&quot;&gt;sortShuffleWriter&lt;/code&gt;,&lt;code class=&quot;highlighter-rouge&quot;&gt;UnsafeShuffleWriter&lt;/code&gt;.之前看过spark1.5的代码，当时是由hashShuffleWriter的，现在spark2.0多了一个&lt;code class=&quot;highlighter-rouge&quot;&gt;BypassMergeSortShuffleWriter&lt;/code&gt;，我们就从这个类型的shuffleWriter说起。&lt;/p&gt;
+
+&lt;h3 id=&quot;bypassmergesortshufflewriter&quot;&gt;BypassMergeSortShuffleWriter&lt;/h3&gt;
+
+</description>
+                <link>http://bbwff.github.io/spark/2016/12/26/spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90Shuffle%E5%AE%9E%E7%8E%B0</link>
+                <guid>http://bbwff.github.io/spark/2016/12/26/spark源码分析Shuffle实现</guid>
+                <pubDate>2016-12-26T00:00:00+08:00</pubDate>
+        </item>
 
         <item>
                 <title>Spark内存预测</title>
