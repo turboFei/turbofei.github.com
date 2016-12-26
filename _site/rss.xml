@@ -5,8 +5,8 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2016-12-26T15:11:55+08:00</lastBuildDate>
-        <pubDate>2016-12-26T15:11:55+08:00</pubDate>
+        <lastBuildDate>2016-12-26T15:23:30+08:00</lastBuildDate>
+        <pubDate>2016-12-26T15:23:30+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -20,8 +20,8 @@
   &lt;li&gt;&lt;a href=&quot;#sizetracker&quot; id=&quot;markdown-toc-sizetracker&quot;&gt;sizeTracker&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#sizeestimator&quot; id=&quot;markdown-toc-sizeestimator&quot;&gt;SizeEstimator&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 &lt;p&gt;spark是一个内存计算框架，因此内存是重要的资源，合理的使用的内存在spark应用在执行过程中非常重要。在使用内存的过程，spark会采用抽样的方法预测出所需要的内存，并预先分配内存。本文会就内存预测机制进行源码的解读。&lt;/p&gt;
 
 &lt;h2 id=&quot;sizetracker&quot;&gt;sizeTracker&lt;/h2&gt;
