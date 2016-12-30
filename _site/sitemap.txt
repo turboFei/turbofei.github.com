@@ -3,6 +3,7 @@ http://bbwff.github.io/about
 http://bbwff.github.io/archive
 http://bbwff.github.io/atom.xml
 http://bbwff.github.io/categories
+http://bbwff.github.io/search/cb-search.json
 http://bbwff.github.io/
 http://bbwff.github.io/pages
 http://bbwff.github.io/rss.xml

@@ -1,6 +1,6 @@
 ---
 layout: index
-title:
+title:  bbw's blog
 ---
 
 {% for post in site.posts %}
