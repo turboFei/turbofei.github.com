@@ -3,6 +3,14 @@
 	"data" : [
 	 
 	{
+		"title" : "代码小技巧 持续更新 - OJ_持续更新",
+		"url" : "/code/2017/01/02/%E4%BB%A3%E7%A0%81%E5%B0%8F%E6%8A%80%E5%B7%A7-%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "Spark源码分析shuffle实现 - spark_shuffle",
 		"url" : "/spark/2016/12/26/spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90Shuffle%E5%AE%9E%E7%8E%B0"
 	}

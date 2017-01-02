@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>理解动态规划</title>
+    <title>代码小技巧 持续更新</title>
     
     <meta name="author" content="bbw">
 
@@ -208,7 +208,7 @@
 
 <div class="span9">
   <div class="page-header">
-    <h1>理解动态规划 </h1>
+    <h1>代码小技巧 持续更新 <small></small></h1>
   </div>
 
   
@@ -220,8 +220,8 @@
 
   
      
-    	<li><a href="/categories.html#算法-ref">
-    		算法 (4)
+    	<li><a href="/categories.html#code-ref">
+    		code (1)
     	</a></li>
     
   
@@ -240,7 +240,9 @@
 
   
      
-    	<li><a href="/tags.html#algorithm-ref">algorithm <span>4</span></a></li>
+    	<li><a href="/tags.html#OJ-ref">OJ <span>1</span></a></li>
+     
+    	<li><a href="/tags.html#持续更新-ref">持续更新 <span>1</span></a></li>
     
   
 
@@ -253,19 +255,108 @@
   <div class="row-fluid post-full">
     <div class="span12">
       <div class="date">
-        <span>14 December 2016</strong>
+        <span>02 January 2017</strong>
       </div>
 
 <script src="/js/jquery.min.js"></script>
 <div class="content">
         
-<p><strong>Overview</strong></p>
+<p>目录</p>
 
-<p>最近在看动态规划，挺难理解的，慢慢看，把心得记录下。</p>
+<ul id="markdown-toc">
+  <li><a href="#background" id="markdown-toc-background">Background</a></li>
+  <li><a href="#逻辑运算的短路" id="markdown-toc-逻辑运算的短路">逻辑运算的短路</a></li>
+  <li><a href="#加法的实现" id="markdown-toc-加法的实现">加法的实现</a></li>
+  <li><a href="#数值类型的范围" id="markdown-toc-数值类型的范围">数值类型的范围</a></li>
+</ul>
 
-<h2 id="参考资料">参考资料</h2>
+<h3 id="background">Background</h3>
+<p>在做牛客的在线编程题，有些比较巧妙地技巧</p>
 
-<p>http://blog.csdn.net/pi9nc/article/details/8142876</p>
+<h2 id="逻辑运算的短路">逻辑运算的短路</h2>
+
+<p>代码里面的逻辑与，<em>&amp;&amp;</em>，只要前面就是false，后面就不会执行了，必定就是false。如果前面是真，那么后面还要执行，后面的真假决定整体的真假。</p>
+
+<p>或操作，如果前面为真，后面就不用执行了。前面为假，后面就执行。</p>
+
+<p>这里有一道题目。</p>
+
+<p>求1+2+3+…+n，要求不能使用乘除法、for、while、if、else、switch、case等关键字及条件判断语句（A?B:C）。</p>
+
+<p>这里不能使用那些判断和循环的语句。那么怎样才能循环或者判断递归求和呢？</p>
+
+<p>如果能使用if else 那就很简单了。就是n=1时候返回1结束，其他就递归调用。</p>
+
+<p>但是不能用if else，下面的代码很巧妙。</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public int Sum_Solution(int n) {
+    int sum=n;
+    boolean flag=(sum&gt;0)&amp;&amp;((sum+=Sum_Solution(n-1))&gt;0);
+    return sum;
+}
+</code></pre>
+</div>
+
+<p>这里，就是先让 sum=n,第二句是与语句，如果sum&gt;0不成立，也就是n=0时候，后面的sum+=Sum_solution(n-1)就不会执行，就相当于到这里是栈顶了。然后其他时候sum&gt;0都是成立的，都会执行后面的代码。</p>
+
+<table>
+  <tbody>
+    <tr>
+      <td>所以这里也可以用*</td>
+      <td> </td>
+      <td>*来实现。如下。</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public int Sum_Solution(int n) {
+    int sum=n;
+    boolean flag=(sum==00)||((sum+=Sum_Solution(n-1))&gt;0);
+    return sum;
+}
+</code></pre>
+</div>
+
+<h2 id="加法的实现">加法的实现</h2>
+
+<p>这个应该是组成原理的内容吧。。有加法器的硬件实现过程。不过我已经忘了。</p>
+
+<p>题目如下：写一个函数，求两个整数之和，要求在函数体内不得使用+、-、*、/四则运算符号。</p>
+
+<p>看了下有人的分析：</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>首先看十进制是如何做的： 5+7=12，三步走
+第一步：相加各位的值，不算进位，得到2。
+第二步：计算进位值，得到10. 如果这一步的进位值为0，那么第一步得到的值就是最终结果。
+
+第三步：重复上述两步，只是相加的值变成上述两步的得到的结果2和10，得到12。
+
+同样我们可以用三步走的方式计算二进制值相加： 5-101，7-111 第一步：相加各位的值，不算进位，得到010，二进制每位相加就相当于各位做异或操作，101^111。
+
+第二步：计算进位值，得到1010，相当于各位做与操作得到101，再向左移一位得到1010，(101&amp;111)&lt;&lt;1。
+
+第三步重复上述两步， 各位相加 010^1010=1000，进位值为100=(010&amp;1010)&lt;&lt;1。
+     继续重复上述两步：1000^100 = 1100，进位值为0，跳出循环，1100为最终结果。
+</code></pre>
+</div>
+
+<p>代码如下：</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>public int Add(int num1,int num2) {
+    if ( 0 == num2 ) return num1;
+
+    int sum = num1 ^ num2;
+    int carry = (num1 &amp; num2) &lt;&lt; 1;
+    return Add(sum, carry);
+}
+</code></pre>
+</div>
+
+<p>先亦或，再左移，递归。</p>
+
+<h2 id="数值类型的范围">数值类型的范围</h2>
+
+<p>对于一个有符号的数，它的数值范围为-n~n-1。所以如果你要的结果是-n，而你想先算出n，然后再0-n。这样的n是越界的，必须用另外一种范围更大的类型表示，然后进行强制类型转换，或者一开始就用负数来求。</p>
 
 
       </div>
@@ -274,11 +365,11 @@
         <div class="pagination">
           <ul>
           
-            <li class="prev"><a href="/%E7%AE%97%E6%B3%95/2016/12/13/%E5%8C%BA%E9%97%B4%E5%86%851%E5%87%BA%E7%8E%B0%E6%AC%A1%E6%95%B0" title="区间内1出现次数">&larr; Previous</a></li>
+            <li class="prev"><a href="/spark/2016/12/26/spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90Shuffle%E5%AE%9E%E7%8E%B0" title="Spark源码分析shuffle实现">&larr; Previous</a></li>
           
             <li><a href="/archive.html">Archive</a></li>
           
-            <li class="next"><a href="/spark/2016/12/19/spark%E7%BB%9F%E4%B8%80%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86" title="spark统一内存管理">Next &rarr;</a></li>
+            <li class="next disabled"><a>Next &rarr;</a>
           
           </ul>
         </div>
@@ -296,7 +387,7 @@
 <!-- JiaThis Button END -->
 
 <!-- 多说评论框 start -->
-        <div class="ds-thread"  data-title=" 理解动态规划 " ></div>
+        <div class="ds-thread"  data-title=" 代码小技巧 持续更新 " ></div>
 <!-- 多说评论框 end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
