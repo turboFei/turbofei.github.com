@@ -4,13 +4,119 @@
  <title>bbw's blog</title>
  <link href="http://bbwff.github.io/" rel="self"/>
  <link href="http://bbwff.github.io"/>
- <updated>2017-01-03T09:38:17+08:00</updated>
+ <updated>2017-01-03T09:41:29+08:00</updated>
  <id>http://bbwff.github.io</id>
  <author>
    <name>bbw</name>
    <email>cn.feiwang@gmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>代码小技巧</title>
+   <link href="http://bbwff.github.io/code/2017/01/02/%E4%BB%A3%E7%A0%81%E5%B0%8F%E6%8A%80%E5%B7%A7"/>
+   <updated>2017-01-02T00:00:00+08:00</updated>
+   <id>http://bbwff.github.io/code/2017/01/02/代码小技巧</id>
+   <content type="html">
+&lt;p&gt;目录&lt;/p&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#逻辑运算的短路&quot; id=&quot;markdown-toc-逻辑运算的短路&quot;&gt;逻辑运算的短路&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#加法的实现&quot; id=&quot;markdown-toc-加法的实现&quot;&gt;加法的实现&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#数值类型的范围&quot; id=&quot;markdown-toc-数值类型的范围&quot;&gt;数值类型的范围&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+&lt;p&gt;在做牛客的在线编程题，有些比较巧妙地技巧&lt;/p&gt;
+
+&lt;h2 id=&quot;逻辑运算的短路&quot;&gt;逻辑运算的短路&lt;/h2&gt;
+
+&lt;p&gt;代码里面的逻辑与，&lt;em&gt;&amp;amp;&amp;amp;&lt;/em&gt;，只要前面就是false，后面就不会执行了，必定就是false。如果前面是真，那么后面还要执行，后面的真假决定整体的真假。&lt;/p&gt;
+
+&lt;p&gt;或操作，如果前面为真，后面就不用执行了。前面为假，后面就执行。&lt;/p&gt;
+
+&lt;p&gt;这里有一道题目。&lt;/p&gt;
+
+&lt;p&gt;求1+2+3+…+n，要求不能使用乘除法、for、while、if、else、switch、case等关键字及条件判断语句（A?B:C）。&lt;/p&gt;
+
+&lt;p&gt;这里不能使用那些判断和循环的语句。那么怎样才能循环或者判断递归求和呢？&lt;/p&gt;
+
+&lt;p&gt;如果能使用if else 那就很简单了。就是n=1时候返回1结束，其他就递归调用。&lt;/p&gt;
+
+&lt;p&gt;但是不能用if else，下面的代码很巧妙。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public int Sum_Solution(int n) {
+    int sum=n;
+    boolean flag=(sum&amp;gt;0)&amp;amp;&amp;amp;((sum+=Sum_Solution(n-1))&amp;gt;0);
+    return sum;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这里，就是先让 sum=n,第二句是与语句，如果sum&amp;gt;0不成立，也就是n=0时候，后面的sum+=Sum_solution(n-1)就不会执行，就相当于到这里是栈顶了。然后其他时候sum&amp;gt;0都是成立的，都会执行后面的代码。&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;所以这里也可以用*&lt;/td&gt;
+      &lt;td&gt; &lt;/td&gt;
+      &lt;td&gt;*来实现。如下。&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public int Sum_Solution(int n) {
+    int sum=n;
+    boolean flag=(sum==00)||((sum+=Sum_Solution(n-1))&amp;gt;0);
+    return sum;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;加法的实现&quot;&gt;加法的实现&lt;/h2&gt;
+
+&lt;p&gt;这个应该是组成原理的内容吧。。有加法器的硬件实现过程。不过我已经忘了。&lt;/p&gt;
+
+&lt;p&gt;题目如下：写一个函数，求两个整数之和，要求在函数体内不得使用+、-、*、/四则运算符号。&lt;/p&gt;
+
+&lt;p&gt;看了下有人的分析：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;首先看十进制是如何做的： 5+7=12，三步走
+第一步：相加各位的值，不算进位，得到2。
+第二步：计算进位值，得到10. 如果这一步的进位值为0，那么第一步得到的值就是最终结果。
+
+第三步：重复上述两步，只是相加的值变成上述两步的得到的结果2和10，得到12。
+
+同样我们可以用三步走的方式计算二进制值相加： 5-101，7-111 第一步：相加各位的值，不算进位，得到010，二进制每位相加就相当于各位做异或操作，101^111。
+
+第二步：计算进位值，得到1010，相当于各位做与操作得到101，再向左移一位得到1010，(101&amp;amp;111)&amp;lt;&amp;lt;1。
+
+第三步重复上述两步， 各位相加 010^1010=1000，进位值为100=(010&amp;amp;1010)&amp;lt;&amp;lt;1。
+     继续重复上述两步：1000^100 = 1100，进位值为0，跳出循环，1100为最终结果。
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;代码如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public int Add(int num1,int num2) {
+    if ( 0 == num2 ) return num1;
+
+    int sum = num1 ^ num2;
+    int carry = (num1 &amp;amp; num2) &amp;lt;&amp;lt; 1;
+    return Add(sum, carry);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;先亦或，再左移，递归。&lt;/p&gt;
+
+&lt;h2 id=&quot;数值类型的范围&quot;&gt;数值类型的范围&lt;/h2&gt;
+
+&lt;p&gt;对于一个有符号的数，它的数值范围为-n~n-1。所以如果你要的结果是-n，而你想先算出n，然后再0-n。这样的n是越界的，必须用另外一种范围更大的类型表示，然后进行强制类型转换，或者一开始就用负数来求。&lt;/p&gt;
+
+</content>
+ </entry>
  
  <entry>
    <title>代码小技巧 持续更新</title>

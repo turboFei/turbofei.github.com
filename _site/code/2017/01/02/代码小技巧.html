@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>ganglia 安装</title>
+    <title>代码小技巧</title>
     
     <meta name="author" content="bbw">
 
@@ -208,7 +208,7 @@
 
 <div class="span9">
   <div class="page-header">
-    <h1>ganglia 安装 </h1>
+    <h1>代码小技巧 <small></small></h1>
   </div>
 
   
@@ -220,8 +220,8 @@
 
   
      
-    	<li><a href="/categories.html#环境配置-ref">
-    		环境配置 (1)
+    	<li><a href="/categories.html#code-ref">
+    		code (2)
     	</a></li>
     
   
@@ -240,7 +240,9 @@
 
   
      
-    	<li><a href="/tags.html#env-ref">env <span>1</span></a></li>
+    	<li><a href="/tags.html#OJ-ref">OJ <span>2</span></a></li>
+     
+    	<li><a href="/tags.html#待续-ref">待续 <span>3</span></a></li>
     
   
 
@@ -253,264 +255,108 @@
   <div class="row-fluid post-full">
     <div class="span12">
       <div class="date">
-        <span>17 August 2016</strong>
+        <span>02 January 2017</strong>
       </div>
 
 <script src="/js/jquery.min.js"></script>
 <div class="content">
         
-<p><strong>Overview</strong></p>
+<p>目录</p>
 
-<p>最近帮大菠萝安装ganglia，记录下，方便以后安装。</p>
+<ul id="markdown-toc">
+  <li><a href="#background" id="markdown-toc-background">Background</a></li>
+  <li><a href="#逻辑运算的短路" id="markdown-toc-逻辑运算的短路">逻辑运算的短路</a></li>
+  <li><a href="#加法的实现" id="markdown-toc-加法的实现">加法的实现</a></li>
+  <li><a href="#数值类型的范围" id="markdown-toc-数值类型的范围">数值类型的范围</a></li>
+</ul>
 
-<h1 id="cluster-server-and-clients">Cluster Server and Clients</h1>
+<h3 id="background">Background</h3>
+<p>在做牛客的在线编程题，有些比较巧妙地技巧</p>
 
-<p>I configured our nodes with the following hostnames using these steps. Our server is:</p>
+<h2 id="逻辑运算的短路">逻辑运算的短路</h2>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>3.buhpc.com
-</code></pre>
-</div>
+<p>代码里面的逻辑与，<em>&amp;&amp;</em>，只要前面就是false，后面就不会执行了，必定就是false。如果前面是真，那么后面还要执行，后面的真假决定整体的真假。</p>
 
-<p>The clients are:</p>
+<p>或操作，如果前面为真，后面就不用执行了。前面为假，后面就执行。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>1.buhpc.com
-2.buhpc.com
-4.buhpc.com
-5.buhpc.com
-6.buhpc.com
-</code></pre>
-</div>
-<!--more-->
+<p>这里有一道题目。</p>
 
-<h1 id="installation">Installation</h1>
+<p>求1+2+3+…+n，要求不能使用乘除法、for、while、if、else、switch、case等关键字及条件判断语句（A?B:C）。</p>
 
-<p>On the server, inside the shared folder of our cluster, we will first download the latest version of ganglia. For our cluster, /nfs is the folder with our network file system.</p>
+<p>这里不能使用那些判断和循环的语句。那么怎样才能循环或者判断递归求和呢？</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>cd /nfs
-wget http://downloads.sourceforge.net/project/ganglia/ganglia%20monitoring%20core/3.7.2/ganglia-3.7.2.tar.gz
-</code></pre>
-</div>
-<p>On the server, we will install dependencies and libconfuse.</p>
+<p>如果能使用if else 那就很简单了。就是n=1时候返回1结束，其他就递归调用。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
-yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
-yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
+<p>但是不能用if else，下面的代码很巧妙。</p>
 
-#建立rrd数据库
-mkdir -p /var/lib/ganglia/rrds/
-chown nobody:nobody -R /var/lib/ganglia/rrds/
-</code></pre>
-</div>
-
-<p>Now, we will build the rpms from ganglia-3.7.2 on the server.</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>rpmbuild -tb ganglia-3.7.2.tar.gz
-</code></pre>
-</div>
-<p>After running rpmbuild, /root/rpmbuild/RPMS/x86_64 contains the generated rpms:</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>cd /root/rpmbuild/RPMS/x86_64/
-yum install *ganglia*.rpm -y
-</code></pre>
-</div>
-<p>We will remove gmetad because we do not need it on the clients. Send the rest of the rpms to all the clients’ /tmp folder:</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>cd /root/rpmbuild/RPMS/x86_64/
-rm -rf ganglia-gmetad*.rpm
-scp *.rpm root@1.buhpc.com:/tmp
-scp *.rpm root@2.buhpc.com:/tmp
-scp *.rpm root@4.buhpc.com:/tmp
-scp *.rpm root@5.buhpc.com:/tmp
-scp *.rpm root@6.buhpc.com:/tmp
-</code></pre>
-</div>
-<p>SSH onto every client and install the rpms that we will need:</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>ssh root@#.buhpc.com
-yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
-yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
-yum install /tmp/*ganglia*.rpm - y
-</code></pre>
-</div>
-<p>Back on the server, we will adjust the gmetad configuration file:</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>cd /etc/ganglia
-vim gmetad.conf
-</code></pre>
-</div>
-<p>buhpc will be the name of  our cluster. Find the following line and add the name of your cluster and ip address. I am using the subdomain instead of the ip address.</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>data_source "buhpc" 1 3.buhpc.com
-</code></pre>
-</div>
-<p>Now, we edit the server’s gmond configuration file.</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>vim /etc/ganglia/gmond.conf
-</code></pre>
-</div>
-<p>Make sure that these sections have the following and comment any extra lines you see that are within each section.</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>cluster {
-  name = "buhpc"
-  owner = "unspecified"
-  latlong = "unspecified"
-  url = "unspecified"
-}
-
-udp_send_channel {
-  host = 1.buhpc.com
-  port = 8649
-  ttl = 1
-}
-
-udp_send_channel {
-  host = 2.buhpc.com
-  port = 8649
-  ttl = 1
-}
-
-udp_send_channel {
-  host = 3.buhpc.com
-  port = 8649
-  ttl = 1
-}
-udp_send_channel {
-  host = 4.buhpc.com
-  port = 8649
-  ttl = 1
-}
-
-udp_send_channel {
-  host = 5.buhpc.com
-  port = 8649
-  ttl = 1
-}
-
-udp_send_channel {
-  host = 6.buhpc.com
-  port = 8649
-  ttl = 1
-}
-
-udp_recv_channel {
-  port = 8649
-  retry_bind = true
+<div class="highlighter-rouge"><pre class="highlight"><code>public int Sum_Solution(int n) {
+    int sum=n;
+    boolean flag=(sum&gt;0)&amp;&amp;((sum+=Sum_Solution(n-1))&gt;0);
+    return sum;
 }
 </code></pre>
 </div>
-<p>Now, SSH into each of the clients and do the following individually. On every client:</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>vim /etc/ganglia/gmond.conf
-</code></pre>
-</div>
-<p>We will change the clients’ gmond.conf in the same way as the server’s.  Make sure that these sections have the following lines and comment any extra lines you see that are within each section.</p>
+<p>这里，就是先让 sum=n,第二句是与语句，如果sum&gt;0不成立，也就是n=0时候，后面的sum+=Sum_solution(n-1)就不会执行，就相当于到这里是栈顶了。然后其他时候sum&gt;0都是成立的，都会执行后面的代码。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>cluster {
-  name = "buhpc"
-  owner = "unspecified"
-  latlong = "unspecified"
-  url = "unspecified"
-}
+<table>
+  <tbody>
+    <tr>
+      <td>所以这里也可以用*</td>
+      <td> </td>
+      <td>*来实现。如下。</td>
+    </tr>
+  </tbody>
+</table>
 
-udp_send_channel {
-  host = 1.buhpc.com
-  port = 8649
-  ttl = 1
-}
-
-udp_send_channel {
-  host = 2.buhpc.com
-  port = 8649
-  ttl = 1
-}
-
-udp_send_channel {
-  host = 3.buhpc.com
-  port = 8649
-  ttl = 1
-}
-udp_send_channel {
-  host = 4.buhpc.com
-  port = 8649
-  ttl = 1
-}
-
-udp_send_channel {
-  host = 5.buhpc.com
-  port = 8649
-  ttl = 1
-}
-
-udp_send_channel {
-  host = 6.buhpc.com
-  port = 8649
-  ttl = 1
-}
-
-udp_recv_channel {
-  port = 8649
-  retry_bind = true
+<div class="highlighter-rouge"><pre class="highlight"><code>public int Sum_Solution(int n) {
+    int sum=n;
+    boolean flag=(sum==00)||((sum+=Sum_Solution(n-1))&gt;0);
+    return sum;
 }
 </code></pre>
 </div>
-<p>We will start gmond on the clients for monitoring.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>chkconfig gmond on
-systemctl start gmond
-</code></pre>
-</div>
-<p>然后，安装ganglia-web 3.7.1</p>
+<h2 id="加法的实现">加法的实现</h2>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
-tar zxvf  ganglia-web-3.7.1.tar.gz
-cd  ganglia-web-3.7.1
-vim Makefile
-      # Location where gweb should be installed to (excluding conf, dwoo dirs).
-      GDESTDIR = /var/www/html/ganglia
+<p>这个应该是组成原理的内容吧。。有加法器的硬件实现过程。不过我已经忘了。</p>
 
-      # Gweb statedir (where conf dir and Dwoo templates dir are stored)
-      GWEB_STATEDIR = /var/lib/ganglia-web
+<p>题目如下：写一个函数，求两个整数之和，要求在函数体内不得使用+、-、*、/四则运算符号。</p>
 
-      # Gmetad rootdir (parent location of rrd folder)
-      GMETAD_ROOTDIR = /var/lib/ganglia
+<p>看了下有人的分析：</p>
 
-      # User by which your webserver is running
-      APACHE_USER =  apache
+<div class="highlighter-rouge"><pre class="highlight"><code>首先看十进制是如何做的： 5+7=12，三步走
+第一步：相加各位的值，不算进位，得到2。
+第二步：计算进位值，得到10. 如果这一步的进位值为0，那么第一步得到的值就是最终结果。
 
- make install
+第三步：重复上述两步，只是相加的值变成上述两步的得到的结果2和10，得到12。
+
+同样我们可以用三步走的方式计算二进制值相加： 5-101，7-111 第一步：相加各位的值，不算进位，得到010，二进制每位相加就相当于各位做异或操作，101^111。
+
+第二步：计算进位值，得到1010，相当于各位做与操作得到101，再向左移一位得到1010，(101&amp;111)&lt;&lt;1。
+
+第三步重复上述两步， 各位相加 010^1010=1000，进位值为100=(010&amp;1010)&lt;&lt;1。
+     继续重复上述两步：1000^100 = 1100，进位值为0，跳出循环，1100为最终结果。
 </code></pre>
 </div>
 
-<p>Next, we will want to disable SELinux. Change SELINUX inside /etc/sysconfig/selinux from enforcing to disabled. Then, restart the server node.</p>
+<p>代码如下：</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>vim /etc/sysconfig/selinux
-SELINUX=disabled
-#如果 SELINUX本就是disable，不必reboot
-reboot
-Now, on the server, we’ll open the correct ports on the firewall.
+<div class="highlighter-rouge"><pre class="highlight"><code>public int Add(int num1,int num2) {
+    if ( 0 == num2 ) return num1;
 
-#如果 firewall 没有打开，systemctl service firewalld
-firewall-cmd --permanent --zone=public --add-service=http
-firewall-cmd --permanent --zone=public --add-port=8649/udp
-firewall-cmd --permanent --zone=public --add-port=8649/tcp
-firewall-cmd --permanent --zone=public --add-port=8651/tcp
-firewall-cmd --permanent --zone=public --add-port=8652/tcp
-firewall-cmd --reload
+    int sum = num1 ^ num2;
+    int carry = (num1 &amp; num2) &lt;&lt; 1;
+    return Add(sum, carry);
+}
 </code></pre>
 </div>
-<p>On the server, we will now start httpd, gmetad, and gmond.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>chkconfig httpd
-chkconfig gmetad on
-chkconfig gmond on
-systemctl start httpd
-systemctl start gmetad
-systemctl start gmond
-</code></pre>
-</div>
-<p>Visit http://3.buhpc.com/ganglia to see Ganglia’s monitoring. You should see something like this:</p>
+<p>先亦或，再左移，递归。</p>
 
-<p><img src="http://www.slothparadise.com/wp-content/uploads/2016/03/ganglia-home-page.png" alt="" /></p>
+<h2 id="数值类型的范围">数值类型的范围</h2>
+
+<p>对于一个有符号的数，它的数值范围为-n~n-1。所以如果你要的结果是-n，而你想先算出n，然后再0-n。这样的n是越界的，必须用另外一种范围更大的类型表示，然后进行强制类型转换，或者一开始就用负数来求。</p>
 
 
       </div>
@@ -519,11 +365,11 @@ systemctl start gmond
         <div class="pagination">
           <ul>
           
-            <li class="prev"><a href="/%E6%97%A5%E8%AE%B0/2016/07/22/%E7%94%9F%E6%B4%BB%E6%97%A5%E8%AE%B0" title="生活日记">&larr; Previous</a></li>
+            <li class="prev"><a href="/code/2017/01/02/%E4%BB%A3%E7%A0%81%E5%B0%8F%E6%8A%80%E5%B7%A7-%E6%8C%81%E7%BB%AD%E6%9B%B4%E6%96%B0" title="代码小技巧 持续更新">&larr; Previous</a></li>
           
             <li><a href="/archive.html">Archive</a></li>
           
-            <li class="next"><a href="/%E7%A7%91%E7%A0%94%E7%9B%B8%E5%85%B3/2016/08/30/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BC%9A%E8%AE%AE" title="计算机会议">Next &rarr;</a></li>
+            <li class="next disabled"><a>Next &rarr;</a>
           
           </ul>
         </div>
@@ -541,7 +387,7 @@ systemctl start gmond
 <!-- JiaThis Button END -->
 
 <!-- 多说评论框 start -->
-        <div class="ds-thread"  data-title=" ganglia 安装 " ></div>
+        <div class="ds-thread"  data-title=" 代码小技巧 " ></div>
 <!-- 多说评论框 end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
