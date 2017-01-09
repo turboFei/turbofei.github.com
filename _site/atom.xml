@@ -4,7 +4,7 @@
  <title>bbw's blog</title>
  <link href="http://bbwff.github.io/" rel="self"/>
  <link href="http://bbwff.github.io"/>
- <updated>2017-01-03T09:43:34+08:00</updated>
+ <updated>2017-01-09T10:42:53+08:00</updated>
  <id>http://bbwff.github.io</id>
  <author>
    <name>bbw</name>
@@ -25,6 +25,8 @@
   &lt;li&gt;&lt;a href=&quot;#逻辑运算的短路&quot; id=&quot;markdown-toc-逻辑运算的短路&quot;&gt;逻辑运算的短路&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#加法的实现&quot; id=&quot;markdown-toc-加法的实现&quot;&gt;加法的实现&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#数值类型的范围&quot; id=&quot;markdown-toc-数值类型的范围&quot;&gt;数值类型的范围&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#递归&quot; id=&quot;markdown-toc-递归&quot;&gt;递归&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#减少没用分支对无用代码进行合并&quot; id=&quot;markdown-toc-减少没用分支对无用代码进行合并&quot;&gt;减少没用分支，对无用代码进行合并&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
@@ -115,6 +117,114 @@
 
 &lt;p&gt;对于一个有符号的数，它的数值范围为-n~n-1。所以如果你要的结果是-n，而你想先算出n，然后再0-n。这样的n是越界的，必须用另外一种范围更大的类型表示，然后进行强制类型转换，或者一开始就用负数来求。&lt;/p&gt;
 
+&lt;h2 id=&quot;递归&quot;&gt;递归&lt;/h2&gt;
+
+&lt;p&gt;递归是一个很神奇的东西，他可以把一些方法处理分支用他本身来表示，比如当某个条件下，会有三条分支，这三条分支都可以用递归的方法来表示。&lt;/p&gt;
+
+&lt;p&gt;题目如下：请实现一个函数用来匹配包括’.’和’&lt;em&gt;‘的正则表达式。模式中的字符’.’表示任意一个字符，而’&lt;/em&gt;‘表示它前面的字符可以出现任意次（包含0次）。 在本题中，匹配是指字符串的所有字符匹配整个模式。例如，字符串”aaa”与模式”a.a”和”ab&lt;em&gt;ac&lt;/em&gt;a”匹配，但是与”aa.a”和”ab*a”均不匹配&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;当模式中的第二个字符不是“*”时：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;1、如果字符串第一个字符和模式中的第一个字符相匹配，那么字符串和模式都后移一个字符，然后匹配剩余的。&lt;/p&gt;
+
+&lt;p&gt;2、如果 字符串第一个字符和模式中的第一个字符相不匹配，直接返回false。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;而当模式中的第二个字符是“*”时：&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;如果字符串第一个字符跟模式第一个字符不匹配，则模式后移2个字符，继续匹配。如果字符串第一个字符跟模式第一个字符匹配，可以有3种匹配方式：&lt;/p&gt;
+
+&lt;p&gt;1、模式后移2字符，相当于x*被忽略；&lt;/p&gt;
+
+&lt;p&gt;2、字符串后移1字符，模式后移2字符；&lt;/p&gt;
+
+&lt;p&gt;3、字符串后移1字符，模式不变，即继续匹配字符下一位，因为*可以匹配多位；&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;这里需要注意的是：Java里，要时刻检验数组是否越界。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public boolean match(char[] str, char[] pattern) {
+    if (str == null || pattern == null) {
+        return false;
+    }
+    int strIndex = 0;
+    int patternIndex = 0;
+    return matchCore(str, strIndex, pattern, patternIndex);
+}
+
+public boolean matchCore(char[] str, int strIndex, char[] pattern, int patternIndex) {
+    //有效性检验：str到尾，pattern到尾，匹配成功
+    if (strIndex == str.length &amp;amp;&amp;amp; patternIndex == pattern.length) {
+        return true;
+    }
+    //pattern先到尾，匹配失败
+    if (strIndex != str.length &amp;amp;&amp;amp; patternIndex == pattern.length) {
+        return false;
+    }
+    //模式第2个是*，且字符串第1个跟模式第1个匹配,分3种匹配模式；如不匹配，模式后移2位
+    if (patternIndex + 1 &amp;lt; pattern.length &amp;amp;&amp;amp; pattern[patternIndex + 1] == '*') {
+        if ((strIndex != str.length &amp;amp;&amp;amp; pattern[patternIndex] == str[strIndex]) || (pattern[patternIndex] == '.' &amp;amp;&amp;amp; strIndex != str.length)) {
+            return matchCore(str, strIndex, pattern, patternIndex + 2)//模式后移2，视为x*匹配0个字符
+                    || matchCore(str, strIndex + 1, pattern, patternIndex + 2)//视为模式匹配1个字符
+                    || matchCore(str, strIndex + 1, pattern, patternIndex);//*匹配1个，再匹配str中的下一个
+        } else {
+            return matchCore(str, strIndex, pattern, patternIndex + 2);
+        }
+    }
+    //模式第2个不是*，且字符串第1个跟模式第1个匹配，则都后移1位，否则直接返回false
+    if ((strIndex != str.length &amp;amp;&amp;amp; pattern[patternIndex] == str[strIndex]) || (pattern[patternIndex] == '.' &amp;amp;&amp;amp; strIndex != str.length)) {
+        return matchCore(str, strIndex + 1, pattern, patternIndex + 1);
+    }
+    return false;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这里就是用递归实现那几个分支。&lt;/p&gt;
+
+&lt;h2 id=&quot;减少没用分支对无用代码进行合并&quot;&gt;减少没用分支，对无用代码进行合并&lt;/h2&gt;
+
+&lt;p&gt;以前写那种上下左右寻路的题目，总是很傻的，判断往上走是不是可能的，往下走是不是可能的，然后左右是不是可能的，这样会造成大量重复代码，而且代码往往容易出错。其实这些都可以交由程序开头直接去判断的。&lt;/p&gt;
+
+&lt;p&gt;请设计一个函数，用来判断在一个矩阵中是否存在一条包含某字符串所有字符的路径。路径可以从矩阵中的任意一个格子开始，每一步可以在矩阵中向左，向右，向上，向下移动一个格子。如果一条路径经过了矩阵中的某一个格子，则该路径不能再进入该格子。 例如 a b c e s f c s a d e e 矩阵中包含一条字符串”bccced”的路径，但是矩阵中不包含”abcb”路径，因为字符串的第一个字符b占据了矩阵中的第一行第二个格子之后，路径不能再次进入该格子。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;public class hasPath {
+    public boolean hasPath(char[] matrix, int rows, int cols, char[] str)
+    {
+        if (str.length==0)
+            return true;
+        if (matrix.length==0||rows==0||cols==0||matrix.length!=rows*cols)
+            return false;
+        int[]mark=new int[rows*cols];
+       for (int i=0;i&amp;lt;rows;i++){
+           for (int j=0;j&amp;lt;cols;j++){
+               if (helper(matrix,i,j,rows,cols,mark,str,0)==true)
+                   return true;
+           }
+       }
+        return false;
+    }
+    public boolean helper(char []matrix,int row,int col,int rows,int cols,int[]mark,char[]str,int k){
+
+        int site=row*cols+col;
+        if (row&amp;lt;0||row&amp;gt;=rows||col&amp;lt;0||col&amp;gt;=cols||mark[site]!=0||matrix[site]!=str[k])
+            return false;
+        if (str.length-1==k)
+            return true;
+
+        mark[site]=1;
+        if (helper(matrix,row-1,col,rows,cols,mark,str,k+1)||
+                helper(matrix,row+1,col,rows,cols,mark,str,k+1)||
+                helper(matrix,row,col-1,rows,cols,mark,str,k+1)||
+                helper(matrix,row,col+1,rows,cols,mark,str,k+1)
+                )
+            return true;
+        mark[site]=0;
+        return false;
+    }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这样就比较简洁。想想自己以前好傻😯。&lt;/p&gt;
 </content>
  </entry>
  
