@@ -4,7 +4,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Hello World</title>
+    <title>Facebook的实时处理</title>
     
     <meta name="author" content="bbw">
 
@@ -208,7 +208,7 @@
 
 <div class="span9">
   <div class="page-header">
-    <h1>Hello World <small></small></h1>
+    <h1>Facebook的实时处理 <small></small></h1>
   </div>
 
   
@@ -220,8 +220,8 @@
 
   
      
-    	<li><a href="/categories.html#test-ref">
-    		test (1)
+    	<li><a href="/categories.html#Paper Translation-ref">
+    		Paper Translation (1)
     	</a></li>
     
   
@@ -240,7 +240,11 @@
 
   
      
-    	<li><a href="/tags.html#test-ref">test <span>1</span></a></li>
+    	<li><a href="/tags.html#Realtime-ref">Realtime <span>1</span></a></li>
+     
+    	<li><a href="/tags.html#Facebook-ref">Facebook <span>1</span></a></li>
+     
+    	<li><a href="/tags.html#data process-ref">data process <span>1</span></a></li>
     
   
 
@@ -253,7 +257,7 @@
   <div class="row-fluid post-full">
     <div class="span12">
       <div class="date">
-        <span>22 July 1995</strong>
+        <span>17 February 2017</strong>
       </div>
 
 <script src="/js/jquery.min.js"></script>
@@ -263,18 +267,40 @@
 
 <ul id="markdown-toc">
   <li><a href="#background" id="markdown-toc-background">Background</a></li>
+  <li><a href="#引言" id="markdown-toc-引言">引言</a></li>
+  <li><a href="#参考文献" id="markdown-toc-参考文献">参考文献</a></li>
 </ul>
 
 <h3 id="background">Background</h3>
-<p>模板</p>
+<p>这是翻译的一篇sigmod2016的论文，觉得蛮有意义，就准备翻译记录一下。</p>
 
-<p><strong>Black</strong></p>
+<h3 id="引言">引言</h3>
 
-<ul>
-  <li><strong>list</strong></li>
-</ul>
+<p>实时处理系统的设计需要考虑一下几个方面。</p>
 
-<p><code class="highlighter-rouge">mark</code></p>
+<p>1、便于使用。便于开发应用。</p>
+
+<p>2、性能。多少的延迟是可以接受的。</p>
+
+<p>3、容错。什么错误可以容忍，</p>
+
+<p>4、可扩展。并行。</p>
+
+<p>5、正确性。保证一定的准确度。</p>
+
+<p>这篇文章介绍四条数据流水线。</p>
+
+<p>1、choros，这是用于汇聚Facebook用户的声音：比如top5最热话题，还有世界杯粉丝数等等。</p>
+
+<p>2、移动端分析，给facebook开发者反馈，用来诊断性能和准确度，比如什么时候是cold time，以及Facebook客户端的崩溃率。</p>
+
+<p>3、为每个用户界面提供实时的赞，阅读量，订阅量。</p>
+
+<p>4、</p>
+
+<h3 id="参考文献">参考文献</h3>
+
+<p>Chen, Guoqiang Jerry, et al. “Realtime data processing at Facebook.” <em>Proceedings of the 2016 International Conference on Management of Data</em>. ACM, 2016.</p>
 
       </div>
  
@@ -282,11 +308,11 @@
         <div class="pagination">
           <ul>
           
-            <li class="prev disabled"><a>&larr; Previous</a></li>
+            <li class="prev"><a href="/code/2017/01/02/%E4%BB%A3%E7%A0%81%E5%B0%8F%E6%8A%80%E5%B7%A7" title="代码小技巧">&larr; Previous</a></li>
           
             <li><a href="/archive.html">Archive</a></li>
           
-            <li class="next"><a href="/%E6%97%A5%E8%AE%B0/2016/07/22/%E7%94%9F%E6%B4%BB%E6%97%A5%E8%AE%B0" title="生活日记">Next &rarr;</a></li>
+            <li class="next"><a href="/test/2017/07/01/deca%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93" title="Deca项目总结">Next &rarr;</a></li>
           
           </ul>
         </div>
@@ -304,7 +330,7 @@
 <!-- JiaThis Button END -->
 
 <!-- 多说评论框 start -->
-        <div class="ds-thread"  data-title=" Hello World " ></div>
+        <div class="ds-thread"  data-title=" Facebook的实时处理 " ></div>
 <!-- 多说评论框 end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
@@ -346,7 +372,7 @@ var duoshuoQuery = {short_name:"feiwang";
   
      
     	<li><a href="/categories.html#test-ref">
-    		test (1)
+    		test (2)
     	</a></li>
      
     	<li><a href="/categories.html#日记-ref">
@@ -376,6 +402,10 @@ var duoshuoQuery = {short_name:"feiwang";
     	<li><a href="/categories.html#code-ref">
     		code (1)
     	</a></li>
+     
+    	<li><a href="/categories.html#Paper Translation-ref">
+    		Paper Translation (1)
+    	</a></li>
     
   
 
@@ -389,7 +419,7 @@ var duoshuoQuery = {short_name:"feiwang";
 
   
      
-    	<li><a href="/tags.html#test-ref">test <span>(1)</span></a></li>
+    	<li><a href="/tags.html#test-ref">test <span>(2)</span></a></li>
      
     	<li><a href="/tags.html#吐槽-ref">吐槽 <span>(1)</span></a></li>
      
@@ -412,6 +442,12 @@ var duoshuoQuery = {short_name:"feiwang";
     	<li><a href="/tags.html#shuffle-ref">shuffle <span>(1)</span></a></li>
      
     	<li><a href="/tags.html#OJ-ref">OJ <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#Realtime-ref">Realtime <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#Facebook-ref">Facebook <span>(1)</span></a></li>
+     
+    	<li><a href="/tags.html#data process-ref">data process <span>(1)</span></a></li>
     
   
 

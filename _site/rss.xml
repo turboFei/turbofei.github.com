@@ -5,10 +5,82 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2017-01-09T10:42:53+08:00</lastBuildDate>
-        <pubDate>2017-01-09T10:42:53+08:00</pubDate>
+        <lastBuildDate>2017-07-01T14:13:25+08:00</lastBuildDate>
+        <pubDate>2017-07-01T14:13:25+08:00</pubDate>
         <ttl>1800</ttl>
 
+
+        <item>
+                <title>Deca项目总结</title>
+                <description>
+&lt;p&gt;目录&lt;/p&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+&lt;p&gt;模板&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Black&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;list&lt;/strong&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;mark&lt;/code&gt;&lt;/p&gt;
+</description>
+                <link>http://bbwff.github.io/test/2017/07/01/deca%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93</link>
+                <guid>http://bbwff.github.io/test/2017/07/01/deca项目总结</guid>
+                <pubDate>2017-07-01T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>Facebook的实时处理</title>
+                <description>
+&lt;p&gt;目录&lt;/p&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#引言&quot; id=&quot;markdown-toc-引言&quot;&gt;引言&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#参考文献&quot; id=&quot;markdown-toc-参考文献&quot;&gt;参考文献&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+&lt;p&gt;这是翻译的一篇sigmod2016的论文，觉得蛮有意义，就准备翻译记录一下。&lt;/p&gt;
+
+&lt;h3 id=&quot;引言&quot;&gt;引言&lt;/h3&gt;
+
+&lt;p&gt;实时处理系统的设计需要考虑一下几个方面。&lt;/p&gt;
+
+&lt;p&gt;1、便于使用。便于开发应用。&lt;/p&gt;
+
+&lt;p&gt;2、性能。多少的延迟是可以接受的。&lt;/p&gt;
+
+&lt;p&gt;3、容错。什么错误可以容忍，&lt;/p&gt;
+
+&lt;p&gt;4、可扩展。并行。&lt;/p&gt;
+
+&lt;p&gt;5、正确性。保证一定的准确度。&lt;/p&gt;
+
+&lt;p&gt;这篇文章介绍四条数据流水线。&lt;/p&gt;
+
+&lt;p&gt;1、choros，这是用于汇聚Facebook用户的声音：比如top5最热话题，还有世界杯粉丝数等等。&lt;/p&gt;
+
+&lt;p&gt;2、移动端分析，给facebook开发者反馈，用来诊断性能和准确度，比如什么时候是cold time，以及Facebook客户端的崩溃率。&lt;/p&gt;
+
+&lt;p&gt;3、为每个用户界面提供实时的赞，阅读量，订阅量。&lt;/p&gt;
+
+&lt;p&gt;4、&lt;/p&gt;
+
+&lt;h3 id=&quot;参考文献&quot;&gt;参考文献&lt;/h3&gt;
+
+&lt;p&gt;Chen, Guoqiang Jerry, et al. “Realtime data processing at Facebook.” &lt;em&gt;Proceedings of the 2016 International Conference on Management of Data&lt;/em&gt;. ACM, 2016.&lt;/p&gt;
+</description>
+                <link>http://bbwff.github.io/paper%20translation/2017/02/17/FaceBook%E7%9A%84%E5%AE%9E%E6%97%B6%E5%A4%84%E7%90%86</link>
+                <guid>http://bbwff.github.io/paper%20translation/2017/02/17/FaceBook的实时处理</guid>
+                <pubDate>2017-02-17T00:00:00+08:00</pubDate>
+        </item>
 
         <item>
                 <title>代码小技巧</title>
@@ -1928,6 +2000,8 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 
 &lt;p&gt;最近在看动态规划，挺难理解的，慢慢看，把心得记录下。&lt;/p&gt;
 
+&lt;p&gt;分治法是通过组合子问题的解来解决整个问题，但它的子问题是独立的。而动态规划也是把问题分解为子问题，但子问题不是独立的，也就是各子问题包含公共的子子问题，如果使用分治法就会重复的求解子子问题。动态规划算法对每个子子问题只求解一次，将其结果保存在一张表中，从而避免每次遇到各子问题时重新计算。动态规划通常用于&lt;code class=&quot;highlighter-rouge&quot;&gt;最优化问题&lt;/code&gt;,此类问题有&lt;/p&gt;
+
 &lt;h2 id=&quot;参考资料&quot;&gt;参考资料&lt;/h2&gt;
 
 &lt;p&gt;http://blog.csdn.net/pi9nc/article/details/8142876&lt;/p&gt;
@@ -3162,9 +3236,9 @@ systemctl start gmond
 
 &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;mark&lt;/code&gt;&lt;/p&gt;
 </description>
-                <link>http://bbwff.github.io/test/1995/07/22/hello-world</link>
-                <guid>http://bbwff.github.io/test/1995/07/22/hello-world</guid>
-                <pubDate>1995-07-22T00:00:00+08:00</pubDate>
+                <link>http://bbwff.github.io/test/1992/05/31/hello-world</link>
+                <guid>http://bbwff.github.io/test/1992/05/31/hello-world</guid>
+                <pubDate>1992-05-31T00:00:00+08:00</pubDate>
         </item>
 
 
