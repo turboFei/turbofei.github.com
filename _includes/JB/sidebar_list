@@ -20,8 +20,10 @@
     <li><a href="http://coolshell.cn/">酷壳</a></li>
     <li><a href="http://dplord.com/">dplord</a></li>
   <HR>
-    <li class="nav-header">Recent Comments</li>
-  {% include JB/recent_comments %}
+ <li class="nav-header">About Me</li>
+<div class="textwidget">
+本人王斐,男,就职于网易杭州研究院大数据平台管理部,大数据平台开发工程师,目前涉及Spark系统开发。联系方式: hzfeiwang@163.com
+</div>
 </ul>
   
 </div>

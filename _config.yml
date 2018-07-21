@@ -16,7 +16,7 @@ tagline: Site Tagline
 assets: /assets
 author :
   name : bbw
-  email : cn.feiwang@gmail.com
+  email : wangfei3@corp.netease.com
   github : bbwff
   twitter : 
   feedburner :
@@ -84,7 +84,7 @@ JB :
   # Set 'provider' to false to turn commenting off globally.
   #
   comments :
-    provider : duoshuo
+    provider : valine
     duoshuo :
       short_name : feiwang
     disqus :
