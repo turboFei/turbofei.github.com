@@ -5,10 +5,26 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2018-07-21T16:32:46+08:00</lastBuildDate>
-        <pubDate>2018-07-21T16:32:46+08:00</pubDate>
+        <lastBuildDate>2018-07-27T13:03:26+08:00</lastBuildDate>
+        <pubDate>2018-07-27T13:03:26+08:00</pubDate>
         <ttl>1800</ttl>
 
+
+        <item>
+                <title>Spark Sql Analysis</title>
+                <description>
+&lt;h2 id=&quot;background&quot;&gt;Background&lt;/h2&gt;
+&lt;p&gt;从源码层面解释一个sparkSql语句是如何执行的，从sql到与底层RDD如何对接&lt;/p&gt;
+
+&lt;p&gt;##Spark Sql概述##
+spark sql是 apache spark的其中一个模块，主要用于进行结构化数据的处理。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/img/smg.jpg&quot; alt=&quot;imgtest&quot; /&gt;&lt;/p&gt;
+</description>
+                <link>http://bbwff.github.io/spark/2018/07/27/Spark-Sql-Analysis</link>
+                <guid>http://bbwff.github.io/spark/2018/07/27/Spark-Sql-Analysis</guid>
+                <pubDate>2018-07-27T00:00:00+08:00</pubDate>
+        </item>
 
         <item>
                 <title>Deca项目总结</title>
