@@ -5,21 +5,350 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2018-07-27T13:03:26+08:00</lastBuildDate>
-        <pubDate>2018-07-27T13:03:26+08:00</pubDate>
+        <lastBuildDate>2018-07-28T14:32:34+08:00</lastBuildDate>
+        <pubDate>2018-07-28T14:32:34+08:00</pubDate>
         <ttl>1800</ttl>
 
 
         <item>
                 <title>Spark Sql Analysis</title>
                 <description>
+&lt;p&gt;目录&lt;/p&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#spark-sql概述&quot; id=&quot;markdown-toc-spark-sql概述&quot;&gt;Spark Sql概述&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#源码跟踪&quot; id=&quot;markdown-toc-源码跟踪&quot;&gt;源码跟踪&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#sql-语句--unresolved-logicalplan&quot; id=&quot;markdown-toc-sql-语句--unresolved-logicalplan&quot;&gt;sql 语句-&amp;gt; Unresolved LogicalPlan&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#resolved-logicalplan&quot; id=&quot;markdown-toc-resolved-logicalplan&quot;&gt;Resolved LogicalPlan&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#optimizedlogicalplan&quot; id=&quot;markdown-toc-optimizedlogicalplan&quot;&gt;OptimizedLogicalPlan&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#physicalplan&quot; id=&quot;markdown-toc-physicalplan&quot;&gt;PhysicalPlan&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#可执行的物理计划&quot; id=&quot;markdown-toc-可执行的物理计划&quot;&gt;可执行的物理计划&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#执行&quot; id=&quot;markdown-toc-执行&quot;&gt;执行&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
 &lt;h2 id=&quot;background&quot;&gt;Background&lt;/h2&gt;
+
 &lt;p&gt;从源码层面解释一个sparkSql语句是如何执行的，从sql到与底层RDD如何对接&lt;/p&gt;
 
-&lt;p&gt;##Spark Sql概述##
-spark sql是 apache spark的其中一个模块，主要用于进行结构化数据的处理。&lt;/p&gt;
+&lt;h2 id=&quot;spark-sql概述&quot;&gt;Spark Sql概述&lt;/h2&gt;
 
-&lt;p&gt;&lt;img src=&quot;/public/img/smg.jpg&quot; alt=&quot;imgtest&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;spark sql是 apache spark的其中一个模块，主要用于进行结构化数据的处理。spark sql的底层执行还是调用rdd，在之前的文章中提过rdd的执行流程，因此本文主要讲解一下从sql到底层rdd的对接。通过观察spark sql 模块的源码，源码分为四个部分，如下图。&lt;/p&gt;
+
+&lt;div align=&quot;center&quot;&gt;
+&lt;img src=&quot;/public/img/spark-sql/sql-model.png&quot; title=&quot;sql-model&quot; width=&quot;60%&quot; /&gt;
+&lt;/div&gt;
+
+&lt;p&gt;在官方github的sql模块readme文件有如下描述。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Catalyst (sql/catalyst) - An implementation-agnostic framework for manipulating trees of relational operators and expressions.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Execution (sql/core) - A query planner / execution engine for translating Catalyst’s logical query plans into Spark RDDs. This component also includes a new public interface, SQLContext, that allows users to execute SQL or LINQ statements against existing RDDs and Parquet files.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Hive Support (sql/hive) - Includes an extension of SQLContext called HiveContext that allows users to write queries using a subset of HiveQL and access data from a Hive Metastore using Hive SerDes. There are also wrappers that allow users to run queries that include Hive UDFs, UDAFs, and UDTFs.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;HiveServer and CLI support (sql/hive-thriftserver) - Includes support for the SQL CLI (bin/spark-sql) and a HiveServer2 (for JDBC/ODBC) compatible server.&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;本文主要讲解core和catalyst模块。首先给一个spark sql语句执行流程，来方便对后续内容进行整体把握。&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;SQL 语句经过 SqlParser 解析成 Unresolved LogicalPlan;&lt;/li&gt;
+  &lt;li&gt;使用 analyzer 结合数据数据字典 (catalog) 进行绑定, 生成 resolved LogicalPlan;&lt;/li&gt;
+  &lt;li&gt;使用 optimizer 对 resolved LogicalPlan 进行优化, 生成 optimized LogicalPlan;&lt;/li&gt;
+  &lt;li&gt;使用 SparkPlan 将 LogicalPlan 转换成 PhysicalPlan;&lt;/li&gt;
+  &lt;li&gt;使用 prepareForExecution() 将 PhysicalPlan 转换成可执行物理计划;&lt;/li&gt;
+  &lt;li&gt;使用 execute() 执行可执行物理计划;&lt;/li&gt;
+  &lt;li&gt;生成 RDD。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;源码跟踪&quot;&gt;源码跟踪&lt;/h2&gt;
+
+&lt;p&gt;首先是要创建sparkSession然后导入数据，此处不赘述。我们从执行sql语句开始跟踪。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;val teenagersDF = spark.sql(&quot;SELECT SUM(v) FROM (SELECT score.id, 100+80+ score.math_score +score.english_score AS v FROM people JOIN score WHERE  people.id=score.id AND people.age &amp;gt;100) tmp&quot;)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h3 id=&quot;sql-语句--unresolved-logicalplan&quot;&gt;sql 语句-&amp;gt; Unresolved LogicalPlan&lt;/h3&gt;
+
+&lt;p&gt;此部分主要是对sql语句进行解析。判断一条sql语句是否符合要求，并且进行各部分的划分，比如哪些是操作，哪些是得到的结果等等。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/img/spark-sql/parser.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;这样一句sql 调用，跟进去。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def sql(sqlText: String): DataFrame = {
+  Dataset.ofRows(self, sessionState.sqlParser.parsePlan(sqlText))
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;我们可以看到sql语句会返回一个&lt;code class=&quot;highlighter-rouge&quot;&gt;dataFrame&lt;/code&gt;。而在spark中DataFrame的定义就是&lt;code class=&quot;highlighter-rouge&quot;&gt;Dataset[Row]&lt;/code&gt; .值得一提的是，在spark源码中用到了许多&lt;code class=&quot;highlighter-rouge&quot;&gt;lazy&lt;/code&gt;变量，这些变量虽然是声明在类中，但是并不是在创建对象的时候就初始化这些变量，而是在第一次调用是才进行初始化，因此在跟踪源码时一定要注意这些lazy变量的调用，因为很多lazy变量的初始化都涉及到一系列函数的调用。如果不注意，会失去对很多函数的跟踪。具体lazy变量的介绍，&lt;a href=&quot;https://stackoverflow.com/questions/7484928/what-does-a-lazy-val-do&quot;&gt;可以参考&lt;/a&gt;.&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lazy val sqlParser: ParserInterface = new SparkSqlParser(conf)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;可以看到sqlParser就是一个lazy变量，它会创建一个解析器。上述的sql函数在创建解析器之后调用parsePlan函数，如下。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/** Creates LogicalPlan for a given SQL string. */
+override def parsePlan(sqlText: String): LogicalPlan = parse(sqlText) { parser =&amp;gt;
+  astBuilder.visitSingleStatement(parser.singleStatement()) match {
+    case plan: LogicalPlan =&amp;gt; plan
+    case _ =&amp;gt;
+      val position = Origin(None, None)
+      throw new ParseException(Option(sqlText), &quot;Unsupported SQL statement&quot;, position, position)
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这个函数是使用了Scala柯里化特性。其实是调用的parse函数。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  protected def parse[T](command: String)(toResult: SqlBaseParser =&amp;gt; T): T = {
+    logInfo(s&quot;Parsing command: $command&quot;)
+    val lexer = new SqlBaseLexer(new ANTLRNoCaseStringStream(command))
+    lexer.removeErrorListeners()
+    lexer.addErrorListener(ParseErrorListener)
+    val tokenStream = new CommonTokenStream(lexer)
+    val parser = new SqlBaseParser(tokenStream)
+    parser.addParseListener(PostProcessor)
+    parser.removeErrorListeners()
+    parser.addErrorListener(ParseErrorListener)
+
+    try {
+      try {
+        // first, try parsing with potentially faster SLL mode
+        parser.getInterpreter.setPredictionMode(PredictionMode.SLL)
+        toResult(parser)
+      }
+      catch {
+     ...
+      }
+    }
+    catch {
+      ...
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;而此处的parse函数是使用的Antlr(一个开源语法分析器)来对sql语句进行解析，lexer是其词法分析器，然后spark使用自身的sqlBaseParser对sql语句进行语法分析，结合parse和parsePlan函数，得到了sql语句的&lt;code class=&quot;highlighter-rouge&quot;&gt;UnresolvedLogicalPlan&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;resolved-logicalplan&quot;&gt;Resolved LogicalPlan&lt;/h3&gt;
+
+&lt;p&gt;此部分是对之前得到的逻辑计划进行分析，比如这个字段到底应该是什么类型，等等，不是很熟悉编译。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/img/spark-sql/analysis.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;进入到Dataset类的ofRows函数。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def ofRows(sparkSession: SparkSession, logicalPlan: LogicalPlan): DataFrame = {
+  val qe = sparkSession.sessionState.executePlan(logicalPlan)
+  qe.assertAnalyzed()
+  new Dataset[Row](sparkSession, qe, RowEncoder(qe.analyzed.schema))
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这个函数很短，跟踪executePlan函数，可以看到它是创建了一个queryExecution对象。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def executePlan(plan: LogicalPlan): QueryExecution = new QueryExecution(sparkSession, plan)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这个对象是很重要的一个对象,涉及到前面的&lt;code class=&quot;highlighter-rouge&quot;&gt;UnresolvedLogicalPlan&lt;/code&gt;的分析、优化、转物理计划以及ToRDD所有操作。&lt;/p&gt;
+
+&lt;p&gt;ofRows函数第二行是对逻辑计划进行确认分析，里面涉及到分析操作，分析是对之前逻辑计划里面的属性进行分析。分析的源码我就不贴了，分析是使用一套既定的规则，然后进行多次迭代，知道分析结果达到一个固定点或者到达最高迭代次数停止。得到&lt;code class=&quot;highlighter-rouge&quot;&gt;resolvedLogicalPlan&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;optimizedlogicalplan&quot;&gt;OptimizedLogicalPlan&lt;/h3&gt;
+
+&lt;p&gt;此部分主要是对逻辑计划进行优化， 例如谓词下推等等。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/public/img/spark-sql/optimizer.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;然后第三行，就是生成一个Dataset[Row]，前面提到过，其实这就是dataFrame。&lt;/p&gt;
+
+&lt;p&gt;跟踪进入Dataset的this函数。里面有一个变量会在创建对象时执行&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;@transient private[sql] val logicalPlan: LogicalPlan = {
+  def hasSideEffects(plan: LogicalPlan): Boolean = plan match {
+    case _: Command |
+         _: InsertIntoTable =&amp;gt; true
+    case _ =&amp;gt; false
+  }
+
+  queryExecution.analyzed match {
+    // For various commands (like DDL) and queries with side effects, we force query execution
+    // to happen right away to let these side effects take place eagerly.
+    case p if hasSideEffects(p) =&amp;gt;
+      LogicalRDD(queryExecution.analyzed.output, queryExecution.toRdd)(sparkSession)
+    case Union(children) if children.forall(hasSideEffects) =&amp;gt;
+      LogicalRDD(queryExecution.analyzed.output, queryExecution.toRdd)(sparkSession)
+    case _ =&amp;gt;
+      queryExecution.analyzed
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;看到里面有一行调用了LogicalRDD函数，第一个参数是输出位置，第一个参数，queryExecution.toRdd. 一系列的lazy变量。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lazy val toRdd: RDD[InternalRow] = executedPlan.execute()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lazy val executedPlan: SparkPlan = prepareForExecution(sparkPlan)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lazy val sparkPlan: SparkPlan = {
+  SparkSession.setActiveSession(sparkSession)
+  // TODO: We use next(), i.e. take the first plan returned by the planner, here for now,
+  //       but we will implement to choose the best plan.
+  planner.plan(ReturnAnswer(optimizedPlan)).next()
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lazy val optimizedPlan: LogicalPlan = sparkSession.sessionState.optimizer.execute(withCachedData)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这里调用了一些列，调用到optimizedPlan，其实也是进行规则优化，基于一系列规则，到不动点或者最大迭代次数退出优化。这就得到了&lt;code class=&quot;highlighter-rouge&quot;&gt;optimizedLogicalPlan&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h3 id=&quot;physicalplan&quot;&gt;PhysicalPlan&lt;/h3&gt;
+
+&lt;p&gt;回到前面的sparkPlan懒变量，最后一句，planner.plan对之前的 &lt;code class=&quot;highlighter-rouge&quot;&gt;optimizedLogicalPlan&lt;/code&gt;进行转化生成phsicalPlan。此处的next是操作是获得返回的physicalPlan迭代器中的第一个physicalPlan。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lazy val sparkPlan: SparkPlan = {
+  SparkSession.setActiveSession(sparkSession)
+  // TODO: We use next(), i.e. take the first plan returned by the planner, here for now,
+  //       but we will implement to choose the best plan.
+  planner.plan(ReturnAnswer(optimizedPlan)).next()
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这里的planner为SparkPlanner，类中有一系列的策略，还可以从外部加策略。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def strategies: Seq[Strategy] =
+    extraStrategies ++ (
+    FileSourceStrategy ::
+    DataSourceStrategy ::
+    DDLStrategy ::
+    SpecialLimits ::
+    Aggregation ::
+    JoinSelection ::
+    InMemoryScans ::
+    BasicOperators :: Nil)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;然后进行转化的函数如下。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def plan(plan: LogicalPlan): Iterator[PhysicalPlan] = {
+  // Obviously a lot to do here still...
+
+  // Collect physical plan candidates.
+  val candidates = strategies.iterator.flatMap(_(plan))
+
+  // The candidates may contain placeholders marked as [[planLater]],
+  // so try to replace them by their child plans.
+  val plans = candidates.flatMap { candidate =&amp;gt;
+    val placeholders = collectPlaceholders(candidate)
+
+    if (placeholders.isEmpty) {
+      // Take the candidate as is because it does not contain placeholders.
+      Iterator(candidate)
+    } else {
+      // Plan the logical plan marked as [[planLater]] and replace the placeholders.
+      placeholders.iterator.foldLeft(Iterator(candidate)) {
+        case (candidatesWithPlaceholders, (placeholder, logicalPlan)) =&amp;gt;
+          // Plan the logical plan for the placeholder.
+          val childPlans = this.plan(logicalPlan)
+
+          candidatesWithPlaceholders.flatMap { candidateWithPlaceholders =&amp;gt;
+            childPlans.map { childPlan =&amp;gt;
+              // Replace the placeholder by the child plan
+              candidateWithPlaceholders.transformUp {
+                case p if p == placeholder =&amp;gt; childPlan
+              }
+            }
+          }
+      }
+    }
+  }
+
+  val pruned = prunePlans(plans)
+  assert(pruned.hasNext, s&quot;No plan for $plan&quot;)
+  pruned
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;没看明白，知识欠缺。大概就是得到一系列physicalPlan，然后进行剪枝，筛除掉性能不好的，这就得到了&lt;code class=&quot;highlighter-rouge&quot;&gt;physicalPlan&lt;/code&gt;迭代器，然后通过前面说的next函数，得到迭代器头部的&lt;code class=&quot;highlighter-rouge&quot;&gt;physicalPlan&lt;/code&gt;，应该是最好的那个。&lt;/p&gt;
+
+&lt;h3 id=&quot;可执行的物理计划&quot;&gt;可执行的物理计划&lt;/h3&gt;
+
+&lt;p&gt;在得到物理计划sparkPlan之后会执行下面的函数，prepareForExecution(sparkPlan)，得到可执行的物理计划。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lazy val executedPlan: SparkPlan = prepareForExecution(sparkPlan)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/**
+ * Prepares a planned [[SparkPlan]] for execution by inserting shuffle operations and internal
+ * row format conversions as needed.
+ */
+protected def prepareForExecution(plan: SparkPlan): SparkPlan = {
+  preparations.foldLeft(plan) { case (sp, rule) =&amp;gt; rule.apply(sp) }
+}
+
+/** A sequence of rules that will be applied in order to the physical plan before execution. */
+protected def preparations: Seq[Rule[SparkPlan]] = Seq(
+  python.ExtractPythonUDFs,
+  PlanSubqueries(sparkSession),
+  EnsureRequirements(sparkSession.sessionState.conf),
+  CollapseCodegenStages(sparkSession.sessionState.conf),
+  ReuseExchange(sparkSession.sessionState.conf),
+  ReuseSubquery(sparkSession.sessionState.conf))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;看注释以及源码，理解，就是又是一些规则，然后对逻辑计划不断使用这些规则进行完善，就是把规则按顺序运用一遍，&lt;a href=&quot;https://blog.csdn.net/oopsoom/article/details/23447317&quot;&gt;scala的 foldleft用法参考这里&lt;/a&gt;,不得不说scala语法真多。&lt;/p&gt;
+
+&lt;h3 id=&quot;执行&quot;&gt;执行&lt;/h3&gt;
+
+&lt;p&gt;可以看到在获得获得可执行计划之后就是执行，&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;lazy val toRdd: RDD[InternalRow] = executedPlan.execute()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;final def execute(): RDD[InternalRow] = executeQuery {
+  doExecute()
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;//class sparkPlan
+protected def doExecute(): RDD[InternalRow]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这个函数对应很多子类，每个子类的第一句基本都是&lt;code class=&quot;highlighter-rouge&quot;&gt;child.execute()&lt;/code&gt;,可见这是在构建lineage。也就是一条链，把所有可执行计划串联起来。&lt;/p&gt;
+
+&lt;p&gt;这里的doExecute返回的是一个中间类型的RDD。&lt;/p&gt;
+
 </description>
                 <link>http://bbwff.github.io/spark/2018/07/27/Spark-Sql-Analysis</link>
                 <guid>http://bbwff.github.io/spark/2018/07/27/Spark-Sql-Analysis</guid>
