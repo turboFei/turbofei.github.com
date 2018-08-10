@@ -191,6 +191,22 @@ class:
 name:
 
 .left-column[
+### What is Spark?
+
+]
+.right-column[
+Apache Spark™ is a unified analytics engine for large-scale data processing.
+<figure class="half">
+    <img src="../../imgs/spark_core/spark-eco.png" width="100%" height="60%">
+</figure>
+]
+---
+
+
+class:
+name:
+
+.left-column[
 ### RDD定义及特点
 #### RDD定义
 
@@ -460,10 +476,11 @@ object WordCount {
 
 }
 ```
-或者一句话搞定
-```
-sc.textFile(args(0)).flatMap(_.split("\\s+")).map((_,1)).reduceByKey(_+_).collect()
-```
+
+<figure class="half">
+    <img src="../../imgs/spark_core/wc-trans.png" width="100%" height="18%">
+</figure>
+
 
 ]
 ---
@@ -546,7 +563,7 @@ name:
 ### 宽依赖 & 窄依赖
 ### Shuffle 
 ### Shuffle & Stage & Task
-### Stage & Loop
+### Task & Loop
 
 ]
 .right-column[
@@ -568,12 +585,13 @@ name:
 ### 宽依赖 & 窄依赖
 ### Shuffle 
 ### Shuffle & Stage & Task
-### Stage & Loop
+### Task & Loop
 ### Object Lifetime
 
 ]
 .right-column[
 三种数据容器：存放数据对象的引用，数据对象的生命周期依赖于其容器的生命周期。
+
 
 
 <figure class="half">
@@ -593,7 +611,7 @@ name:
 ### 宽依赖 & 窄依赖
 ### Shuffle 
 ### Shuffle & Stage & Task
-### Stage & Loop
+### Task & Loop
 ### Object Lifetime
 ### Shuffle Tuning
 
@@ -624,7 +642,7 @@ name:
 ### 宽依赖 & 窄依赖
 ### Shuffle 
 ### Shuffle & Stage & Task
-### Stage & Loop
+### Task & Loop
 ### Object Lifetime
 ### Shuffle Tuning
 
@@ -662,7 +680,7 @@ name:
 ### 宽依赖 & 窄依赖
 ### Shuffle 
 ### Shuffle & Stage & Task
-### Stage & Loop
+### Task & Loop
 ### Object Lifetime
 ### Shuffle Tuning
 
@@ -701,7 +719,7 @@ name:
 ### 宽依赖 & 窄依赖
 ### Shuffle 
 ### Shuffle & Stage & Task
-### Stage & Loop
+### Task & Loop
 ### Object Lifetime
 ### Shuffle Tuning
 
@@ -740,7 +758,7 @@ name:
 ### 宽依赖 & 窄依赖
 ### Shuffle 
 ### Shuffle & Stage & Task
-### Stage & Loop
+### Task & Loop
 ### Object Lifetime
 ### Shuffle Tuning
 
@@ -768,7 +786,7 @@ name:
 ### 宽依赖 & 窄依赖
 ### Shuffle 
 ### Shuffle & Stage & Task
-### Stage & Loop
+### Task & Loop
 ### Object Lifetime
 ### Shuffle Tuning
 
@@ -805,7 +823,7 @@ name:
 ### 宽依赖 & 窄依赖
 ### Shuffle 
 ### Shuffle & Stage & Task
-### Stage & Loop
+### Task & Loop
 ### Object Lifetime
 ### Shuffle Tuning
 
@@ -932,7 +950,7 @@ name:
 ### 宽依赖 & 窄依赖
 ### Shuffle 
 ### Shuffle & Stage & Task
-### Stage & Loop
+### Task & Loop
 ### Object Lifetime
 ### Shuffle Tuning
 
