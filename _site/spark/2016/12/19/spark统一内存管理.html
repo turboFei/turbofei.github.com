@@ -357,36 +357,22 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
           </ul>
         </div>
       <hr>
-      <!-- JiaThis Button BEGIN -->
-<div class="jiathis_style">
-<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jtico jtico_jiathis" target="_blank">分享到：</a>
-	<a class="jiathis_button_weixin">微信</a>
-	<a class="jiathis_button_tsina">微博</a>
-	<a class="jiathis_button_qzone">qq空间</a>
-<a class="jiathis_button_tqq">腾讯微博</a>
-	
-</div>
-<script type="text/javascript" src="http://v3.jiathis.com/code_mini/jia.js" charset="utf-8"></script>
-<!-- JiaThis Button END -->
-
- <!-- 来必力City版安装代码 -->
-<div id="lv-container" data-id="city" data-uid="MTAyMC8zODIzOC8xNDc2Ng==">
-<script type="text/javascript">
-   (function(d, s) {
-       var j, e = d.getElementsByTagName(s)[0];
-
-       if (typeof LivereTower === 'function') { return; }
-
-       j = d.createElement(s);
-       j.src = 'https://cdn-city.livere.com/js/embed.dist.js';
-       j.async = true;
-
-       e.parentNode.insertBefore(j, e);
-   })(document, 'script');
+ <div id="gitment" class="gitment"></div>
+<!-- 加载gitment -->
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+var gitment = new Gitment({
+  id: '',
+  owner: 'hustfeiwang',
+  repo: 'https://github.com/hustfeiwang/hustfeiwang.github.com.git',
+  oauth: {
+    client_id: '247e88f941e41f6cdfdd',
+    client_secret: '42f54c4eb2303828c2a7d9b4942488eefa93876d',
+  },
+})
+gitment.render('gitment')
 </script>
-<noscript>为正常使用来必力评论功能请激活JavaScript</noscript>
-</div>
-<!-- City版安装代码已完成 -->
 
 
 

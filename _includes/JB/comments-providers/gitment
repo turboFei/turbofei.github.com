@@ -1,0 +1,16 @@
+<div id="gitment" class="gitment"></div>
+<!-- 加载gitment -->
+<link rel="stylesheet" href="https://imsun.github.io/gitment/style/default.css">
+<script src="https://imsun.github.io/gitment/dist/gitment.browser.js"></script>
+<script>
+var gitment = new Gitment({
+  id: '{{date format="YYYYMMDDHHmmss"}}',
+  owner: 'hustfeiwang',
+  repo: 'https://github.com/hustfeiwang/hustfeiwang.github.com.git',
+  oauth: {
+    client_id: '247e88f941e41f6cdfdd',
+    client_secret: '42f54c4eb2303828c2a7d9b4942488eefa93876d',
+  },
+})
+gitment.render('gitment')
+</script>

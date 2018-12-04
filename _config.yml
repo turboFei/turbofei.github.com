@@ -98,7 +98,19 @@ JB :
       num_posts: 5
       width: 580
       colorscheme: light
-
+    gitment:
+      enable: true
+      mint: true # RECOMMEND, A mint on Gitment, to support count, language and proxy_gateway
+      count: true # Show comments count in post meta area
+      lazy: false # Comments lazy loading with a button
+      cleanly: false # Hide 'Powered by ...' on footer, and more
+      language: # Force language, or auto switch by theme
+      github_user: hustfeiwang
+      github_repo: https://github.com/hustfeiwang/hustfeiwang.github.com.git
+      client_id: 247e88f941e41f6cdfdd
+      client_secret: {刚才申请的Client Secret}
+      proxy_gateway: # Address of api proxy, See: https://github.com/aimingoo/intersect
+      redirect_protocol:
   # Settings for analytics helper
   # Set 'provider' to the analytics provider you want to use.
   # Set 'provider' to false to turn analytics off globally.
