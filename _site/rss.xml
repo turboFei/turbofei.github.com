@@ -5,10 +5,360 @@
         <description>bbw's blog - bbw</description>
         <link>http://bbwff.github.io</link>
         <link>http://bbwff.github.io</link>
-        <lastBuildDate>2018-12-04T17:27:00+08:00</lastBuildDate>
-        <pubDate>2018-12-04T17:27:00+08:00</pubDate>
+        <lastBuildDate>2018-12-04T17:37:40+08:00</lastBuildDate>
+        <pubDate>2018-12-04T17:37:40+08:00</pubDate>
         <ttl>1800</ttl>
 
+
+        <item>
+                <title>Spark Cbo Code Analysis</title>
+                <description>
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+&lt;p&gt;对Spark的CBO(cost based optimization) 进行源码分析&lt;/p&gt;
+
+&lt;h2 id=&quot;spark-cbo-源码分析&quot;&gt;Spark CBO 源码分析&lt;/h2&gt;
+
+&lt;p&gt;CBO是基于Cost来优化plan。&lt;/p&gt;
+
+&lt;p&gt;要计算cost就需要统计一些参与计算的表的相关信息，因此spark添加了&lt;code class=&quot;highlighter-rouge&quot;&gt;Statistics和ColumnStat&lt;/code&gt;类来统计相关信息。&lt;/p&gt;
+
+&lt;p&gt;CBO主要是针对join来计算cost,目前spark-2.3 版本中与CBO相关的参数如下：&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;参数&lt;/th&gt;
+      &lt;th&gt;默认值&lt;/th&gt;
+      &lt;th&gt;说明&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.sql.cbo.enabled&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;Enables CBO for estimation of plan statistics when set true.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.sql.cbo.joinReorder.enabled&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;Enables join reorder in CBO.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.sql.cbo.joinReorder.dp.star.filter&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;Applies star-join filter heuristics to cost based join enumeration.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.sql.cbo.joinReorder.dp.threshold&lt;/td&gt;
+      &lt;td&gt;12&lt;/td&gt;
+      &lt;td&gt;The maximum number of joined nodes allowed in the dynamic programming algorithm.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.sql.cbo.starSchemaDetection&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;When true, it enables join reordering based on star schema detection.&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;下文按照逻辑顺序分析spark cbo 源码。&lt;/p&gt;
+
+&lt;h2 id=&quot;统计信息类&quot;&gt;统计信息类&lt;/h2&gt;
+
+&lt;p&gt;CBO相关的统计信息类有两个，一个是ColumnStat,代表的是表中列的详细，例如最大值，最小值，空值个数，平均长度，最大长度。另外一个类是Statistics，这个类是对应一个LogicalPlan的统计信息，例如join，aggregate，logicalRelation。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-Scala&quot;&gt;case class Statistics(
+    sizeInBytes: BigInt,
+    rowCount: Option[BigInt] = None,
+    attributeStats: AttributeMap[ColumnStat] = AttributeMap(Nil),
+    hints: HintInfo = HintInfo()) 
+
+case class ColumnStat(
+    distinctCount: BigInt,
+    min: Option[Any],
+    max: Option[Any],
+    nullCount: BigInt,
+    avgLen: Long,
+    maxLen: Long,
+    histogram: Option[Histogram] = None) 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如上所示，可以看到ColumnStat表示列的详细信息。&lt;/p&gt;
+
+&lt;p&gt;而Statistics，中的sizeInBytes和rowCount就代表这个logicalPlan输出数据的大小和行数，而attributeStats 代表这个logicalPlan涉及到的列的统计信息（一个expressID到列信息的映射），和hints。&lt;/p&gt;
+
+&lt;p&gt;对于join来说，它的Statistics里的信息就代表join操作输出的大小，行数以及attributeStats。&lt;/p&gt;
+
+&lt;p&gt;对于logicalRelation，它的Statistics代表其对应表中schema相关数据的大小，行数，attributeStats。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;CatalogStatistics&lt;/code&gt;这个类表示存储在外部catalog(例如hive metastore）中的表的信息.&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;CatalogStatistics&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;sizeInBytes&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;BigInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;rowCount&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Option&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;BigInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;None&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;colStats&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;String&lt;/span&gt;, &lt;span class=&quot;kt&quot;&gt;ColumnStat&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;empty&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这些表的信息需要使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;analyze table&lt;/code&gt;命令来计算，然后存储到catalog里。&lt;/p&gt;
+
+&lt;p&gt;每种LogicalPlan计算Statistics的方法是不同的。&lt;/p&gt;
+
+&lt;p&gt;对于LogicalRelation来说，它是读取对应表中schema，使用CatalogStatistics类的toPlanStats可以生成Statistics。&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;toPlanStats&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;planOutput&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Seq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Attribute&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;cboEnabled&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Boolean&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Statistics&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cboEnabled&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rowCount&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isDefined&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;attrStats&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;AttributeMap&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;planOutput&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;flatMap&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;colStats&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)))&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// Estimate size as number of rows * row size.
+&lt;/span&gt;    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;size&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;EstimationUtils&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOutputSize&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;planOutput&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rowCount&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;attrStats&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;nc&quot;&gt;Statistics&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sizeInBytes&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rowCount&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rowCount&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;attributeStats&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;attrStats&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// When CBO is disabled or the table doesn't have other statistics, we apply the size-only
+&lt;/span&gt;    &lt;span class=&quot;c1&quot;&gt;// estimation strategy and only propagate sizeInBytes in statistics.
+&lt;/span&gt;    &lt;span class=&quot;nc&quot;&gt;Statistics&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sizeInBytes&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sizeInBytes&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;下面将介绍其他LogicalPlan的Statistics计算。&lt;/p&gt;
+
+&lt;h2 id=&quot;statistics的计算&quot;&gt;Statistics的计算&lt;/h2&gt;
+
+&lt;p&gt;看LogicalPlanStats类，可以看出，这里，判断cbo是否开启，如果cbo打开，则采用BasicStatsPlanVisitor类来计算相关的Statistics，如果没有cbo，则使用SizeInBytesOnlyStatsPlanVisitor来计算。&lt;/p&gt;
+
+&lt;p&gt;从类的名字就可以看出来，只有cbo开启，才会计算rowCount以及attributeStats信息，如果没有cbo,SizeInBytesOnlyStatsPlanVisitor只会计算 size信息。&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;trait&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;LogicalPlanStats&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;LogicalPlan&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stats&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Statistics&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;statsCache&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;getOrElse&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;cboEnabled&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;statsCache&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Option&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;BasicStatsPlanVisitor&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;visit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;statsCache&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Option&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;SizeInBytesOnlyStatsPlanVisitor&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;visit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;statsCache&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;get&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;其实在BasicStatsPlanVisitor类中对于大部分类型的LogicalPlan都还是调用SizeInBytesOnlyStatsPlanVisitor的方法来计算。&lt;/p&gt;
+
+&lt;p&gt;只有针对Aggregate，Join，Filter，Project有另外的计算方法。&lt;/p&gt;
+
+&lt;p&gt;这里讲下join操作的Statistics计算过程。&lt;/p&gt;
+
+&lt;p&gt;如果没有开启CBO，join操作首先判断是否是 leftAntiJoin或者是LeftSemiJoin，如果是，则把leftChild的sizeInBytes作为计算结果，因为对于leftAntiJoin和leftSemiJoin来说，join之后表的大小是小于leftChild的。而对于其他类型的join，把左右child的sizeInBytes相乘作为join之后的大小，并且关闭掉broadcastHint，因为这些join类型可能造成很大的output。而这种粗糙的代价估计造成的结果就是，对代价估计不准确，如果该join是可以进行broadcastjoin，也可能由于粗糙的代价估计变得不可进行。&lt;/p&gt;
+
+&lt;p&gt;如果开启了CBO，对于join操作就不止计算sizeInBytes，还需要计算rowCount，AttributeStats。&lt;/p&gt;
+
+&lt;p&gt;代码如下，首先是判断join类型，如果是 inner,cross,leftOuter,RightOuter,FullOuter中的一种，则使用estimateInnerOuterJoin方法。&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;estimate&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Option&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Statistics&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;joinType&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;match&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Inner&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Cross&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;LeftOuter&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;RightOuter&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;FullOuter&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;estimateInnerOuterJoin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;LeftSemi&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;LeftAnti&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;estimateLeftSemiAntiJoin&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;logDebug&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;[CBO] Unsupported join type: ${join.joinType}&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;nc&quot;&gt;None&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这里只针对针对estimateInnerOuterJoin方法，用语言描述一下：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;如果是equiJoin:&lt;/p&gt;
+
+  &lt;blockquote&gt;
+    &lt;p&gt;1、首先估算被equi条件选择的记录条数,即等于innerJoin选择的条数，命名为numInnerJoinedRows；以及这些equi涉及的key在join之后的stats。&lt;/p&gt;
+
+    &lt;blockquote&gt;
+      &lt;p&gt;即在join中，存在类似 a.co1=b.co1, a.co2=b.co2 这些类似条件，现在是估计满足这些相等条件的记录条数。&lt;/p&gt;
+
+      &lt;p&gt;使用的公式是： T(A J B) = T(A) * T(B) / max(V(A.ki), V(B.ki)).&lt;/p&gt;
+    &lt;/blockquote&gt;
+
+    &lt;p&gt;2、 预估得到结果的行数。&lt;/p&gt;
+
+    &lt;blockquote&gt;
+      &lt;p&gt;因为即使满足这些相等条件，也不会只输出这些满足条件的记录。&lt;/p&gt;
+
+      &lt;p&gt;如果是leftOuterJoin，则会对左边表中所有记录都会输出，不管右边匹配是否为空。&lt;/p&gt;
+
+      &lt;p&gt;因此，对于leftOuterJoin来说，输出的记录条数等于max(左边表条数，numInnerJoinedRows)。&lt;/p&gt;
+
+      &lt;p&gt;同样还有rightOuterJoin,输出记录条数=max(右边表条数，numInnerJoinedRows)。&lt;/p&gt;
+
+      &lt;p&gt;对于全连接，输出记录条数=max(左边表条数，numInnerJoinedRows)+max(右边表条数，numInnerJoinedRows)-numInnerJoinedRows。即类似于A与B的并集-A与B的交集。&lt;/p&gt;
+    &lt;/blockquote&gt;
+
+    &lt;p&gt;3、然后是根据前面的计算结果更新Statistics，包括attributeStats。&lt;/p&gt;
+  &lt;/blockquote&gt;
+
+  &lt;p&gt;如果不是equiJoin：&lt;/p&gt;
+
+  &lt;blockquote&gt;
+    &lt;p&gt;则按照笛卡尔积来计算，输出行数为两个表行数的乘积&lt;/p&gt;
+
+  &lt;/blockquote&gt;
+&lt;/blockquote&gt;
+
+&lt;h2 id=&quot;拿到数据之后怎么用&quot;&gt;拿到数据之后怎么用&lt;/h2&gt;
+
+&lt;p&gt;这些Statistics的结果，会怎么运用呢？&lt;/p&gt;
+
+&lt;p&gt;spark sql中plan的处理过程可以参考&lt;a href=&quot;./spark-sql-catalyst.md&quot;&gt;Spark sql catalyst过程详解&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;在unresolvedLogicalPlan-&amp;gt;resolvedLogicalPlan过程中收集Statistics，然后在&lt;/p&gt;
+
+&lt;p&gt;resolvedLogicalPlan-&amp;gt;optimizedLogicalPlan过程中，基于这些统计信息，进行costBasedJoinRecorder，即基于统计信息，对join顺序重排序，寻求最优join方案。&lt;/p&gt;
+
+&lt;p&gt;在optimizedLogicalPlan-&amp;gt;phsicalPlan过程中，基于Statistics中的sizeInBytes信息以及hint选择合适的join策略(broadcastJoin,hashShuffledJoin,sortMergeJoin).&lt;/p&gt;
+
+&lt;h4 id=&quot;costbasedjoinreorder&quot;&gt;CostBasedJoinReorder&lt;/h4&gt;
+
+&lt;p&gt;这是一个使用plan的stats信息，来选择合适的join顺序的类。&lt;/p&gt;
+
+&lt;p&gt;类&lt;code class=&quot;highlighter-rouge&quot;&gt;Optimizer&lt;/code&gt;中有两个跟join 顺序有关的rule，一个是reoderJoin，另外一个是CostBasedJoinRecorder。reorderjoin是没有cbo也会触发的rule，这个不会使用统计的信息，只是负责将filter下推，这样最底层的join至少会有一个filter。如果这些join已经每个都有一条condition，那么这些plan就不会变化，因此reorder join不涉及基于代价的优化。&lt;/p&gt;
+
+&lt;p&gt;首先看下对cost的定义。cost是有一个基数，是rowCount，然后一个sizeInBytes。&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cm&quot;&gt;/**
+ * This class defines the cost model for a plan.
+ * @param card Cardinality (number of rows).
+ * @param size Size in bytes.
+ */&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;card&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;BigInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;BigInt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;other&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Cost&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Cost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;card&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;other&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;card&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;size&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;other&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;而判断cost的方法是：&lt;/p&gt;
+
+&lt;p&gt;A: Cost(ac,as)  B: Cost(bc,bs)&lt;/p&gt;
+
+&lt;p&gt;如果&lt;/p&gt;
+
+&lt;p&gt;(ac/bc)*joinReorderCardWeight +(as/bs)*(1-joinReorderCardWeight)&amp;lt;1，&lt;/p&gt;
+
+&lt;p&gt;则认为A比B好。&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.cbo.joinReorder.card.weight&lt;/code&gt;默认为0.7。代码如下：&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;betterThan&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;other&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;JoinPlan&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;SQLConf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Boolean&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;other&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;planCost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;card&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;||&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;other&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;planCost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;size&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;relativeRows&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;planCost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;card&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;other&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;planCost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;card&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;relativeSize&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;planCost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;BigDecimal&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;other&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;planCost&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;relativeRows&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;joinReorderCardWeight&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;relativeSize&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;joinReorderCardWeight&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;costBasedJoinReorder是使用一个动态规划来进行选择合适的join顺序。&lt;/p&gt;
+
+&lt;p&gt;下面讲一个这个动态规划算法。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;假设有  a j b j c j d   a.k1=b.k1 and b.k2 = c.k2 and c.k3=d.k3&lt;/p&gt;
+
+  &lt;p&gt;将会分为4层来进行：&lt;/p&gt;
+
+  &lt;blockquote&gt;
+    &lt;p&gt;level 0: p({A}), p({B}), p({C}), p({D})
+level 1: p({A, B}), p({B, C}), p({C, D})
+level 2: p({A, B, C}), p({B, C, D})
+level 3: p({A, B, C, D})&lt;/p&gt;
+  &lt;/blockquote&gt;
+
+  &lt;p&gt;首先就是生成第0层，第0层的founfPlans={p{a},p{b},p{c},p{d}}.&lt;/p&gt;
+
+  &lt;p&gt;如果设层级为level，那么每层的任务就是找到（level+1)个plan进行join最优的版本。&lt;/p&gt;
+
+  &lt;p&gt;因此 k层和level-k层的所包含的表的个数之和，就是(k+1+level-k+1)=level+2，也就是说是level+1层所需要的foundPlan。&lt;/p&gt;
+
+  &lt;p&gt;而我们在每次生成新的join之后，就判断他的itemSet是否已经存在，如果不存在就存储；如果存在，就取出其对应的plan，对比看是不是优于之前的plan（betterThan)，保存最优的。&lt;/p&gt;
+
+  &lt;p&gt;这样。每个level里面保存的都是相应个数个多join最优的plan，最终也得到了最优的plan。&lt;/p&gt;
+
+  &lt;p&gt;当然，在形成plan时有很多判断，比如在level1 里面，就不能形成p({A,C})。&lt;/p&gt;
+
+  &lt;p&gt;因为不存在condition 使得A,C可以进行join。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;当然，在动态规划进行search的时候，有一个filter。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;spark.sql.cbo.joinReorder.dp.star.filter&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;这是一个星型join过滤器，用来确保star schema 中的tables是被plan在一起。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;spark.sql.cbo.joinReorder.dp.threshold&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;代表在dp进行costbasedReorder时，最多支持的表的数量。&lt;/p&gt;
+
+&lt;p&gt;**spark.sql.cbo.starSchemaDetection  **&lt;/p&gt;
+
+&lt;p&gt;这个参数是在reorderJoin中触发，而且只在&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.cbo.starSchemaDetection=true spark.sql.cbo.enabled=false&lt;/code&gt;时才触发，很奇怪，这个参数以cbo命名，但是却在cbo.enable=false才触发。&lt;/p&gt;
+
+&lt;p&gt;这个是用来观察是否存在starJoin。&lt;/p&gt;
+
+&lt;h4 id=&quot;joinselection&quot;&gt;JoinSelection&lt;/h4&gt;
+
+&lt;p&gt;在SparkPlanner类中，有几个优化策略会对LogicalPlan进行优化。&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;SparkPlanner&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sparkContext&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;SparkContext&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;SQLConf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;experimentalMethods&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;ExperimentalMethods&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;extends&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;SparkStrategies&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+	&lt;span class=&quot;o&quot;&gt;...&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strategies&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Seq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Strategy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;experimentalMethods&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;extraStrategies&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;++&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;extraPlanningStrategies&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;++&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+      &lt;span class=&quot;nc&quot;&gt;DataSourceV2Strategy&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;
+      &lt;span class=&quot;nc&quot;&gt;FileSourceStrategy&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;
+      &lt;span class=&quot;nc&quot;&gt;DataSourceStrategy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;
+      &lt;span class=&quot;nc&quot;&gt;SpecialLimits&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;
+      &lt;span class=&quot;nc&quot;&gt;Aggregation&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;
+      &lt;span class=&quot;nc&quot;&gt;JoinSelection&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;
+      &lt;span class=&quot;nc&quot;&gt;InMemoryScans&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;
+      &lt;span class=&quot;nc&quot;&gt;BasicOperators&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Nil&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;...&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;里面有一个JoinSelection方法，这个方法是主要是用来判断是否可以使用broadcastjoin，然后决定是使用broadcastJoin，还是shuffledHashJoin还是sortMergeJoin。&lt;/p&gt;
+
+&lt;p&gt;broadcastjoin可以避免shuffle，如果使用得当，可以提升程序的性能。&lt;code class=&quot;highlighter-rouge&quot;&gt;这是针对一个大表和一个极小表&lt;/code&gt;在spark中有一个参数是，&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.autoBroadcastJoinThreshold&lt;/code&gt;，这个参数是一个数字，单位字节，代表如果一个表的szie小于这个数值，就可以进行broadcastjoin。但是这里只使用size作为估计是不准确的，还应该使用rowCount作为参考，因为在join中，join的结果是与两个表的条数强相关，只使用size做判断是不准确的。&lt;/p&gt;
+
+&lt;p&gt;在spark中，有BroadCastHint，前面也提到过，如果没有开启cbo，那么如果判断join类型是非leftAntiJoin和leftSemiJoin，则会觉得join之后的大小无法估测，可能会爆炸式增长，因此会关掉BroadcastHint。&lt;/p&gt;
+
+&lt;p&gt;对于shuffledHashJoin，&lt;code class=&quot;highlighter-rouge&quot;&gt;这是针对一个大表和一个小表（判断标准为a.stats.sizeInBytes * 3 &amp;lt;= b.stats.sizeInBytes)&lt;/code&gt;，简单描述一下过程就是两个表A和B，首先，选择一个表进行shuffle write操作，即针对每个分区，按照key的hash值进行排序，将相同hash值的key放在一起，形成一个partitionFile，然后在read端拉取write端所有相应key的数据，作为localhashMap和另外一个标的分区进行join。&lt;/p&gt;
+
+&lt;p&gt;这里也使用stats进行判断，如果&lt;code class=&quot;highlighter-rouge&quot;&gt;plan.stats.sizeInBytes &amp;lt; conf.autoBroadcastJoinThreshold * conf.numShufflePartitions&lt;/code&gt;，则判断该表的size可以满足每个分区构建localhashMap的可能，可以看到这里也是以&lt;code class=&quot;highlighter-rouge&quot;&gt;autoBroadcastJoinThreshold&lt;/code&gt;作为衡量标准。&lt;/p&gt;
+
+&lt;p&gt;如果是两张大表，则需要使用sortmergeJoin，类似于先排序，即按照keypair排序，然后进行归并。&lt;/p&gt;
+
+&lt;p&gt;这些join selection的操作，不管是否开启CBO都会进行。但是和CBO相关的是，这些数据的统计是和CBO有关，前面提过，如果开启CBO则使用BasicStatsPlanVisitor来进行统计。&lt;/p&gt;
+
+&lt;p&gt;上述的这些估测，都是基于size信息。但是即使是基于size信息，如果没有开启cbo，这些信息也是粗糙的，没有CBO那种更细致的估计，因此可能会造成Join种类选择不合适。&lt;/p&gt;
+
+&lt;p&gt;上述的判断，很多是基于&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.autoBroadcastJoinThreshold&lt;/code&gt;，因此在运行环境中，一定要结合集群环境设置合适的值。&lt;/p&gt;
+
+&lt;p&gt;而且，在joinSelection中，也应该基于rowCount来判断join的种类。&lt;/p&gt;
+</description>
+                <link>http://bbwff.github.io/spark/2018/12/04/spark-cbo-code-analysis</link>
+                <guid>http://bbwff.github.io/spark/2018/12/04/spark-cbo-code-analysis</guid>
+                <pubDate>2018-12-04T00:00:00+08:00</pubDate>
+        </item>
 
         <item>
                 <title>Spark Sql Analysis</title>
