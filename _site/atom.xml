@@ -4,7 +4,7 @@
  <title>bbw's blog</title>
  <link href="http://bbwff.github.io/" rel="self"/>
  <link href="http://bbwff.github.io"/>
- <updated>2018-12-04T17:37:40+08:00</updated>
+ <updated>2018-12-04T17:57:29+08:00</updated>
  <id>http://bbwff.github.io</id>
  <author>
    <name>bbw</name>
@@ -18,6 +18,17 @@
    <updated>2018-12-04T00:00:00+08:00</updated>
    <id>http://bbwff.github.io/spark/2018/12/04/spark-cbo-code-analysis</id>
    <content type="html">
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#spark-cbo-源码分析&quot; id=&quot;markdown-toc-spark-cbo-源码分析&quot;&gt;Spark CBO 源码分析&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#统计信息类&quot; id=&quot;markdown-toc-统计信息类&quot;&gt;统计信息类&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#statistics的计算&quot; id=&quot;markdown-toc-statistics的计算&quot;&gt;Statistics的计算&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#拿到数据之后怎么用&quot; id=&quot;markdown-toc-拿到数据之后怎么用&quot;&gt;拿到数据之后怎么用&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#costbasedjoinreorder&quot; id=&quot;markdown-toc-costbasedjoinreorder&quot;&gt;CostBasedJoinReorder&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#joinselection&quot; id=&quot;markdown-toc-joinselection&quot;&gt;JoinSelection&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
 &lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 &lt;p&gt;对Spark的CBO(cost based optimization) 进行源码分析&lt;/p&gt;
 

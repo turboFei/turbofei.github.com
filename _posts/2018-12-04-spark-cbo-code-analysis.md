@@ -6,6 +6,9 @@ summary: 对Spark的CBO(cost based optimization) 进行源码分析
 tags: [spark,cbo]
 ---
 {% include JB/setup %}
+目录
+* toc
+{:toc}
 ### Background ###
 {{ page.summary }}
 
