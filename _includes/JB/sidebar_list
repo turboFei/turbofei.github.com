@@ -15,10 +15,10 @@
       {% include JB/tags_list %}
 <HR>   
  <li class="nav-header">Links</li>
-    <li><a href="http://www.ruanyifeng.com/blog/">阮一峰的网络日志</a></li>
-    <li><a href="http://mindhacks.cn/">刘未鹏</a></li>
-    <li><a href="http://coolshell.cn/">酷壳</a></li>
-    <li><a href="http://dplord.com/">dplord</a></li>
+    <li><a href="https://yq.aliyun.com/teams/18?spm=5176.100244.team1.3.lZ7hhE">阿里云E-MapReduce</a></li>
+    <li><a href="https://databricks.com/blog/category/company">DataBricks 博客</a></li>
+    <li><a href="https://blog.cloudera.com/">Coludera 博客</a></li>
+    <li><a href="http://hbasefly.com/author/libisthanksgmail-com/">有态度的HBase/Spark/BigData</a></li>
   <HR>
  <li class="nav-header">About Me</li>
 <div class="textwidget">
