@@ -4,7 +4,11 @@ title:  bbw's blog
 ---
 
 {% for post in site.posts %}
-- ### [{{ post.title }}]({{ post.url }}) <time >{{ post.date | date: '%Y-%m-%d' }}</time>
+- ### [{{ post.title }}]({{ post.url }})
+<i class="fa fa-calendar "></i> <time >{{ post.date | date: '%Y-%m-%d' }}</time>
+<i class="fa fa-folder-o"></i>[{{post.category}}](/categories.html#{{post.category}})
+<i class="fa fa-tags"></i>
+{% for tag in post.tags %}[{{tag}}](/tags.html#{{tag}}) {% endfor %}
 
   {{ post.summary }}
 
