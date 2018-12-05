@@ -1,14 +1,12 @@
 ---
 layout: post
-category: java
+category: coding
 summary: 最近在写堆外操作的代码，需要用到unsafe 类，记录下。
 title: java unsafe类的使用
 date: 2016-11-13 00:24:19
 tags:  java
 toc: true
 comments: true
-categories:
-- java
 ---
 {% include JB/setup %}
 
