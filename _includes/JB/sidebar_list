@@ -1,10 +1,12 @@
 <div class="well sidebar-nav">
+<!--
   <div class="content">
     <p style="text-align:center;">
       <img src="/img/smg.jpg" alt="myself" width="120"> 
     </p>
   </div>
   <HR>
+-->
   <ul class="nav nav-list">
     <li class="nav-header">Categories</li>
       {% assign categories_list = site.categories %}
