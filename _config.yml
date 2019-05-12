@@ -16,8 +16,8 @@ tagline: Site Tagline
 assets: /assets
 author :
   name : feiwang
-  email : hzfeiwang@163.com
-  github : hustfeiwang
+  email : turbofei@foxmail.com
+  github : turbofei
   twitter : 
   feedburner :
 
@@ -29,7 +29,8 @@ author :
 # Else if you are pushing to username.github.com, replace with your username.
 # Finally if you are pushing to a GitHub project page, include the project name at the end.
 #
-production_url : http://hustfeiwang.github.io
+production_url : http://turbofei.github.io
+
 
 # All Jekyll-Bootstrap specific configurations are namespaced into this hash
 #
@@ -105,8 +106,8 @@ JB :
       lazy: false # Comments lazy loading with a button
       cleanly: false # Hide 'Powered by ...' on footer, and more
       language: # Force language, or auto switch by theme
-      github_user: hustfeiwang
-      github_repo: https://github.com/hustfeiwang/hustfeiwang.github.com.git
+      github_user: turbofei
+      github_repo: https://github.com/turbofei/turbofei.github.com.git
       client_id: 247e88f941e41f6cdfdd
       client_secret: {刚才申请的Client Secret}
       proxy_gateway: # Address of api proxy, See: https://github.com/aimingoo/intersect

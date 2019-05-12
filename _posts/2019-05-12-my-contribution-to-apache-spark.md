@@ -63,8 +63,7 @@ Spark中有一个RetryingBlockFetcher，如果在连接失败之后，会抛出j
               }
           }
 ```
-
-
+Ps: 感谢社区大佬对我代码的review，非常佩服他们的代码功力，受益匪浅.
 
 ### SPARK-27562(In Progress)
 

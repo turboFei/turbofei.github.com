@@ -1,6 +1,6 @@
 ---
 layout: index
-title:  feiwang's blog
+title:  turboFei's blog
 ---
 
 {% for post in site.posts %}
