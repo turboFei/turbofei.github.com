@@ -5,8 +5,8 @@
         <description>feiwang's blog - feiwang</description>
         <link>http://hustfeiwang.github.io</link>
         <link>http://hustfeiwang.github.io</link>
-        <lastBuildDate>2018-12-08T00:50:44+08:00</lastBuildDate>
-        <pubDate>2018-12-08T00:50:44+08:00</pubDate>
+        <lastBuildDate>2019-05-12T14:01:38+08:00</lastBuildDate>
+        <pubDate>2019-05-12T14:01:38+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -715,6 +715,20 @@ protected def doExecute(): RDD[InternalRow]
                 <link>http://hustfeiwang.github.io/spark/2018/07/27/Spark-Sql-Analysis</link>
                 <guid>http://hustfeiwang.github.io/spark/2018/07/27/Spark-Sql-Analysis</guid>
                 <pubDate>2018-07-27T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>Rdd Basics</title>
+                <description>
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+&lt;p&gt;从RDD入手, 对Spark进行深入理解&lt;/p&gt;
+
+&lt;h3 id=&quot;正文&quot;&gt;正文&lt;/h3&gt;
+&lt;p&gt;是之前做的html格式的PPT，&lt;a href=&quot;https://netease-bigdata.github.io/ne-spark-courseware/slides/spark_core/rdd_basics.html#1&quot;&gt;链接&lt;/a&gt;&lt;/p&gt;
+</description>
+                <link>http://hustfeiwang.github.io/spark/2018/07/12/rdd-basics</link>
+                <guid>http://hustfeiwang.github.io/spark/2018/07/12/rdd-basics</guid>
+                <pubDate>2018-07-12T00:00:00+08:00</pubDate>
         </item>
 
         <item>

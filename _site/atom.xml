@@ -4,7 +4,7 @@
  <title>feiwang's blog</title>
  <link href="http://hustfeiwang.github.io/" rel="self"/>
  <link href="http://hustfeiwang.github.io"/>
- <updated>2018-12-08T00:50:44+08:00</updated>
+ <updated>2019-05-12T14:01:38+08:00</updated>
  <id>http://hustfeiwang.github.io</id>
  <author>
    <name>feiwang</name>
@@ -716,6 +716,20 @@ protected def doExecute(): RDD[InternalRow]
 
 &lt;p&gt;这里的doExecute返回的是一个中间类型的RDD。&lt;/p&gt;
 
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Rdd Basics</title>
+   <link href="http://hustfeiwang.github.io/spark/2018/07/12/rdd-basics"/>
+   <updated>2018-07-12T00:00:00+08:00</updated>
+   <id>http://hustfeiwang.github.io/spark/2018/07/12/rdd-basics</id>
+   <content type="html">
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+&lt;p&gt;从RDD入手, 对Spark进行深入理解&lt;/p&gt;
+
+&lt;h3 id=&quot;正文&quot;&gt;正文&lt;/h3&gt;
+&lt;p&gt;是之前做的html格式的PPT，&lt;a href=&quot;https://netease-bigdata.github.io/ne-spark-courseware/slides/spark_core/rdd_basics.html#1&quot;&gt;链接&lt;/a&gt;&lt;/p&gt;
 </content>
  </entry>
  

@@ -15,6 +15,7 @@ http://hustfeiwang.github.io/tags
 
 http://hustfeiwang.github.io/spark/2018/12/04/spark-cbo-code-analysis
 http://hustfeiwang.github.io/spark/2018/07/27/Spark-Sql-Analysis
+http://hustfeiwang.github.io/spark/2018/07/12/rdd-basics
 http://hustfeiwang.github.io/essay/2017/07/01/deca%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93
 http://hustfeiwang.github.io/spark/2016/12/26/spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90Shuffle%E5%AE%9E%E7%8E%B0
 http://hustfeiwang.github.io/spark/2016/12/26/spark%E5%86%85%E5%AD%98%E9%A2%84%E6%B5%8B
