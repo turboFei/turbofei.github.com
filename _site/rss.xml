@@ -5,8 +5,8 @@
         <description>turboFei's blog - feiwang</description>
         <link>http://hustfeiwang.github.io</link>
         <link>http://hustfeiwang.github.io</link>
-        <lastBuildDate>2019-05-12T16:58:10+08:00</lastBuildDate>
-        <pubDate>2019-05-12T16:58:10+08:00</pubDate>
+        <lastBuildDate>2019-05-12T17:04:42+08:00</lastBuildDate>
+        <pubDate>2019-05-12T17:04:42+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -141,12 +141,11 @@
                 <description>
 &lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 
-&lt;p&gt;简单记录一下对spark的PR。菜鸟在成长~
-&lt;a href=&quot;https://github.com/apache/spark/pull/24447&quot;&gt;SPARK-27562&lt;/a&gt;[Shuffle]Complete the verification mechanism for shuffle transmitted data&lt;/p&gt;
+&lt;p&gt;简单记录一下对spark的PR。菜鸟在成长~&lt;/p&gt;
 
 &lt;h3 id=&quot;spark-27637&quot;&gt;SPARK-27637&lt;/h3&gt;
 
-&lt;p&gt;PR链接:&lt;a href=&quot;https://github.com/apache/spark/pull/24533&quot;&gt;SPARK-27637&lt;/a&gt;[SHUFFLE]If exception occured while fetching blocks by netty block transfer service, check whether the relative executor is alive before retry.&lt;/p&gt;
+&lt;p&gt;PR链接:[&lt;a href=&quot;https://github.com/apache/spark/pull/24533&quot;&gt;SPARK-27637&lt;/a&gt;][SHUFFLE]If exception occured while fetching blocks by netty block transfer service, check whether the relative executor is alive before retry.&lt;/p&gt;
 
 &lt;h4 id=&quot;description&quot;&gt;Description&lt;/h4&gt;
 

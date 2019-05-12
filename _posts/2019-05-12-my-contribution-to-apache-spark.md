@@ -9,11 +9,10 @@ tags: [spark, PR]
 ### Background ###
 
 {{ page.summary }}
-[SPARK-27562](https://github.com/apache/spark/pull/24447)\[Shuffle]Complete the verification mechanism for shuffle transmitted data
 
 ### SPARK-27637
 
-PR链接:[SPARK-27637](https://github.com/apache/spark/pull/24533)\[SHUFFLE]If exception occured while fetching blocks by netty block transfer service, check whether the relative executor is alive before retry.
+PR链接:[[SPARK-27637](https://github.com/apache/spark/pull/24533)]\[SHUFFLE]If exception occured while fetching blocks by netty block transfer service, check whether the relative executor is alive before retry.
 
 #### Description
 
