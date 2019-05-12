@@ -118,6 +118,6 @@ Backslash characters (\) can be used in the COPY data to quote data characters t
 
 对于coalesce操作，从m个分区编程n个分区，如果m<n是一定要进行shuffle的，如果m>n, 则如果非指定shuffle为true，则不需要进行shuffle。
 
-因此coalesce(1)操作，不会造成shuffle压力，而且rdd操作是迭代读取，之后进行落盘(参考[rdd-basic](./2018-07-12-rdd-basics.md)）。只是每个partition分区的数据都发向一个节点，数据拷贝需要进行串行，然后就是可能造成磁盘压力，如果存储不够的话就很尴尬。
+因此coalesce(1)操作，不会造成shuffle压力，而且rdd操作是迭代读取，之后进行落盘(参考[rdd-basic](https://netease-bigdata.github.io/ne-spark-courseware/slides/spark_core/rdd_basics.html#1)）。只是每个partition分区的数据都发向一个节点，数据拷贝需要进行串行，然后就是可能造成磁盘压力，如果存储不够的话就很尴尬。
 
 如果transactionOn为false，则不保障事务。
