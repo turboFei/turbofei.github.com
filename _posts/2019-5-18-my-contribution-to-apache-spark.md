@@ -6,13 +6,16 @@ summary: 简单记录一下对spark的PR。菜鸟在成长~
 tags: [spark, PR]
 ---
 {% include JB/setup %}
+
+* toc
+{:toc}
+
+
 ### Background ###
 
 {{ page.summary }}
 
 ### SPARK-27637
-
-PR链接:[[SPARK-27637](https://github.com/apache/spark/pull/24533)]\[SHUFFLE]If exception occured while fetching blocks by netty block transfer service, check whether the relative executor is alive before retry.
 
 #### Description
 
@@ -64,6 +67,12 @@ Spark中有一个RetryingBlockFetcher，如果在连接失败之后，会抛出j
           }
 ```
 Ps: 感谢社区大佬对我代码的review，非常佩服他们的代码功力，受益匪浅.
+
+
+
+#### Link
+[ISSUE SPARK-27637](https://issues.apache.org/jira/browse/SPARK-27637)
+[PR SPARK-27637](https://github.com/apache/spark/pull/24533)
 
 ### SPARK-27562(In Progress)
 
@@ -127,10 +136,64 @@ spark 的shuffle writer分为三种，bypassShuffleWriter， SortShuffleWriter�
 - 在写crc时的一致性保证。
 - 在shuffle read端在发现crc值与原来的crc不同时的处理等等。
 
-具体可以参考:
+#### Link
 
  [ISSUE SPARK-27562](https://issues.apache.org/jira/browse/SPARK-27562)
 
 [PR SPARK-27562](https://github.com/apache/spark/pull/24447)
 
-### 会加油的~ 
+### SPARK-27716
+
+#### Description
+
+使用jdbc 的DataSource，我们可以将一个RDD保存到database中。比如mysql，greenplum。
+
+这些操作的主要逻辑由`JdbcUtils`中的`saveTable`函数完成,该函数的注释如下.
+
+```
+  /**
+   * Saves the RDD to the database in a single transaction.
+   */
+  def saveTable(
+      df: DataFrame,
+      tableSchema: Option[StructType],
+      isCaseSensitive: Boolean,
+      options: JdbcOptionsInWrite)
+```
+
+事实上这个注释的描述是错的，注释中说saveTable操作是在单个事务中完成。
+
+其实saveTable是调用savePartition操作来将每个分区的数据保存在数据库中，而savePartition的操作是在单个事务完成，而针对整体的saveTable却并不是单个事务。
+
+可能会存在某个分区出错，但是saveTable却处于一个中间状态的情况，这不符合事务的要求。
+
+在使用jdbc的数据传输操作可以分为以下几种。
+
+- case1: append数据到一个已经存在的表中。
+- case2：overwrite一张表，但是这个表是级联表，如果将这个表drop会牵连到其他的表，因此只能将这个表清空，再append数据。
+- case3：overwrite一张表，该表存在且不是级联表，因此可以先drop表。
+- case4：要保存的表不存在。
+
+在这个PR中，我对case3和case4进行了事务支持。
+
+#### Solution
+
+针对case3和case4，我们可以先将数据保存到一个临时表中。
+
+我们使用一个累加器来记录成功savePartition的分区数。累加器是spark中的一个分布式的计数器。
+
+来每个分区都执行savePartition之后，我们拿累加器的值和分区的数目做比较，如果所有分区都成功的savePartition，那么我们可以在driver上面drop destination table if exists,然后对临时表做rename操作，将其rename到最终的表。
+
+由于drop table 和rename table 都是原子操作，所以我们可以保证case3和case4是在单事务进行。
+
+如果有分区savePartition失败，那么我们将在driver端抛出一个分区失败的异常，提醒user。
+
+在finally模块，我们将会进行删除临时表的操作，最大重试次数为三次，确保不会产生一些垃圾数据。
+
+#### Link
+
+[PR SPARK-27716](https://github.com/apache/spark/pull/24610)
+
+ [ISSUE SPARK-27716](https://issues.apache.org/jira/browse/SPARK-27716)
+
+### To Be Continued~
