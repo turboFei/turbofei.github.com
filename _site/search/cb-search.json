@@ -11,6 +11,14 @@
 	
     
 	{
+		"title" : "Scala Concurrent Programing - concurrent_scala_future",
+		"url" : "/coding/2019/05/18/scala-concurrent-programing"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "Transactions Suuport For Spark Greenlum - spark_greenplum",
 		"url" : "/spark/2019/05/12/transactions-suuport-for-spark-greenlum"
 	}
