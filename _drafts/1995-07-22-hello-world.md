@@ -6,9 +6,9 @@ summary: Hello World!
 tags: [test]
 ---
 {% include JB/setup %}
+目录
+* toc
+{:toc}
 ### Background ###
 {{ page.summary }}
 
-**Black**
-* **list**
-`mark`

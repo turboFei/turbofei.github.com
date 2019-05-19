@@ -3,8 +3,24 @@
 	"data" : [
 	 
 	{
+		"title" : "Scala Concurrent Programming: Future And Thread - coding_essay_scala_concurrent",
+		"url" : "/coding/2019/05/19/scala-concurrent-programming-Future-And-Thread"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "My Contribution To Apache Spark - spark_PR",
 		"url" : "/spark/2019/05/18/my-contribution-to-apache-spark"
+	}
+	
+	,
+	
+    
+	{
+		"title" : "Scala Concurrent Programing: Promise And Forkjoinpool - concurrent_scala_future",
+		"url" : "/coding/2019/05/18/scala-concurrent-programing-Promise-And-ForkJoinPool"
 	}
 	
 	,
