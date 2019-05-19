@@ -5,8 +5,8 @@
         <description>turboFei's blog - feiwang</description>
         <link>http://turbofei.github.io</link>
         <link>http://turbofei.github.io</link>
-        <lastBuildDate>2019-05-19T15:35:09+08:00</lastBuildDate>
-        <pubDate>2019-05-19T15:35:09+08:00</pubDate>
+        <lastBuildDate>2019-05-19T21:56:48+08:00</lastBuildDate>
+        <pubDate>2019-05-19T21:56:48+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -1177,6 +1177,835 @@
 </description>
                 <link>http://turbofei.github.io/bigdata/2019/05/19/%E8%BD%AC%E8%BD%BD-Raft%E8%AF%91%E6%96%87</link>
                 <guid>http://turbofei.github.io/bigdata/2019/05/19/[转载]-Raft译文</guid>
+                <pubDate>2019-05-19T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>About Maven</title>
+                <description>
+&lt;p&gt;目录&lt;/p&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#基本概念&quot; id=&quot;markdown-toc-基本概念&quot;&gt;基本概念&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#lifecycle&quot; id=&quot;markdown-toc-lifecycle&quot;&gt;lifecycle&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#phase&quot; id=&quot;markdown-toc-phase&quot;&gt;phase&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#goal&quot; id=&quot;markdown-toc-goal&quot;&gt;goal&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#什么是pom&quot; id=&quot;markdown-toc-什么是pom&quot;&gt;什么是pom?&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#快速察看&quot; id=&quot;markdown-toc-快速察看&quot;&gt;快速察看&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#基本内容&quot; id=&quot;markdown-toc-基本内容&quot;&gt;基本内容：&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#pom关系&quot; id=&quot;markdown-toc-pom关系&quot;&gt;POM关系&lt;/a&gt;        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#依赖&quot; id=&quot;markdown-toc-依赖&quot;&gt;依赖&lt;/a&gt;            &lt;ul&gt;
+              &lt;li&gt;&lt;a href=&quot;#非开源包处理&quot; id=&quot;markdown-toc-非开源包处理&quot;&gt;非开源包处理&lt;/a&gt;&lt;/li&gt;
+            &lt;/ul&gt;
+          &lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#继承&quot; id=&quot;markdown-toc-继承&quot;&gt;继承&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#合成&quot; id=&quot;markdown-toc-合成&quot;&gt;合成&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#build设置&quot; id=&quot;markdown-toc-build设置&quot;&gt;build设置&lt;/a&gt;        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#resources&quot; id=&quot;markdown-toc-resources&quot;&gt;resources&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#plugins配置&quot; id=&quot;markdown-toc-plugins配置&quot;&gt;plugins配置&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#pluginmanagement配置&quot; id=&quot;markdown-toc-pluginmanagement配置&quot;&gt;pluginManagement配置&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#extensions&quot; id=&quot;markdown-toc-extensions&quot;&gt;Extensions&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#reporting&quot; id=&quot;markdown-toc-reporting&quot;&gt;reporting&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#maven-shade-plugin&quot; id=&quot;markdown-toc-maven-shade-plugin&quot;&gt;Maven-shade-plugin&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#更多项目信息&quot; id=&quot;markdown-toc-更多项目信息&quot;&gt;更多项目信息&lt;/a&gt;        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#环境设置&quot; id=&quot;markdown-toc-环境设置&quot;&gt;环境设置&lt;/a&gt;            &lt;ul&gt;
+              &lt;li&gt;&lt;a href=&quot;#issuemanagement&quot; id=&quot;markdown-toc-issuemanagement&quot;&gt;issueManagement&lt;/a&gt;&lt;/li&gt;
+              &lt;li&gt;&lt;a href=&quot;#repositories&quot; id=&quot;markdown-toc-repositories&quot;&gt;Repositories&lt;/a&gt;&lt;/li&gt;
+              &lt;li&gt;&lt;a href=&quot;#pluginrepositories&quot; id=&quot;markdown-toc-pluginrepositories&quot;&gt;pluginRepositories&lt;/a&gt;&lt;/li&gt;
+              &lt;li&gt;&lt;a href=&quot;#distributionmanagement&quot; id=&quot;markdown-toc-distributionmanagement&quot;&gt;distributionManagement&lt;/a&gt;&lt;/li&gt;
+              &lt;li&gt;&lt;a href=&quot;#profiles&quot; id=&quot;markdown-toc-profiles&quot;&gt;profiles&lt;/a&gt;&lt;/li&gt;
+            &lt;/ul&gt;
+          &lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#references&quot; id=&quot;markdown-toc-references&quot;&gt;References&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+
+&lt;p&gt;关于maven的使用&lt;/p&gt;
+
+&lt;h3 id=&quot;基本概念&quot;&gt;基本概念&lt;/h3&gt;
+
+&lt;p&gt;lifecycle, phase, goal&lt;/p&gt;
+
+&lt;p&gt;以下是参考&lt;a href=&quot;http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html&quot;&gt;官方文档&lt;/a&gt;。&lt;/p&gt;
+
+&lt;h4 id=&quot;lifecycle&quot;&gt;lifecycle&lt;/h4&gt;
+
+&lt;p&gt;maven的一个中心概念就是build lifecycle, 也就是说build以及发布一个project的过程是明确定义好的。对于build 一个project的人来说，这意味着只需要了解不多的maven命令就可以编译任何maven项目，而且POM可以保证它得到想要的结果。&lt;/p&gt;
+
+&lt;p&gt;有三个内置的build lifecycle: default, clean 和site.&lt;/p&gt;
+
+&lt;p&gt;default 发布项目，clean清空编译，site创建site文档.&lt;/p&gt;
+
+&lt;h4 id=&quot;phase&quot;&gt;phase&lt;/h4&gt;
+
+&lt;p&gt;一个build lifec是由一系列phase组成，每个phase代表build lifecycle的一个阶段。&lt;/p&gt;
+
+&lt;p&gt;例如: default lifecycle由下列phase组成.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;validate: 确定项目是正确的，且需要的information都是available&lt;/li&gt;
+  &lt;li&gt;compile: 编译&lt;/li&gt;
+  &lt;li&gt;test： 单元测试，不需要打包&lt;/li&gt;
+  &lt;li&gt;package: 打包为可发布版本，例如jar&lt;/li&gt;
+  &lt;li&gt;verify:  run any checks on results of integration tests to ensure quality criteria are met。应该是确保包可用.&lt;/li&gt;
+  &lt;li&gt;install: 在本地库安装，用来作为本地项目的依赖&lt;/li&gt;
+  &lt;li&gt;deploy: 编译环境中完成，将包拷贝至远端库，用来分享给其他developers和projects&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;所以只需要 mvn install 就可以从validate一直执行到install，因此使用mvn命令只需要指定最后一个phase，前面的phase不用指定.&lt;/p&gt;
+
+&lt;p&gt;在编译环境中，使用clean 可以清除掉前面编译的classes。 常用下面命令进行打包。&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;mvn clean package
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h4 id=&quot;goal&quot;&gt;goal&lt;/h4&gt;
+
+&lt;p&gt;前面说了lifecycle是由多个phase组成，而每个phase又包含了多个goal。&lt;/p&gt;
+
+&lt;p&gt;每个plugin的goal都是一个指定的任务，一个goal可以绑定至0个或者多个goal。如果一个goal没有指定phase，那么可以在build的lifecycle之外进行显示指定.&lt;/p&gt;
+
+&lt;p&gt;执行的顺序由调用顺序决定。例如,下面的这个命令, clean和package属于编译phases，而dependency:copy-dependencies是一个goal(属于maven-dependency-plugin)。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;mvn clean dependency:copy-dependencies package
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这条命令clean 会最下执行，也就是说先运行clean lifecycle,然后运行 dependency:copy-dependencies, 最后进行package(包括package之前的phases).&lt;/p&gt;
+
+&lt;p&gt;如果一个goal被绑定至多个phase，那么每个phase都会去执行这个goal.&lt;/p&gt;
+
+&lt;p&gt;如果一个phase中没有goal，那么那个phase不做任何执行，但如何一个phase有多个goal，则会执行所有的goals。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;有一些phase通常不在命令行中被使用&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;一些带前缀(pre-*， post-*, process-*)的命令通常不被直接使用。&lt;/p&gt;
+
+&lt;p&gt;其他文档太长，以后用到再看,&lt;a href=&quot;http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html&quot;&gt;官方文档&lt;/a&gt;。&lt;/p&gt;
+
+&lt;h3 id=&quot;什么是pom&quot;&gt;什么是pom?&lt;/h3&gt;
+
+&lt;p&gt;POM(Project Object Model)作为项目对象模型。通过xml表示maven项目，使用pom.xml来实现。主要描述了项目：包括配置文件；开发者需要遵循的规则，缺陷管理系统，组织和licenses，项目的url，项目的依赖性，以及其他所有的项目相关因素。&lt;/p&gt;
+
+&lt;h4 id=&quot;快速察看&quot;&gt;快速察看&lt;/h4&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;project&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;modelVersion&amp;gt;&lt;/span&gt;4.0.0&lt;span class=&quot;nt&quot;&gt;&amp;lt;/modelVersion&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;c&quot;&gt;&amp;lt;!--maven2.0必须是这样写，现在是maven2唯一支持的版本--&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 基础设置 --&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;packaging&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/packaging&amp;gt;&lt;/span&gt;
+
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;url&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/url&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;dependencies&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/dependencies&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;parent&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/parent&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;dependencyManagement&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/dependencyManagement&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;modules&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/modules&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;properties&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/properties&amp;gt;&lt;/span&gt;
+
+  &lt;span class=&quot;c&quot;&gt;&amp;lt;!--构建设置 --&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;build&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/build&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;reporting&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/reporting&amp;gt;&lt;/span&gt;
+
+  &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 更多项目信息 --&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;description&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/description&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;url&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/url&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;inceptionYear&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/inceptionYear&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;licenses&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/licenses&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;organization&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/organization&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;developers&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/developers&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;contributors&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/contributors&amp;gt;&lt;/span&gt;
+
+  &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 环境设置--&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;issueManagement&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/issueManagement&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;ciManagement&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/ciManagement&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;mailingLists&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/mailingLists&amp;gt;&lt;/span&gt; 
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;scm&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/scm&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;prerequisites&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/prerequisites&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;repositories&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/repositories&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;pluginRepositories&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/pluginRepositories&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;distributionManagement&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/distributionManagement&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;profiles&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/profiles&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/project&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h4 id=&quot;基本内容&quot;&gt;基本内容：&lt;/h4&gt;
+
+&lt;p&gt;POM包括了所有的项目信息&lt;/p&gt;
+
+&lt;p&gt;groupId:项目或者组织的唯一标志，并且配置时生成路径也是由此生成，如org.myproject.mojo生成的相对路径为：/org/myproject/mojo&lt;/p&gt;
+
+&lt;p&gt;artifactId:项目的通用名称&lt;/p&gt;
+
+&lt;p&gt;version:项目的版本&lt;/p&gt;
+
+&lt;p&gt;packaging:打包机制，如pom,jar,maven-plugin,ejb,war,ear,rar,par&lt;/p&gt;
+
+&lt;p&gt;name:用户描述项目的名称，无关紧要的东西，可选&lt;/p&gt;
+
+&lt;p&gt;url:应该是只是写明开发团队的网站，无关紧要，可选&lt;/p&gt;
+
+&lt;p&gt;classifer:分类&lt;/p&gt;
+
+&lt;p&gt;其中groupId,artifactId,version,packaging这四项组成了项目的唯一坐标。一般情况下，前面三项(&lt;strong&gt;groupId:artifactId:version&lt;/strong&gt;)就可以组成项目的唯一坐标了。&lt;/p&gt;
+
+&lt;h4 id=&quot;pom关系&quot;&gt;POM关系&lt;/h4&gt;
+
+&lt;p&gt;POM关系：主要为依赖，继承，合成&lt;/p&gt;
+
+&lt;h5 id=&quot;依赖&quot;&gt;依赖&lt;/h5&gt;
+
+&lt;p&gt;依赖不仅是dependencies的依赖，也包括plugins的依赖等等.&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;dependencies&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;dependency&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;junit&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;junit&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;4.0&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;type&amp;gt;&lt;/span&gt;jar&lt;span class=&quot;nt&quot;&gt;&amp;lt;/type&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;scope&amp;gt;&lt;/span&gt;test&lt;span class=&quot;nt&quot;&gt;&amp;lt;/scope&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;optional&amp;gt;&lt;/span&gt;true&lt;span class=&quot;nt&quot;&gt;&amp;lt;/optional&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/dependency&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;dependency&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;com.alibaba.china.shared&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;alibaba.apollo.webx&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;2.5.0&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+				&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 这里用于排除掉一些依赖jar，避免一些jar包冲突 --&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;exclusions&amp;gt;&lt;/span&gt;
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;exclusion&amp;gt;&lt;/span&gt;
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;org.slf4j.slf4j-api&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;com.alibaba.external&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;/exclusion&amp;gt;&lt;/span&gt;
+          ....
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/exclusions&amp;gt;&lt;/span&gt;
+......
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/dependencies&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;其中groupId, artifactId, version这三个组合标示依赖的具体工程，而且 这个依赖工程必需是maven中心包管理范围内的，如果碰上非开源包，maven支持不了这个包，那么则有有三种 方法处理：&lt;/p&gt;
+
+&lt;h6 id=&quot;非开源包处理&quot;&gt;非开源包处理&lt;/h6&gt;
+
+&lt;p&gt;1.本地安装这个插件install plugin&lt;/p&gt;
+
+&lt;p&gt;例如：mvn install:intall-file -Dfile=non-maven-proj.jar -DgroupId=som.group -DartifactId=non-maven-proj -Dversion=1&lt;/p&gt;
+
+&lt;p&gt;2.创建自己的repositories并且部署这个包，使用类似上面的deploy:deploy-file命令，&lt;/p&gt;
+
+&lt;p&gt;3.设置scope为system,并且指定系统路径。&lt;/p&gt;
+
+&lt;p&gt;dependency里属性介绍：&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;type&lt;/strong&gt;：默认为jar类型，常用的类型有：jar,ejb-client,test-jar…,可设置plugins中的extensions值为true后在增加 新的类型，&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;scope&lt;/strong&gt;：是用来指定当前包的依赖范围&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;compile 依赖打入包&lt;/li&gt;
+  &lt;li&gt;provided 次之，除了最后不打入包&lt;/li&gt;
+  &lt;li&gt;runtime，只在运行和测试时使用这些依赖&lt;/li&gt;
+  &lt;li&gt;test 只在测试时使用这些依赖&lt;/li&gt;
+  &lt;li&gt;system 手动指定的本地依赖&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h5 id=&quot;继承&quot;&gt;继承&lt;/h5&gt;
+
+&lt;p&gt;子模块的pom继承父模块的POM.&lt;/p&gt;
+
+&lt;p&gt;如果一个工程是parent或者aggregation（即mutil-module的）的，那么必须在packing赋值为pom,child工程从&lt;strong&gt;parent继承&lt;/strong&gt;的包括：dependencies,developers,contributors,plugin lists,reports lists,plugin execution with matching ids,plugin configuration&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;parent&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;org.codehaus.mojo&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;my-parent&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;2.0&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;relativePath&amp;gt;&lt;/span&gt;../my-parent&lt;span class=&quot;nt&quot;&gt;&amp;lt;/relativePath&amp;gt;&lt;/span&gt; 
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/parent&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;个人认为继承还包括一些依赖被继承。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;optional&lt;/strong&gt;:设置指依赖是否可选，默认为false,即子项目默认都&lt;strong&gt;继承&lt;/strong&gt;，为true,则子项目必需显示的引入，与dependencyManagement里定义的依赖类似 。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;exclusions&lt;/strong&gt;：如果X需要A,A包含B依赖，那么X可以声明不要B依赖，只要在exclusions中声明exclusion.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;exclusion&lt;/strong&gt;:是将B从依赖树中删除，如上配置，alibaba.apollo.webx不想使用com.alibaba.external  ,但是alibaba.apollo.webx是集成了com.alibaba.external,r所以就需要排除掉.&lt;/p&gt;
+
+&lt;p&gt;relativePath是可选的,maven会首先搜索这个地址,在搜索本地远程repositories之前.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;dependencyManagement&lt;/strong&gt;：是用于帮助管理chidren的dependencies的。例如如果parent使用dependencyManagement定义了一个dependencyon junit:junit4.0,那么 它的children就可以只引用 groupId和artifactId,而version就可以通过parent来设置，这样的好处就是可以集中管理 依赖的详情&lt;/p&gt;
+
+&lt;h5 id=&quot;合成&quot;&gt;合成&lt;/h5&gt;
+
+&lt;p&gt;对于多模块的project,outer-module没有必需考虑inner-module的dependencies,当列出modules的时候，modules的顺序是不重要的，因为maven会自动根据依赖关系来拓扑排序，&lt;/p&gt;
+
+&lt;p&gt;modules例子如下 ：&lt;/p&gt;
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;module&amp;gt;&lt;/span&gt;my-project&lt;span class=&quot;nt&quot;&gt;&amp;lt;/module&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;module&amp;gt;&lt;/span&gt;other-project&lt;span class=&quot;nt&quot;&gt;&amp;lt;/module&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;properties&lt;/strong&gt;:是为pom定义一些常量，在pom中的其它地方可以直接引用。&lt;/p&gt;
+
+&lt;p&gt;定义方式如下：&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;properties&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;file.encoding&amp;gt;&lt;/span&gt;UTF-8&lt;span class=&quot;nt&quot;&gt;&amp;lt;/file_encoding&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;java.source.version&amp;gt;&lt;/span&gt;1.5&lt;span class=&quot;nt&quot;&gt;&amp;lt;/java_source_version&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;java.target.version&amp;gt;&lt;/span&gt;1.5&lt;span class=&quot;nt&quot;&gt;&amp;lt;/java_target_version&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/properties&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;使用方式 如下 ：&lt;/p&gt;
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;${file.encoding}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;还可以使用project.xx引用pom里定义的其它属性：如$(project.version}&lt;/p&gt;
+
+&lt;h4 id=&quot;build设置&quot;&gt;build设置&lt;/h4&gt;
+
+&lt;p&gt;&lt;strong&gt;defaultGoal&lt;/strong&gt;:默认的目标，必须跟命令行上的参数相同，如：jar:jar,或者与phase相同,例如install&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;directory&lt;/strong&gt;:指定build target目标的目录，默认为$(basedir}/target,即项目根目录下的target&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;finalName&lt;/strong&gt;:指定去掉后缀的工程名字，例如：默认为${artifactId}-${version}&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;filters&lt;/strong&gt;:用于定义指定filter属性的位置，例如filter元素赋值filters/filter1.properties,那么这个文件里面就可以定义name=value对，这个name=value对的值就可以在工程pom中通过${name}引用，默认的filter目录是${basedir}/src/main/fiters/&lt;/p&gt;
+
+&lt;h5 id=&quot;resources&quot;&gt;resources&lt;/h5&gt;
+
+&lt;p&gt;构建Maven项目的时候，如果没有进行特殊的配置，Maven会按照标准的目录结构查找和处理各种类型文件。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;src/main/java和src/test/java&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;p&gt;这两个目录中的所有*.java文件会分别在comile和test-comiple阶段被编译，编译结果分别放到了target/classes和targe/test-classes目录中，但是这两个目录中的其他文件都会被忽略掉。&lt;/p&gt;
+
+  &lt;p&gt;&lt;strong&gt;src/main/resouces和src/test/resources&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;p&gt;这两个目录中的文件也会分别被复制到target/classes和target/test-classes目录中。&lt;/p&gt;
+
+  &lt;p&gt;&lt;strong&gt;target/classes&lt;/strong&gt;&lt;/p&gt;
+
+  &lt;p&gt;打包插件默认会把这个目录中的所有内容打入到jar包或者war包中。&lt;/p&gt;
+
+  &lt;p&gt;maven项目的结构一般如下:&lt;/p&gt;
+
+  &lt;ul&gt;
+    &lt;li&gt;src
+      &lt;ul&gt;
+        &lt;li&gt;main
+          &lt;ul&gt;
+            &lt;li&gt;&lt;strong&gt;java&lt;/strong&gt;         源文件&lt;/li&gt;
+            &lt;li&gt;&lt;strong&gt;resources&lt;/strong&gt;    资源文件&lt;/li&gt;
+            &lt;li&gt;filters   资源过滤文件&lt;/li&gt;
+            &lt;li&gt;config   配置文件&lt;/li&gt;
+            &lt;li&gt;scripts   脚本文件&lt;/li&gt;
+            &lt;li&gt;webapp   web应用文件&lt;/li&gt;
+          &lt;/ul&gt;
+        &lt;/li&gt;
+        &lt;li&gt;test
+          &lt;ul&gt;
+            &lt;li&gt;&lt;strong&gt;java&lt;/strong&gt;    测试源文件&lt;/li&gt;
+            &lt;li&gt;resources    测试资源文件&lt;/li&gt;
+            &lt;li&gt;filters    测试资源过滤文件&lt;/li&gt;
+          &lt;/ul&gt;
+        &lt;/li&gt;
+        &lt;li&gt;it       集成测试&lt;/li&gt;
+        &lt;li&gt;assembly    assembly descriptors&lt;/li&gt;
+        &lt;li&gt;site    Site&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/li&gt;
+    &lt;li&gt;target
+      &lt;ul&gt;
+        &lt;li&gt;generated-sources&lt;/li&gt;
+        &lt;li&gt;classes&lt;/li&gt;
+        &lt;li&gt;generated-test-sources&lt;/li&gt;
+        &lt;li&gt;test-classes&lt;/li&gt;
+        &lt;li&gt;xxx.jar&lt;/li&gt;
+      &lt;/ul&gt;
+    &lt;/li&gt;
+    &lt;li&gt;&lt;strong&gt;pom.xml&lt;/strong&gt;&lt;/li&gt;
+    &lt;li&gt;LICENSE.txt&lt;/li&gt;
+    &lt;li&gt;NOTICE.txt&lt;/li&gt;
+    &lt;li&gt;README.txt&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;resources&lt;/code&gt;标签用于描述工程中资源的位置.&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;			&lt;span class=&quot;nt&quot;&gt;&amp;lt;resource&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;targetPath&amp;gt;&lt;/span&gt;META-INF/plexus&lt;span class=&quot;nt&quot;&gt;&amp;lt;/targetPath&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;filtering&amp;gt;&lt;/span&gt;false&lt;span class=&quot;nt&quot;&gt;&amp;lt;/filtering&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;directory&amp;gt;&lt;/span&gt;${basedir}/src/main/plexus&lt;span class=&quot;nt&quot;&gt;&amp;lt;/directory&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;includes&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;include&amp;gt;&lt;/span&gt;configuration.xml&lt;span class=&quot;nt&quot;&gt;&amp;lt;/include&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/includes&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;excludes&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;exclude&amp;gt;&lt;/span&gt;**/*.properties&lt;span class=&quot;nt&quot;&gt;&amp;lt;/exclude&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/excludes&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/resource&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;targetPath&lt;/strong&gt;:指定build资源到哪个目录，默认是base directory&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;filtering&lt;/strong&gt;:指定是否将filter文件(即上面说的filters里定义的*.property文件)的变量值在这个resource文件有效,例如上面就指定那些变量值在configuration文件无效。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;directory&lt;/strong&gt;:指定属性文件的目录，build的过程需要找到它，并且将其放到targetPath下，默认的directory是${basedir}/src/main/resources&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;includes&lt;/strong&gt;:指定包含文件的patterns,符合样式并且在directory目录下的文件将会包含进project的资源文件。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;excludes&lt;/strong&gt;:指定不包含在内的patterns,如果inclues与excludes有冲突，那么excludes胜利，那些符合冲突的样式的文件是不会包含进来的。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;testResources&lt;/strong&gt;:这个模块包含测试资源元素，其内容定义与resources类似，不同的一点是默认的测试资源路径是${basedir}/src/test/resources,测试资源是不部署的。&lt;/p&gt;
+
+&lt;h5 id=&quot;plugins配置&quot;&gt;plugins配置&lt;/h5&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;			&lt;span class=&quot;nt&quot;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;org.apache.maven.plugins&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;maven-jar-plugin&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;2.0&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;extensions&amp;gt;&lt;/span&gt;false&lt;span class=&quot;nt&quot;&gt;&amp;lt;/extensions&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;inherited&amp;gt;&lt;/span&gt;true&lt;span class=&quot;nt&quot;&gt;&amp;lt;/inherited&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;classifier&amp;gt;&lt;/span&gt;test&lt;span class=&quot;nt&quot;&gt;&amp;lt;/classifier&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;dependencies&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/dependencies&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;executions&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/executions&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;&lt;strong&gt;extensions&lt;/strong&gt;:true or false, 决定是否要load这个plugin的extensions，默认为true.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;inherited&lt;/strong&gt;:是否让子pom继承，ture or false 默认为true.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;configuration&lt;/strong&gt;:通常用于私有不开源的plugin,不能够详细了解plugin的内部工作原理，但使plugin满足的properties&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;dependencies&lt;/strong&gt;:与pom基础的dependencies的结构和功能都相同，只是plugin的dependencies用于plugin,而pom的denpendencies用于项目本身。在plugin的dependencies主要用于改变plugin原来的dependencies，例如排除一些用不到的dependency或者修改dependency的版本等，详细请看pom的denpendencies.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;executions&lt;/strong&gt;:plugin也有很多个目标，每个目标具有不同的配置，executions就是设定plugin的目标，&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;					&lt;span class=&quot;nt&quot;&gt;&amp;lt;execution&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;id&amp;gt;&lt;/span&gt;echodir&lt;span class=&quot;nt&quot;&gt;&amp;lt;/id&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;goals&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;goal&amp;gt;&lt;/span&gt;run&lt;span class=&quot;nt&quot;&gt;&amp;lt;/goal&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;/goals&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;phase&amp;gt;&lt;/span&gt;verify&lt;span class=&quot;nt&quot;&gt;&amp;lt;/phase&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;inherited&amp;gt;&lt;/span&gt;false&lt;span class=&quot;nt&quot;&gt;&amp;lt;/inherited&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;tasks&amp;gt;&lt;/span&gt; 
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;echo&amp;gt;&lt;/span&gt;Build Dir: ${project.build.directory}&lt;span class=&quot;nt&quot;&gt;&amp;lt;/echo&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;/tasks&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;/execution&amp;gt;&lt;/span&gt; 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;&lt;strong&gt;id&lt;/strong&gt;:标识符&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;goals&lt;/strong&gt;:里面列出一系列的goals元素，例如上面的run goal&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;phase&lt;/strong&gt;:声明goals执行的时期，例如：verify&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;inherited&lt;/strong&gt;:是否传递execution到子pom里。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;configuration&lt;/strong&gt;:设置execution下列表的goals的设置，而不是plugin所有的goals的设置&lt;/p&gt;
+
+&lt;h5 id=&quot;pluginmanagement配置&quot;&gt;pluginManagement配置&lt;/h5&gt;
+
+&lt;p&gt;pluginManagement的作用类似于denpendencyManagement,只是denpendencyManagement是用于管理项目jar包依赖，pluginManagement是用于管理plugin。与pom build里的plugins区别是，&lt;strong&gt;这里的plugin是列出来，然后让子pom来决定是否引用。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;例如：&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;	&lt;span class=&quot;nt&quot;&gt;&amp;lt;pluginManagement&amp;gt;&lt;/span&gt; 
+     &lt;span class=&quot;nt&quot;&gt;&amp;lt;plugins&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;org.apache.maven.plugins&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;maven-jar-plugin&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;2.2&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;executions&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;execution&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;id&amp;gt;&lt;/span&gt;pre-process-classes&lt;span class=&quot;nt&quot;&gt;&amp;lt;/id&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;phase&amp;gt;&lt;/span&gt;compile&lt;span class=&quot;nt&quot;&gt;&amp;lt;/phase&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;goals&amp;gt;&lt;/span&gt; 
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;goal&amp;gt;&lt;/span&gt;jar&lt;span class=&quot;nt&quot;&gt;&amp;lt;/goal&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;/goals&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt; 
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;classifier&amp;gt;&lt;/span&gt;pre-process&lt;span class=&quot;nt&quot;&gt;&amp;lt;/classifier&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;/execution&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;/executions&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugins&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/pluginManagement&amp;gt;&lt;/span&gt; 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;子pom引用方法： 
+在pom的build里的plugins引用： &lt;/p&gt;
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &lt;span class=&quot;nt&quot;&gt;&amp;lt;plugins&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;org.apache.maven.plugins&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;maven-jar-plugin&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugins&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;build里的directories:&lt;/p&gt;
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;		&lt;span class=&quot;nt&quot;&gt;&amp;lt;sourceDirectory&amp;gt;&lt;/span&gt;${basedir}/src/main/java&lt;span class=&quot;nt&quot;&gt;&amp;lt;/sourceDirectory&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;scriptSourceDirectory&amp;gt;&lt;/span&gt;${basedir}/src/main/scripts&lt;span class=&quot;nt&quot;&gt;&amp;lt;/scriptSourceDirectory&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;testSourceDirectory&amp;gt;&lt;/span&gt;${basedir}/src/test/java&lt;span class=&quot;nt&quot;&gt;&amp;lt;/testSourceDirectory&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;outputDirectory&amp;gt;&lt;/span&gt;${basedir}/target/classes&lt;span class=&quot;nt&quot;&gt;&amp;lt;/outputDirectory&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;testOutputDirectory&amp;gt;&lt;/span&gt;${basedir}/target/test-classes&lt;span class=&quot;nt&quot;&gt;&amp;lt;/testOutputDirectory&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;这几个元素只在parent build element里面定义，他们设置多种路径结构，他们并不在profile里，所以不能通过profile来修改&lt;/p&gt;
+
+&lt;h5 id=&quot;extensions&quot;&gt;Extensions&lt;/h5&gt;
+
+&lt;p&gt;它们是一系列build过程中要使用的产品，他们会包含在running bulid‘s classpath里面。他们可以开启extensions，也可以通过提供条件来激活plugins。简单来讲，&lt;strong&gt;extensions是在build过程被激活的产品&lt;/strong&gt; .&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &lt;span class=&quot;nt&quot;&gt;&amp;lt;extensions&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;extension&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;org.apache.maven.wagon&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;wagon-ftp&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;1.0-alpha-3&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/extension&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/extensions&amp;gt;&lt;/span&gt; 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h5 id=&quot;reporting&quot;&gt;reporting&lt;/h5&gt;
+
+&lt;p&gt;reporting包含site生成阶段的一些元素，某些maven plugin可以生成reports并且在reporting下配置。例如javadoc,maven site等，在reporting下配置的report plugin的方法与build几乎一样，最不同的是build的plugin goals在executions下设置，而reporting的configures goals在reporttest。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;excludeDefaults&lt;/strong&gt;:是否排除site generator默认产生的reports&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;outputDirectory&lt;/strong&gt;，默认的dir变成:${basedir}/target/site&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;reportSets&lt;/strong&gt;:设置execution goals,相当于build里面的executions,不同的是不能够bind a report to another phase,只能够是site&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;reporting&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;plugins&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt; 
+        ... 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;reportSets&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;reportSet&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;id&amp;gt;&lt;/span&gt;sunlink&lt;span class=&quot;nt&quot;&gt;&amp;lt;/id&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;reports&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;report&amp;gt;&lt;/span&gt;javadoc&lt;span class=&quot;nt&quot;&gt;&amp;lt;/report&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;/reports&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;inherited&amp;gt;&lt;/span&gt;true&lt;span class=&quot;nt&quot;&gt;&amp;lt;/inherited&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;links&amp;gt;&lt;/span&gt; 
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;link&amp;gt;&lt;/span&gt;http://java.sun.com/j2se/1.5.0/docs/api/&lt;span class=&quot;nt&quot;&gt;&amp;lt;/link&amp;gt;&lt;/span&gt; 
+              &lt;span class=&quot;nt&quot;&gt;&amp;lt;/links&amp;gt;&lt;/span&gt; 
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;/reportSet&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/reportSets&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugins&amp;gt;&lt;/span&gt; 
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/reporting&amp;gt;&lt;/span&gt; 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;reporting里面的reportSets和build里面的executions的作用都是控制pom的不同粒度去控制build的过程，我们不单要配置plugins，还要配置那些plugins单独的goals。&lt;/p&gt;
+
+&lt;h5 id=&quot;maven-shade-plugin&quot;&gt;Maven-shade-plugin&lt;/h5&gt;
+
+&lt;p&gt;如果是作为使用方可以使用&lt;code class=&quot;highlighter-rouge&quot;&gt;exclusions&lt;/code&gt;来去掉一些依赖包避免冲突，而如果是作为提供方，有时候需要在提供jar包时候避免产生依赖冲突，而&lt;code class=&quot;highlighter-rouge&quot;&gt;maven-shade-plugin&lt;/code&gt;非常适合这个场景.&lt;/p&gt;
+
+&lt;p&gt;下面这个例子。&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &lt;span class=&quot;nt&quot;&gt;&amp;lt;build&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;plugins&amp;gt;&lt;/span&gt;
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;plugin&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;groupId&amp;gt;&lt;/span&gt;org.apache.maven.plugins&lt;span class=&quot;nt&quot;&gt;&amp;lt;/groupId&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactId&amp;gt;&lt;/span&gt;maven-shade-plugin&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactId&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;3.1.1&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
+                    &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifactSet&amp;gt;&lt;/span&gt;
+                      	&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 把哪些包打进去 --&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;nt&quot;&gt;&amp;lt;includes&amp;gt;&lt;/span&gt;
+                            &lt;span class=&quot;nt&quot;&gt;&amp;lt;include&amp;gt;&lt;/span&gt;redis.clients:jedis&lt;span class=&quot;nt&quot;&gt;&amp;lt;/include&amp;gt;&lt;/span&gt;
+                            &lt;span class=&quot;nt&quot;&gt;&amp;lt;include&amp;gt;&lt;/span&gt;org.apache.commons:commons-pool2&lt;span class=&quot;nt&quot;&gt;&amp;lt;/include&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/includes&amp;gt;&lt;/span&gt;
+                    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifactSet&amp;gt;&lt;/span&gt;
+                    &lt;span class=&quot;nt&quot;&gt;&amp;lt;filters&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;nt&quot;&gt;&amp;lt;filter&amp;gt;&lt;/span&gt;
+                            &lt;span class=&quot;nt&quot;&gt;&amp;lt;artifact&amp;gt;&lt;/span&gt;*:*&lt;span class=&quot;nt&quot;&gt;&amp;lt;/artifact&amp;gt;&lt;/span&gt;
+                          	&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 排除一些文件 --&amp;gt;&lt;/span&gt;
+                            &lt;span class=&quot;nt&quot;&gt;&amp;lt;excludes&amp;gt;&lt;/span&gt;
+                                &lt;span class=&quot;nt&quot;&gt;&amp;lt;exclude&amp;gt;&lt;/span&gt;META-INF/*.SF&lt;span class=&quot;nt&quot;&gt;&amp;lt;/exclude&amp;gt;&lt;/span&gt;
+                                &lt;span class=&quot;nt&quot;&gt;&amp;lt;exclude&amp;gt;&lt;/span&gt;META-INF/*.DSA&lt;span class=&quot;nt&quot;&gt;&amp;lt;/exclude&amp;gt;&lt;/span&gt;
+                                &lt;span class=&quot;nt&quot;&gt;&amp;lt;exclude&amp;gt;&lt;/span&gt;META-INF/*.RSA&lt;span class=&quot;nt&quot;&gt;&amp;lt;/exclude&amp;gt;&lt;/span&gt;
+                            &lt;span class=&quot;nt&quot;&gt;&amp;lt;/excludes&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/filter&amp;gt;&lt;/span&gt;
+                    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/filters&amp;gt;&lt;/span&gt;
+                    &lt;span class=&quot;nt&quot;&gt;&amp;lt;relocations&amp;gt;&lt;/span&gt;
+                      	&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 对一些包名重定位，以解决冲突. --&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;nt&quot;&gt;&amp;lt;relocation&amp;gt;&lt;/span&gt;
+                            &lt;span class=&quot;nt&quot;&gt;&amp;lt;pattern&amp;gt;&lt;/span&gt;redis&lt;span class=&quot;nt&quot;&gt;&amp;lt;/pattern&amp;gt;&lt;/span&gt;
+                            &lt;span class=&quot;nt&quot;&gt;&amp;lt;shadedPattern&amp;gt;&lt;/span&gt;scyuan.maven.shaded.redis&lt;span class=&quot;nt&quot;&gt;&amp;lt;/shadedPattern&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/relocation&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;nt&quot;&gt;&amp;lt;relocation&amp;gt;&lt;/span&gt;
+                            &lt;span class=&quot;nt&quot;&gt;&amp;lt;pattern&amp;gt;&lt;/span&gt;org.apache.commons&lt;span class=&quot;nt&quot;&gt;&amp;lt;/pattern&amp;gt;&lt;/span&gt;
+                            &lt;span class=&quot;nt&quot;&gt;&amp;lt;shadedPattern&amp;gt;&lt;/span&gt;scyuan.maven.shaded.org.apache.commons&lt;span class=&quot;nt&quot;&gt;&amp;lt;/shadedPattern&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/relocation&amp;gt;&lt;/span&gt;
+                    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/relocations&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;/configuration&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;executions&amp;gt;&lt;/span&gt;
+                    &lt;span class=&quot;nt&quot;&gt;&amp;lt;execution&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 在package阶段执行shade goal,这些goal是定好的 --&amp;gt;&lt;/span&gt;
+                     		&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 可在maven-shade-plugin-${ver}.jar/META-INF/maven/plugin.xml中查看有哪些goal --&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;nt&quot;&gt;&amp;lt;phase&amp;gt;&lt;/span&gt;package&lt;span class=&quot;nt&quot;&gt;&amp;lt;/phase&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;nt&quot;&gt;&amp;lt;goals&amp;gt;&lt;/span&gt;
+                            &lt;span class=&quot;nt&quot;&gt;&amp;lt;goal&amp;gt;&lt;/span&gt;shade&lt;span class=&quot;nt&quot;&gt;&amp;lt;/goal&amp;gt;&lt;/span&gt;
+                        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/goals&amp;gt;&lt;/span&gt;
+                    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/execution&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;/executions&amp;gt;&lt;/span&gt;
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugin&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/plugins&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/build&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h4 id=&quot;更多项目信息&quot;&gt;更多项目信息&lt;/h4&gt;
+
+&lt;p&gt;name:项目除了artifactId外，可以定义多个名称
+description: 项目描述
+url: 项目url
+inceptionYear:创始年份&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Licenses&lt;/strong&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;licenses&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;license&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;Apache 2&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;url&amp;gt;&lt;/span&gt;http://www.apache.org/licenses/LICENSE-2.0.txt&lt;span class=&quot;nt&quot;&gt;&amp;lt;/url&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;distribution&amp;gt;&lt;/span&gt;repo&lt;span class=&quot;nt&quot;&gt;&amp;lt;/distribution&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;comments&amp;gt;&lt;/span&gt;A business-friendly OSS license&lt;span class=&quot;nt&quot;&gt;&amp;lt;/comments&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/license&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/licenses&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;列出本工程直接的licenses，而不要列出dependencies的licenses&lt;/p&gt;
+
+&lt;p&gt;配置组织信息:&lt;/p&gt;
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;nt&quot;&gt;&amp;lt;organization&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;Codehaus Mojo&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;url&amp;gt;&lt;/span&gt;http://mojo.codehaus.org&lt;span class=&quot;nt&quot;&gt;&amp;lt;/url&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/organization&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;很多工程都受到某些组织运行，这里设置基本信息&lt;/p&gt;
+
+&lt;p&gt;配置开发者信息:&lt;/p&gt;
+
+&lt;p&gt;例如：一个开发者可以有多个roles，properties是 &lt;/p&gt;
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;developers&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;developer&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;id&amp;gt;&lt;/span&gt;eric&lt;span class=&quot;nt&quot;&gt;&amp;lt;/id&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;Eric&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;email&amp;gt;&lt;/span&gt;eredmond@codehaus.org&lt;span class=&quot;nt&quot;&gt;&amp;lt;/email&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;url&amp;gt;&lt;/span&gt;http://eric.propellors.net&lt;span class=&quot;nt&quot;&gt;&amp;lt;/url&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;organization&amp;gt;&lt;/span&gt;Codehaus&lt;span class=&quot;nt&quot;&gt;&amp;lt;/organization&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;organizationUrl&amp;gt;&lt;/span&gt;http://mojo.codehaus.org&lt;span class=&quot;nt&quot;&gt;&amp;lt;/organizationUrl&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;roles&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;role&amp;gt;&lt;/span&gt;architect&lt;span class=&quot;nt&quot;&gt;&amp;lt;/role&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;role&amp;gt;&lt;/span&gt;developer&lt;span class=&quot;nt&quot;&gt;&amp;lt;/role&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/roles&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;timezone&amp;gt;&lt;/span&gt;-6&lt;span class=&quot;nt&quot;&gt;&amp;lt;/timezone&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;properties&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;picUrl&amp;gt;&lt;/span&gt;http://tinyurl.com/prv4t&lt;span class=&quot;nt&quot;&gt;&amp;lt;/picUrl&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/properties&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/developer&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/developers&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h5 id=&quot;环境设置&quot;&gt;环境设置&lt;/h5&gt;
+
+&lt;h6 id=&quot;issuemanagement&quot;&gt;issueManagement&lt;/h6&gt;
+
+&lt;p&gt;bug跟踪管理系统,定义defect tracking system缺陷跟踪系统，比如有（bugzilla,testtrack,clearquest等）.
+例如:&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;nt&quot;&gt;&amp;lt;issueManagement&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;system&amp;gt;&lt;/span&gt;Bugzilla&lt;span class=&quot;nt&quot;&gt;&amp;lt;/system&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;url&amp;gt;&lt;/span&gt;http://127.0.0.1/bugzilla/&lt;span class=&quot;nt&quot;&gt;&amp;lt;/url&amp;gt;&lt;/span&gt; 
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/issueManagement&amp;gt;&lt;/span&gt; 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h6 id=&quot;repositories&quot;&gt;Repositories&lt;/h6&gt;
+
+&lt;p&gt;pom里面的仓库与setting.xml里的仓库功能是一样的。主要的区别在于，pom里的仓库是个性化的。比如一家大公司里的setting文件是公用 的，所有项目都用一个setting文件，但各个子项目却会引用不同的第三方库，所以就需要在pom里设置自己需要的仓库地址。&lt;/p&gt;
+
+&lt;p&gt;repositories：要成为maven2的repository artifact，必须具有pom文件在$BASE_REPO/groupId/artifactId/version/artifactId-version.pom 
+BASE_REPO可以是本地，也可以是远程的。repository元素就是声明那些去查找的repositories 
+默认的central Maven repository在http://repo1.maven.org/maven2/&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;repositories&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;repository&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;releases&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;enabled&amp;gt;&lt;/span&gt;false&lt;span class=&quot;nt&quot;&gt;&amp;lt;/enabled&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;updatePolicy&amp;gt;&lt;/span&gt;always&lt;span class=&quot;nt&quot;&gt;&amp;lt;/updatePolicy&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;checksumPolicy&amp;gt;&lt;/span&gt;warn&lt;span class=&quot;nt&quot;&gt;&amp;lt;/checksumPolicy&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/releases&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;snapshots&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;enabled&amp;gt;&lt;/span&gt;true&lt;span class=&quot;nt&quot;&gt;&amp;lt;/enabled&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;updatePolicy&amp;gt;&lt;/span&gt;never&lt;span class=&quot;nt&quot;&gt;&amp;lt;/updatePolicy&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;checksumPolicy&amp;gt;&lt;/span&gt;fail&lt;span class=&quot;nt&quot;&gt;&amp;lt;/checksumPolicy&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/snapshots&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;id&amp;gt;&lt;/span&gt;codehausSnapshots&lt;span class=&quot;nt&quot;&gt;&amp;lt;/id&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;Codehaus Snapshots&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;url&amp;gt;&lt;/span&gt;http://snapshots.maven.codehaus.org/maven2&lt;span class=&quot;nt&quot;&gt;&amp;lt;/url&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;layout&amp;gt;&lt;/span&gt;default&lt;span class=&quot;nt&quot;&gt;&amp;lt;/layout&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/repository&amp;gt;&lt;/span&gt; 
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/repositories&amp;gt;&lt;/span&gt; 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;release和snapshots：是artifact的两种policies，pom可以选择那种政策有效。 
+enable：本别指定两种类型是否可用，true or false 
+updatePolicy:说明更新发生的频率always 或者 never 或者 daily（默认的）或者 interval:X（X是分钟数）&lt;/p&gt;
+
+&lt;p&gt;checksumPolicy：当Maven的部署文件到仓库中，它也部署了相应的校验和文件。您可以选择忽略，失败，或缺少或不正确的校验和警告。&lt;/p&gt;
+
+&lt;p&gt;layout：maven1.x与maven2有不同的layout，所以可以声明为default或者是legacy（遗留方式maven1.x）。&lt;/p&gt;
+
+&lt;h6 id=&quot;pluginrepositories&quot;&gt;pluginRepositories&lt;/h6&gt;
+
+&lt;p&gt;与Repositories具有类似的结构，只是Repositories是dependencies的home，而这个是plugins 的home。&lt;/p&gt;
+
+&lt;h6 id=&quot;distributionmanagement&quot;&gt;distributionManagement&lt;/h6&gt;
+
+&lt;p&gt;管理distribution和supporting files。&lt;/p&gt;
+
+&lt;p&gt;downloadUrl：是其他项目为了抓取本项目的pom’s artifact而指定的url，就是说告诉pom upload的地址也就是别人可以下载的地址。 
+status：这里的状态不要受到我们的设置，maven会自动设置project的状态，有效的值：none：没有声明状态，pom默认的；converted：本project是管理员从原先的maven版本convert到maven2的；partner：以前叫做synched，意思是与partner repository已经进行了同步；deployed：至今为止最经常的状态，意思是制品是从maven2 instance部署的，人工在命令行deploy的就会得到这个；verified：本制品已经经过验证，也就是已经定下来了最终版。 
+repository：声明deploy过程中current project会如何变成repository，说明部署到repository的信息。&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &lt;span class=&quot;nt&quot;&gt;&amp;lt;repository&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;uniqueVersion&amp;gt;&lt;/span&gt;false&lt;span class=&quot;nt&quot;&gt;&amp;lt;/uniqueVersion&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;id&amp;gt;&lt;/span&gt;corp1&lt;span class=&quot;nt&quot;&gt;&amp;lt;/id&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;Corporate Repository&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;url&amp;gt;&lt;/span&gt;scp://repo1/maven2&lt;span class=&quot;nt&quot;&gt;&amp;lt;/url&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;layout&amp;gt;&lt;/span&gt;default&lt;span class=&quot;nt&quot;&gt;&amp;lt;/layout&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/repository&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;snapshotRepository&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;uniqueVersion&amp;gt;&lt;/span&gt;true&lt;span class=&quot;nt&quot;&gt;&amp;lt;/uniqueVersion&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;id&amp;gt;&lt;/span&gt;propSnap&lt;span class=&quot;nt&quot;&gt;&amp;lt;/id&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;Propellors Snapshots&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;url&amp;gt;&lt;/span&gt;sftp://propellers.net/maven&lt;span class=&quot;nt&quot;&gt;&amp;lt;/url&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;layout&amp;gt;&lt;/span&gt;legacy&lt;span class=&quot;nt&quot;&gt;&amp;lt;/layout&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/snapshotRepository&amp;gt;&lt;/span&gt; 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;id, name:：唯一性的id，和可读性的name 
+uniqueVersion：指定是否产生一个唯一性的version number还是使用address里的其中version部分。true or false 
+url：说明location和transport protocol 
+layout：default或者legacy&lt;/p&gt;
+
+&lt;h6 id=&quot;profiles&quot;&gt;profiles&lt;/h6&gt;
+
+&lt;p&gt;pom4.0的一个新特性就是具有根据environment来修改设置的能力&lt;/p&gt;
+
+&lt;p&gt;它包含可选的activation（profile的触发器）和一系列的changes。例如test过程可能会指向不同的数据库（相对最终的deployment）或者不同的dependencies或者不同的repositories，并且是根据不同的JDK来改变的。那么结构如下： &lt;/p&gt;
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;nt&quot;&gt;&amp;lt;profiles&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;profile&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;id&amp;gt;&lt;/span&gt;test&lt;span class=&quot;nt&quot;&gt;&amp;lt;/id&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;activation&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/activation&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;build&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/build&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;modules&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/modules&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;repositories&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/repositories&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;pluginRepositories&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/pluginRepositories&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;dependencies&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/dependencies&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;reporting&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/reporting&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;dependencyManagement&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/dependencyManagement&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;distributionManagement&amp;gt;&lt;/span&gt;...&lt;span class=&quot;nt&quot;&gt;&amp;lt;/distributionManagement&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/profile&amp;gt;&lt;/span&gt; 
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/profiles&amp;gt;&lt;/span&gt; 
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+&lt;p&gt;&lt;strong&gt;Activation&lt;/strong&gt;
+触发这个profile的条件配置如下例：（只需要其中一个成立就可以激活profile，如果第一个条件满足了，那么后面就不会在进行匹配。 &lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &lt;span class=&quot;nt&quot;&gt;&amp;lt;profile&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;id&amp;gt;&lt;/span&gt;test&lt;span class=&quot;nt&quot;&gt;&amp;lt;/id&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;activation&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;activeByDefault&amp;gt;&lt;/span&gt;false&lt;span class=&quot;nt&quot;&gt;&amp;lt;/activeByDefault&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;jdk&amp;gt;&lt;/span&gt;1.5&lt;span class=&quot;nt&quot;&gt;&amp;lt;/jdk&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;os&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;Windows XP&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;family&amp;gt;&lt;/span&gt;Windows&lt;span class=&quot;nt&quot;&gt;&amp;lt;/family&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;arch&amp;gt;&lt;/span&gt;x86&lt;span class=&quot;nt&quot;&gt;&amp;lt;/arch&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;version&amp;gt;&lt;/span&gt;5.1.2600&lt;span class=&quot;nt&quot;&gt;&amp;lt;/version&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/os&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;property&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;name&amp;gt;&lt;/span&gt;mavenVersion&lt;span class=&quot;nt&quot;&gt;&amp;lt;/name&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;value&amp;gt;&lt;/span&gt;2.0.3&lt;span class=&quot;nt&quot;&gt;&amp;lt;/value&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/property&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;file&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;exists&amp;gt;&lt;/span&gt;${basedir}/file2.properties&lt;span class=&quot;nt&quot;&gt;&amp;lt;/exists&amp;gt;&lt;/span&gt; 
+          &lt;span class=&quot;nt&quot;&gt;&amp;lt;missing&amp;gt;&lt;/span&gt;${basedir}/file1.properties&lt;span class=&quot;nt&quot;&gt;&amp;lt;/missing&amp;gt;&lt;/span&gt; 
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/file&amp;gt;&lt;/span&gt; 
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/activation&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/profile&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;激活profile的方法有多个：setting文件的activeProfile元素明确指定激活的profile的ID，在命令行上明确激活Profile用-P flag 参数&lt;/p&gt;
+
+&lt;p&gt;如:&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        &lt;span class=&quot;nt&quot;&gt;&amp;lt;profile&amp;gt;&lt;/span&gt;
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;id&amp;gt;&lt;/span&gt;spark-2.3&lt;span class=&quot;nt&quot;&gt;&amp;lt;/id&amp;gt;&lt;/span&gt;
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;properties&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;spark.version&amp;gt;&lt;/span&gt;2.3.2&lt;span class=&quot;nt&quot;&gt;&amp;lt;/spark.version&amp;gt;&lt;/span&gt;
+                &lt;span class=&quot;nt&quot;&gt;&amp;lt;scalatest.version&amp;gt;&lt;/span&gt;3.0.3&lt;span class=&quot;nt&quot;&gt;&amp;lt;/scalatest.version&amp;gt;&lt;/span&gt;
+            &lt;span class=&quot;nt&quot;&gt;&amp;lt;/properties&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/profile&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;./build/mvn clean install -Pspark-2.3
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这里就激活了spark-2.3对应的properties.&lt;/p&gt;
+
+&lt;p&gt;查看某个build会激活的profile列表可以用：mvn help:active-profiles&lt;/p&gt;
+
+&lt;h3 id=&quot;references&quot;&gt;References&lt;/h3&gt;
+
+&lt;p&gt;http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html&lt;/p&gt;
+
+&lt;p&gt;https://www.cnblogs.com/qq78292959/p/3711501.html&lt;/p&gt;
+</description>
+                <link>http://turbofei.github.io/coding/2019/05/19/About-Maven</link>
+                <guid>http://turbofei.github.io/coding/2019/05/19/About-Maven</guid>
                 <pubDate>2019-05-19T00:00:00+08:00</pubDate>
         </item>
 
