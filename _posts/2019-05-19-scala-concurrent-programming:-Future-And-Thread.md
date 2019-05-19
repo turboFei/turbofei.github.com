@@ -158,40 +158,6 @@ Thread类实现了Runnable，是一个特殊的Runnable类。
 
 Thread类里面提供了一些静态工具方法. **Deprecated**的方法不再列出.
 
-```java
- 		// 得到当前线程	
-		public static native Thread currentThread();
-    public static native void yield();
-    public static native void sleep(long millis) throws InterruptedException;
-    public synchronized void start();
-    public void run();
-    public void interrupt();
-    public boolean isInterrupted();
-    public final native boolean isAlive();
-    public final void setPriority(int newPriority);
-    public final int getPriority()；
-    public final synchronized void setName(String name);
-		public final String getName();
-		public final ThreadGroup getThreadGroup();
-		public static int activeCount();
-		public static int enumerate(Thread tarray[]);
-		public final synchronized void join(long millis);
-		public final void setDaemon(boolean on);
-		public final boolean isDaemon();
-		public final void checkAccess();
-		public ClassLoader getContextClassLoader();
-		public void setContextClassLoader(ClassLoader cl);
-		public static native boolean holdsLock(Object obj);
-		public StackTraceElement[] getStackTrace();
-		public static Map<Thread, StackTraceElement[]> getAllStackTraces();
-		public long getId();
-		public State getState();
-		static void processQueue(ReferenceQueue<Class<?>> queue,
-                             ConcurrentMap<? extends
-                             WeakReference<Class<?>>, ?> map);
-
-```
-
 #### Thread状态
 
 首先，thread的五种状态.
