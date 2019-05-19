@@ -2,7 +2,7 @@
 layout: post
 category: spark
 tagline: "Stay hungry, stay foolish~"
-summary: 简单记录一下对spark的PR。菜鸟在成长~
+summary: 简单记录一下对spark的PR。Slowly, but always forward~
 tags: [spark, PR]
 ---
 {% include JB/setup %}

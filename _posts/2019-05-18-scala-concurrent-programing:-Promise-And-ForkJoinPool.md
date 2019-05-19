@@ -1,8 +1,8 @@
 ---
 layout: post
-category: Coding
+category: coding
 tagline: "About concurrent programming"
-summary: 关于并发编程的一些总结与思考，包括promise， future， forkJoinPool, and etc.
+summary: 关于并发编程的一些总结与思考，包括promise, forkJoinPool, and etc.
 tags: [concurrent, scala, future]
 ---
 {% include JB/setup %}
