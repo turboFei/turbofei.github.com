@@ -1,0 +1,20 @@
+---
+layout: page
+title:  Recommendation
+header: Posts By Category
+group: navigation
+---
+{% include JB/setup %}
+
+<h3>In search of an understandable consensus algorithm</h3>
+<b>ATC-2014-Raft</b> <br>
+<b>Abstract:</b> <br>
+<p>Raft is a consensus algorithm for managing a replicated log. It produces a result equivalent to (multi-)Paxos, and it is as efficient as Paxos, but its structure is different from Paxos; this makes Raft more understandable than Paxos and also provides a better foundation for building practical systems. In order to enhance understandability, Raft separates the key elements of consensus, such as leader election, log replication, and safety, and it enforces a stronger degree of coherency to reduce the number of states that must be considered. Results from a user study demonstrate that Raft is easier for students to learn than Paxos. Raft also includes a new mechanism for changing the cluster membership, which uses overlapping majorities to guarantee safety.</p>
+<a href="/public/papers/raft.pdf" target="_blank">[PDF]</a>
+<br>
+<h3>Albis: High-Performance File Format for Big Data Systems</h3>
+<b>Atc-2018</b> <br>
+<b>Abstract:</b> <br>
+<p>Over the last decade, a variety of external file formats such as Parquet, ORC, Arrow, etc., have been developed to store large volumes of relational data in the cloud. As high-performance networking and storage devices are used pervasively to process this data in frameworks like Spark and Hadoop, we observe that none of the popular file formats are capable of delivering data access rates close to the hardware. Our analysis suggests that multiple antiquated notions about the nature of I/O in a distributed setting, and the preference for the "storage efficiency" over performance is the key reason for this gap.</p>
+<p>In this paper we present Albis, a high-performance file format for storing relational data on modern hardware. Albis is built upon two key principles: (i) reduce the CPU cost by keeping the data/metadata storage format simple; (ii) use a binary API for an efficient object management to avoid unnecessary object materialization. In our evaluation, we demonstrate that in micro-benchmarks Albis delivers 1.9-21.4x faster bandwidths than other formats. At the workload-level, Albis in Spark/SQL reduces the runtimes of TPC-DS queries up to a margin of 3x.</p>
+<a href="/public/papers/atc-18-Albis- High-Performance File Format for Big Data Systems.pdf" target="_blank">[PDF]</a>&emsp;<a href="/public/papers/atc-18-Alibis_slides.pdf" target="_blank">[Slides]</a>

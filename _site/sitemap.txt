@@ -2,6 +2,7 @@
 http://turbofei.github.io/public/html/BigData
 http://turbofei.github.io/public/html/Coding
 http://turbofei.github.io/public/html/Essay
+http://turbofei.github.io/public/html/Papers
 http://turbofei.github.io/public/html/Spark
 http://turbofei.github.io/archive
 http://turbofei.github.io/atom.xml
