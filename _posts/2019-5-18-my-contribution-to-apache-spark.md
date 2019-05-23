@@ -3,7 +3,7 @@ layout: post
 category: spark
 tagline: "Stay hungry, stay foolish~"
 summary: 简单记录一下对spark的PR。Slowly, but always forward~
-tags: [spark, PR]
+tags: [spark, PR, Apache]
 ---
 {% include JB/setup %}
 
@@ -73,6 +73,128 @@ Ps: 感谢社区大佬对我代码的review，非常佩服他们的代码功力�
 #### Link
 [ISSUE SPARK-27637](https://issues.apache.org/jira/browse/SPARK-27637)
 [PR SPARK-27637](https://github.com/apache/spark/pull/24533)
+
+### SPARK-27814
+
+#### Description
+
+在spark中有条件下推机制，条件下推可以大大加快sql的执行速度。
+
+例如在spark源码里面 jdbc工具类获得一个query schema的方法代码如下。
+
+```scala
+@Since("2.1.0")
+def getSchemaQuery(table: String): String = {
+  s"SELECT * FROM $table WHERE 1=0"
+}
+```
+
+这里加了一个`where 1=0`，就是为了将这个条件下推，加快查询速度。
+
+在分区表情况下，如果一些过滤条件是加在分区key上面，这时进行条件下推可以直接跳过许多分区，但是对分区表的分区键进行谓词下推有一个限制，就是只能下推类型为`string`的分区键.
+
+在spark2.4.* 某个PR之前，就拿spark2.3.2中的源码来说。
+
+其对prediction转换为filter的方法如下:
+
+`org.apache.spark.sql.hive.client.HiveShim ` 的`convertFilter`方法
+
+```scala
+      case op @ SpecialBinaryComparison(NonVarcharAttribute(name), ExtractableLiteral(value)) =>
+        Some(s"$name ${op.symbol} $value")
+```
+
+解析下这段代码，如果这个prediction是一个 `attribute = 'value'`类型的表达式(也可以是> < != in， etc)，那么他就会判断一下这个列不是一个varchar类型的partition key， 因为hive不支持varchar类型的partition key下推，但是在spark catalyst里面，varchar也被表达为string。
+
+而在master分支对之前的这部分逻辑进行了改动。
+
+目前的方法为:
+
+```scala
+    case op @ SpecialBinaryComparison(
+        ExtractAttribute(NonVarcharAttribute(name)), ExtractableLiteral(value)) =>
+      Some(s"$name ${op.symbol} $value")
+
+    object ExtractAttribute {
+      def unapply(expr: Expression): Option[Attribute] = {
+        expr match {
+          case attr: Attribute => Some(attr)
+          case Cast(child @ AtomicType(), dt: AtomicType, _)
+              if Cast.canUpCast(child.dataType.asInstanceOf[AtomicType], dt) => unapply(child)
+          case _ => None
+        }
+      }
+    }
+```
+
+可以明显看出比之前多了一个`ExtractAttribute`方法，这个方法是用于操作cast操作。首先判断能不能cast，能cast就进行转换类型操作。之后再进行 NonVarcharAttribute判断。这个cast操作引入了一个风险。
+
+以下是复现场景。
+
+如果有一张表分区键为 c3 类型为`int`.
+
+```sql
+table test (c1 int, c2 string) partitioned by (c3 Int)
+```
+
+如果对c3进行cast操作查询，如下:
+
+```sql
+select * from test where (cast c3 as string)  = '0'
+```
+
+这个操作会首先进行int转string类型，这个转换是允许的，进行convertFilter之后变成filter `c3 ="0"`，注意这里的`"0"`加了双引号，是一个String。这会导致这个filter下推，而这时hive不允许的，因此会抛出以下异常.
+
+```sql
+Caused by: MetaException(message:Filtering is supported only on partition keys of type string)
+```
+
+#### Solution
+
+解决方案:
+
+```scala
+    object ExtractAttribute {
+      val partitionKeys = table.getPartitionKeys.asScala.map(_.getName).toSet
+
+      def unapply(expr: Expression): Option[Attribute] = {
+        var castToStr = false
+        expr match {
+          case attr: Attribute
+              if (!castToStr || !partitionKeys.contains(attr.name) ||
+                attr.dataType == StringType) =>
+            Some(attr)
+          case Cast(child @ AtomicType(), dt: AtomicType, _)
+              if Cast.canUpCast(child.dataType.asInstanceOf[AtomicType], dt) =>
+            castToStr = (castToStr || dt == StringType)
+            unapply(child)
+          case _ => None
+        }
+      }
+    }
+```
+
+解决方案就是改变ExtractAttribute的unapply方法。首先记录，这个抽取过程中有没有发生转换为字符串的操作，因为这个cast都是向上转换，因为只要有一个转换为字符串的操作，都说明对最底层的attribute进行了转换为字符串的操作。因为在提取到最底层时候，进行三个判断。
+
+- 1、有没有进行转换为字符串的操作，如果没有返回Some(attribute)，有则执行第2个判断
+- 2、该attribute是不是partition key，如果不是则返回Some(attribute)，是则进行第三个判断
+- 3、该attribute是不是原本就是StringType(catalyst类型)，是则返回Some(attribute)，否则，只能返回None。
+
+如此，就解决了这个fatal的问题~
+
+引申一下:下面的这条语句是不是造成下推出错的。
+
+```sql
+select * from test where (cast c3 as BigDecimal)  = '1.1'
+```
+
+可能要问不是说只有string才可以下推么，是的，所以这个prediction不会下推到分区过滤。我想是因为它会转化为filter `c3 = 1.1`后面的`1.1`还是一个数字类型，这导致其不会被下推到partitionFilter。而前面的cast as string的filter是`c3 ="0"`,后面的`"0"`是一个字符串，导致其会下推到partitionFilter，造成异常。
+
+#### Link
+
+[ISSUE SPARK-27814](https://issues.apache.org/jira/browse/SPARK-27814)
+
+[PR SPARK-27814](https://github.com/apache/spark/pull/24685)
 
 ### SPARK-27562(In Progress)
 
