@@ -156,19 +156,22 @@ Caused by: MetaException(message:Filtering is supported only on partition keys o
 ```scala
     object ExtractAttribute {
       val partitionKeys = table.getPartitionKeys.asScala.map(_.getName).toSet
+      var castToStr = false
 
       def unapply(expr: Expression): Option[Attribute] = {
-        var castToStr = false
         expr match {
           case attr: Attribute
               if (!castToStr || !partitionKeys.contains(attr.name) ||
                 attr.dataType == StringType) =>
+            castToStr = false
             Some(attr)
           case Cast(child @ AtomicType(), dt: AtomicType, _)
               if Cast.canUpCast(child.dataType.asInstanceOf[AtomicType], dt) =>
             castToStr = (castToStr || dt == StringType)
             unapply(child)
-          case _ => None
+          case _ =>
+            castToStr = false
+            None
         }
       }
     }
@@ -179,6 +182,8 @@ Caused by: MetaException(message:Filtering is supported only on partition keys o
 - 1、有没有进行转换为字符串的操作，如果没有返回Some(attribute)，有则执行第2个判断
 - 2、该attribute是不是partition key，如果不是则返回Some(attribute)，是则进行第三个判断
 - 3、该attribute是不是原本就是StringType(catalyst类型)，是则返回Some(attribute)，否则，只能返回None。
+
+**需要注意的是，此处由于需要使用递归，因此需要使用全局的变量，并且在出口处对全局变量进行reset.**
 
 如此，就解决了这个fatal的问题~
 
