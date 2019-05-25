@@ -3,6 +3,14 @@
 	"data" : [
 	 
 	{
+		"title" : "Scala Match And Regex - scala_coding",
+		"url" : "/coding/2019/05/25/scala-match-and-regex"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "Scala Concurrent Programming: Future And Thread - coding_essay_scala_concurrent",
 		"url" : "/coding/2019/05/19/scala-concurrent-programming-Future-And-Thread"
 	}
