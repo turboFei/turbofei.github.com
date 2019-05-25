@@ -1,9 +1,9 @@
 ---
 layout: post
-category: test
-tagline: "Supporting tagline"
-summary: Hello World!
-tags: [test]
+category: 
+tagline: ""
+summary: 
+tags: []
 ---
 {% include JB/setup %}
 目录
