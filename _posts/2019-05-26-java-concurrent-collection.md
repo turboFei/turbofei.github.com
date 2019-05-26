@@ -106,7 +106,7 @@ object HeapSortTopK {
 
 使用场景是一些需要安排优先级的场景。
 
-在spark中，在`ShutdownHookManager`中使用了优先级队列。因为有些Hoot需要先执行，所以需要安排优先级。
+在spark中，在`ShutdownHookManager`中使用了优先级队列。因为有些Hook需要先执行，所以需要安排优先级。
 
 或者是基于无界的PriorityQueue实现有界的优先级队列，只需要在插入元素的时候判断一下目前的size即可，如果已经到达界限，则进行替换。
 
