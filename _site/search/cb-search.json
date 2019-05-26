@@ -3,6 +3,14 @@
 	"data" : [
 	 
 	{
+		"title" : "Java Concurrent Collection - java_concurrent",
+		"url" : "/coding/2019/05/26/java-concurrent-collection"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "About Spark Streaming - spark_streaming",
 		"url" : "/spark/2019/05/26/about-spark-streaming"
 	}
