@@ -14,6 +14,7 @@ http://turbofei.github.io/rss.xml
 http://turbofei.github.io/sitemap.txt
 http://turbofei.github.io/tags
 
+http://turbofei.github.io/spark/2019/05/26/about-spark-streaming
 http://turbofei.github.io/coding/2019/05/25/scala-match-and-regex
 http://turbofei.github.io/spark/2019/05/20/spark-sql-execution
 http://turbofei.github.io/coding/2019/05/19/scala-concurrent-programming-Future-And-Thread

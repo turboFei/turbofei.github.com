@@ -3,6 +3,14 @@
 	"data" : [
 	 
 	{
+		"title" : "About Spark Streaming - spark_streaming",
+		"url" : "/spark/2019/05/26/about-spark-streaming"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "Scala Match And Regex - scala_coding",
 		"url" : "/coding/2019/05/25/scala-match-and-regex"
 	}
