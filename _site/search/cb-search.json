@@ -11,6 +11,14 @@
 	
     
 	{
+		"title" : "Spark Sql Execution - spark_sql",
+		"url" : "/spark/2019/05/20/spark-sql-execution"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "Scala Concurrent Programming: Future And Thread - coding_essay_scala_concurrent",
 		"url" : "/coding/2019/05/19/scala-concurrent-programming-Future-And-Thread"
 	}

@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://turbofei.github.io/" rel="self"/>
  <link href="http://turbofei.github.io"/>
- <updated>2019-05-25T23:08:41+08:00</updated>
+ <updated>2019-05-26T11:34:18+08:00</updated>
  <id>http://turbofei.github.io</id>
  <author>
    <name>feiwang</name>
@@ -201,6 +201,167 @@ fei&quot;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;//可直接�
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;
 &lt;/div&gt;
+</content>
+ </entry>
+ 
+ <entry>
+   <title>Spark Sql Execution</title>
+   <link href="http://turbofei.github.io/spark/2019/05/20/spark-sql-execution"/>
+   <updated>2019-05-20T00:00:00+08:00</updated>
+   <id>http://turbofei.github.io/spark/2019/05/20/spark-sql-execution</id>
+   <content type="html">
+&lt;p&gt;目录&lt;/p&gt;
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#关于spark-sql模块&quot; id=&quot;markdown-toc-关于spark-sql模块&quot;&gt;关于spark-sql模块&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#execution包&quot; id=&quot;markdown-toc-execution包&quot;&gt;execution包&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#exchange包&quot; id=&quot;markdown-toc-exchange包&quot;&gt;exchange包&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#exchange--exchangecoordinator&quot; id=&quot;markdown-toc-exchange--exchangecoordinator&quot;&gt;Exchange &amp;amp; ExchangeCoordinator&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#ensurerequirements&quot; id=&quot;markdown-toc-ensurerequirements&quot;&gt;EnsureRequirements&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#join&quot; id=&quot;markdown-toc-join&quot;&gt;Join&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#aggregate&quot; id=&quot;markdown-toc-aggregate&quot;&gt;Aggregate&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#conclusion&quot; id=&quot;markdown-toc-conclusion&quot;&gt;Conclusion&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+
+&lt;p&gt;关于spark sql 的execution部分源码解析&lt;/p&gt;
+
+&lt;h3 id=&quot;关于spark-sql模块&quot;&gt;关于spark-sql模块&lt;/h3&gt;
+
+&lt;p&gt;spark-sql模块下的代码作用有:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;sparkSession，SQLContext，DataSet，DataFrameWriter和reader等类&lt;/li&gt;
+  &lt;li&gt;api 包: python，r的api&lt;/li&gt;
+  &lt;li&gt;catalog包: catalog以及column，table，function，database的接口类&lt;/li&gt;
+  &lt;li&gt;expression包: 包括aggregator，UDF， UDAF以及窗口函数&lt;/li&gt;
+  &lt;li&gt;internal包：包括catalogImpl， HiveSerde，sessionState，sharedState等internal类&lt;/li&gt;
+  &lt;li&gt;jdbc包： 里面都是方言类 dialect&lt;/li&gt;
+  &lt;li&gt;sources包: 用于下推至DataSource的filter以及一些DataSource和sql relation相关接口&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;streaming&lt;/strong&gt;包: DataStreamReader， writer，StreamingQueryException等于streaming有关的类。&lt;/li&gt;
+  &lt;li&gt;util包: QueryExecutionListener类&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;execution&lt;/strong&gt;包：本文的重点&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&quot;execution包&quot;&gt;execution包&lt;/h4&gt;
+
+&lt;p&gt;该包下源码分为:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;直接在根目录下
+    &lt;ul&gt;
+      &lt;li&gt;基本物理操作: coalesceExec, filterExec, projectExec, unionExec, RangeExec, and etc.&lt;/li&gt;
+      &lt;li&gt;cacheManager：用于cache table.&lt;/li&gt;
+      &lt;li&gt;一些exec: sort, DataSourceScan&lt;/li&gt;
+      &lt;li&gt;wholeStageCodegenExec&lt;/li&gt;
+      &lt;li&gt;SparkPlanner用于生产物理计划的&lt;/li&gt;
+      &lt;li&gt;limit以及其他操作&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;aggregate包: 当然是与聚合相关的exec 以及UDAF&lt;/li&gt;
+  &lt;li&gt;arrow包: arrow也是一种列式存储格式，这个包有他的 writer以及工具类.&lt;/li&gt;
+  &lt;li&gt;columnar包: 与列状态，访问，类型相关的类&lt;/li&gt;
+  &lt;li&gt;command包: 一些命令,ddl, analyzeTableCommand, functions, create等命令&lt;/li&gt;
+  &lt;li&gt;DataSources包: 与DataSource有关，parquet, jdbc, orc等等
+    &lt;ul&gt;
+      &lt;li&gt;关于DataSource options， writer， 工具类等等&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;exchange： 里面有broadcastExchangeExec， exchangeCoordinator，shuffleExchangeExec等相关类，后面会重点分析这个,其实在物理计划中转换的重点就是这部分，所以ensureRequirements就在这个包中。&lt;/li&gt;
+  &lt;li&gt;joins: join相关的， hashJoin, broadcastHashJoin, broadcastNestedLoopJoin, sortMergeJoin,shuffleHashJoinExec.&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;streaming&lt;/strong&gt;包: 应该是continuous streaming相关的底层实现，应该不是走rdd，是一个真正流式的实现.&lt;/li&gt;
+  &lt;li&gt;window包: 窗口函数相关exec。&lt;/li&gt;
+  &lt;li&gt;python包，r包，metric包。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;下文重点分析 &lt;strong&gt;aggregate&lt;/strong&gt;, &lt;strong&gt;exchange&lt;/strong&gt;, &lt;strong&gt;joins&lt;/strong&gt;包。&lt;/p&gt;
+
+&lt;h3 id=&quot;exchange包&quot;&gt;exchange包&lt;/h3&gt;
+
+&lt;h4 id=&quot;exchange--exchangecoordinator&quot;&gt;Exchange &amp;amp; ExchangeCoordinator&lt;/h4&gt;
+
+&lt;p&gt;首先讲一下Exchange，顾名思义就是交换，是为了在多个线程之间进行数据交换，完成并行。&lt;/p&gt;
+
+&lt;p&gt;Exchange分为两种，一种是BroadcastExchange另外一种是ShuffleExchange。Broadcast就是将数据发送至driver，然后由driver广播，这适合于数据量较小时候的shuffle。另一种ShuffleExchange就比较常见了，就是多对多的分发。&lt;/p&gt;
+
+&lt;p&gt;如果开启了&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.adaptive.enabled&lt;/code&gt;，也就是自适应执行，&lt;/p&gt;
+
+&lt;p&gt;那么在使用ShuffleExchange的时候有对应的ExchangeCoordinator；如果没开启ae，那就不需要协调器。&lt;/p&gt;
+
+&lt;p&gt;ExchangeCoordinator顾名思义，是Exchange协调器，是一个用于决定怎么在stage之间进行shuffle数据的coordinator。这个协调器用于决定之后的shuffle有多少个partition用来需要fetch shuffle 数据。&lt;/p&gt;
+
+&lt;p&gt;一个coordinator有三个参数.&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;numExchanges&lt;/li&gt;
+  &lt;li&gt;targetPostShuffleInputSize&lt;/li&gt;
+  &lt;li&gt;minNumPostShufflePartitions&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;第一个参数是用于表示有多少个ShuffleExchangeExec需要注册到这个coordinator里面。因此，当我们要开始真正执行时，我们需要知道到底有多少个ShuffleExchangeExec。&lt;/p&gt;
+
+&lt;p&gt;第二个参数是表示后面shuffle阶段每个partition的输入数据大小，这是用于adaptive-execution的，用于推测后面的shuffle阶段需要多少个partition。可以通过&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.adaptive.shuffle.targetPostShuffleInputSize&lt;/code&gt;来配置。&lt;/p&gt;
+
+&lt;p&gt;第三个参数是一个可选参数，表示之后shuffle阶段最小的partition数量。如果这个参数被定义，那么之后的shuffle阶段的partition数量不能小于这个值。&lt;/p&gt;
+
+&lt;p&gt;Coordinator的流程如下：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;在一个&lt;code class=&quot;highlighter-rouge&quot;&gt;SparkPlan&lt;/code&gt;执行之前，对于一个&lt;code class=&quot;highlighter-rouge&quot;&gt;ShuffleExchangeExec&lt;/code&gt;操作，如果它被指定了一个&lt;code class=&quot;highlighter-rouge&quot;&gt;coorinator&lt;/code&gt;，那么它将会注册到这个协调器，这发生在&lt;code class=&quot;highlighter-rouge&quot;&gt;doPrepare&lt;/code&gt;方法里.&lt;/li&gt;
+  &lt;li&gt;当开始执行&lt;code class=&quot;highlighter-rouge&quot;&gt;SparkPlan&lt;/code&gt;，注册到这个协调器里面的ShuffleExchangeExec将会调用&lt;code class=&quot;highlighter-rouge&quot;&gt;postShuffleRDD&lt;/code&gt;方法来相应的 post-shuffle &lt;code class=&quot;highlighter-rouge&quot;&gt;ShuffledRowRDD&lt;/code&gt;.如果这个协调器已经决定了如何去shuffle data，那么这个Exec会马上获得它对应的&lt;code class=&quot;highlighter-rouge&quot;&gt;ShuffledRowRDD&lt;/code&gt;.&lt;/li&gt;
+  &lt;li&gt;如果这个coordinator已经决定了如何shuffle data，它会让注册到自己的&lt;code class=&quot;highlighter-rouge&quot;&gt;ShuffleExchangeExec&lt;/code&gt;s来提交pos-shuffle stage。然后基于pre-shuffle阶段partition的统计信息，来决定post-shuffle的partition数量，如果post-shuffle需要，它也会将一些需要的连续的partitions放在一起发送给post-shuffle.&lt;/li&gt;
+  &lt;li&gt;最后，这个coordinator会为所有注册的&lt;code class=&quot;highlighter-rouge&quot;&gt;ShuffleExchangeExec&lt;/code&gt;创建post-shuffle &lt;code class=&quot;highlighter-rouge&quot;&gt;ShuffledRowRDD&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;目前的ae是比较老版本的ae，intel有一个ae项目，相信会在spark-3.0之后会合入，可以了解一下新的ae。&lt;/p&gt;
+
+&lt;h4 id=&quot;ensurerequirements&quot;&gt;EnsureRequirements&lt;/h4&gt;
+
+&lt;p&gt;这就是前面说的在SparkPlan 之前的do-prepare，需要为sparkplan的可执行做一些准备工作。&lt;/p&gt;
+
+&lt;p&gt;主要分为以下几部分:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;确定distribution和Ordering&lt;/li&gt;
+  &lt;li&gt;确定join 的条件和join keys出现顺序匹配&lt;/li&gt;
+  &lt;li&gt;创建coordinator
+    &lt;ul&gt;
+      &lt;li&gt;ae开启&lt;/li&gt;
+      &lt;li&gt;支持Coordinator
+        &lt;ul&gt;
+          &lt;li&gt;有ShuffleExchangeExec且是HashPartitionings&lt;/li&gt;
+          &lt;li&gt;支持Distribution并且child个数大于1&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;针对ShuffleExchangeExec创建coordinator&lt;/li&gt;
+      &lt;li&gt;针对一个post-shuffle 对应几个pre-shuffle的创建coordinator，例如join 一个对应多个pre-shuffle，而几个pre-shuffle有不同的分区划分方式&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&quot;join&quot;&gt;Join&lt;/h4&gt;
+
+&lt;p&gt;这里的join是执行阶段的join，不是解析阶段的join。&lt;/p&gt;
+
+&lt;p&gt;join包括BroadcastHashJoinExec, ShuffledHashJoinExec以及SortMergeSortMergeJoinExec。&lt;/p&gt;
+
+&lt;p&gt;join策略的选择&lt;code class=&quot;highlighter-rouge&quot;&gt;SparkStrategies&lt;/code&gt;类里面，面临join，首先会尝试BroadcastJoin，然后是ShuffledHashJoin最后才是SortMergeHashJoin,只要能满足前面的条件就会优先使用前面的join。&lt;/p&gt;
+
+&lt;p&gt;而这些JoinExec是在前面构建物理之前进行构建，在之后真正执行物理计划的时候执行。&lt;/p&gt;
+
+&lt;h4 id=&quot;aggregate&quot;&gt;Aggregate&lt;/h4&gt;
+
+&lt;p&gt;Agg和join有些类似，都是需要进行shuffle操作，但不同的是Aggregate可以是一个一元操作，而join是多元操作。&lt;/p&gt;
+
+&lt;p&gt;Aggregate操作例如 max, count, min, sum，groupBy， reduce, reduceBy 以及一些UDAF(User Defined Aggregate Function)。而groupBy这些操作可能面临order by.&lt;/p&gt;
+
+&lt;h3 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h3&gt;
+
+&lt;p&gt;本文大概讲解了下execution包中各个部分的用途，重点是如何进行Exchange，以及什么是ExchangeCoordinator。对于join和Aggregate未涉及太多。&lt;/p&gt;
 </content>
  </entry>
  
