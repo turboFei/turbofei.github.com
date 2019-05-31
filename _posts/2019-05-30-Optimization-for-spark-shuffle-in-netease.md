@@ -45,7 +45,7 @@ java.lang.IllegalArgumentException: Too large frame: 2991947178
 	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:362)
 ```
 
-通过观察日志，我发现，是用户的一个MapTask发生了严重的数据倾斜，导致了这个MapTask写文件时有一个partition的数据量超过了2GB。而spark 使用netty进行数据传输，单个chunk有一个严格的2GB限制，因此这必然导致了在拉取单个partition shuffle 数据大于2GB时的失败。
+通过观察日志，我发现，是用户的一个MapTask发生了严重的数据倾斜，导致了这个MapTask写文件时有一个partition的数据量超过了2GB。而spark 使用netty进行数据传输，单个chunk有一个严格的2GB限制，因此这必然导致了在一次拉取单个partition shuffle 数据大于2GB时的失败。
 
 那么用户又为什么任务可以重试成功呢？通过观察spark 日志页面.
 
@@ -83,7 +83,7 @@ java.lang.IllegalArgumentException: Too large frame: 2991947178
 
 ![shuffle fetch 数据过程(批量拉取量未超过最大放入内存阈值)](/imgs/spark-shuffle-optimization/shuffle-3.png)
 
-如上图所示，可以看到，shuffle read端将每个partition对应的数据，作为一个ManagedBuffer拉取过来，存放在一个阻塞队列中，之后task会依次去取这些数据进行计算。这就是目前shuffle fetch的不足之处，不管对应的partition有多大都一次性去取过来。
+如上图所示，可以看到，shuffle read端将每个partition对应的数据，作为一个ManagedBuffer拉取过来，存放在一个阻塞队列中，之后task会依次去取这些数据进行计算。这就是目前shuffle fetch的不足之处，不管对应的partition有多大，只要这批拉取数据量小于`spark.maxRemoteBlockSizeFetchToMem`都一次性去取过来。
 
 我们针对此方案作出了优化：现简单描述如下:
 
@@ -99,7 +99,7 @@ java.lang.IllegalArgumentException: Too large frame: 2991947178
 
 6. 对于一个ShuffleBlockID对应的partition数据，使用一个buf的Sequence来保存，而不是原来的只用一个buf来保存。
 
-7. 由于我们现在分多次拉取一个partition的数据，因此需要这个partition数据完全拉取结束之后才能进入原来的LinkedBlockingQueue, 因此我们使用一个PriorityBlockingQueue来存放一个partition对应的多块数据，而且优先级阻塞队列还提供了排序功能，我们可以保证一个partition的数据是按序排放。
+7. 由于我们现在分多次拉取一个partition的数据，因此需要这个partition数据完全拉取结束之后才能进入原来的LinkedBlockingQueue, 因此我们使用一个PriorityBlockingQueue来存放一个partition对应的多块数据，而且优先级阻塞队列还提供了排序功能，我们可以保证一个partition的数据是按序排放。当该ShuffleBlockId对应的所有数据都拉取过来之后，将放在优先级队列中的buf出队，然后放入LinkedBlockingQueue中，供task用于取数据计算。
 
 8. 在shuffle服务端，通过识别我们发送的blockId类型来决定如何取数据，如果是`ShuffleBlockSegmentId`,则取一块数据，否则，取全部数据。
 
@@ -140,11 +140,11 @@ java.io.IOException: Connection reset by peer
 	at sun.nio.ch.IOUtil.read(IOUtil.java:192)
 ```
 
-重试操作是spark shuffle 阶段的一个优化，这可以避免由于网络或者节点暂时繁忙而导致拉取数据失败，而是可以多重试几次，保证数据拉取的健壮性，避免贸然的失败。可以使用 `spark.shuffle.io.maxRetries` 和`spark.shuffle.io.retryWait`来配置最大重试此处与重试间隔。
+重试操作是spark shuffle 阶段的一个优化，这可以避免由于网络或者节点暂时繁忙而导致拉取数据失败，而是可以多重试几次，保证数据拉取的健壮性，避免贸然的失败。可以使用 `spark.shuffle.io.maxRetries` 和`spark.shuffle.io.retryWait`来配置最大重试次数与重试时间间隔。
 
 日志中是说，这个shuffle-client一直连接超时，然后不断重试，直到将重试次数用尽。如果我们配置的最大重试次数为15次，重试间隔为20s的话，这样一个task不断重试下来就要推迟五分钟，如果很多的task推迟，后果很严重。
 
-首先介绍一下shuffle client， spark中有两种shuffle client。一种是用于拉取由spark自身管理的数据，成为blockTransferService，另外一种是 ExternalShuffleClient，是用于拉取外部shuffle 服务的数据。常用的ExternalShuffleService是yarn上的shuffle service，它独立运行在yarn集群上的每个nodemanager之上，用于管理spark在运行阶段生成的shuffle数据，因此spark上的executor就不用自己管理自己的shuffle 数据。这也就会executor的动态回收提供了可能，因此如果没有额外的shuffle Service帮助这些executor管理他们的shuffle数据， 如果一个executor回收掉了，那么这些shuffle数据也就不可见。因此在spark中，如果要使用executor动态回收，必须要有对应的外部shuffle Service。
+首先介绍一下shuffle client， spark中有两种shuffle client。一种是blockTransferService，用于拉取由spark自身管理的数据；另外一种是 ExternalShuffleClient，是用于拉取外部shuffle 服务的数据。常用的ExternalShuffleService是yarn上的shuffle service，它独立运行在yarn集群上的每个nodemanager之上，用于管理spark在运行阶段生成的shuffle数据，因此spark上的executor就不用自己管理自己的shuffle 数据。这也就为executor的动态回收提供了可能，因此如果没有额外的shuffle Service帮助这些executor管理他们的shuffle数据， 如果一个executor回收掉了，那么这些shuffle数据也就不可见。因此在spark中，如果要使用executor动态回收，必须要有对应的外部shuffle Service。
 
 前面说了有两种shuffle client，blockTransferService是用于拉取由spark自身管理的数据，现在有了ExternalShuffleService用于管理shuffle 数据，那么blockTransferService还有什么作用呢？那就是拉取Broadcast数据。
 
@@ -152,12 +152,12 @@ java.io.IOException: Connection reset by peer
 
 通过对日志进行详细的分析,问题如下:
 
-1. executorA 要拉取Broadcast变量，向executorB建立连接，成功
-2. 建立连接成功之后，由于executorB到达最大空闲时间，被回收
-3. executorA取数据时候发生超时，然后重试
-4. 不断重试，直到重试此处用尽，之后executorA向Driver索要数据，成功
+1. executorA 要拉取Broadcast变量，向executorB建立连接，成功。
+2. 建立连接成功之后，由于executorB到达最大空闲时间，被动态回收。
+3. executorA取数据时候发生超时，然后重试，重试必然会失败。
+4. 不断重试，直到重试此处用尽，之后executorA向Driver索要数据，成功。
 
-整个流程下来，这个task并没有失败，但是花费了大量的时间。
+整个流程下来，这个task并没有失败，但是花费了大量的时间在不断的重试之上。
 
 #### 优化方案
 
@@ -165,16 +165,16 @@ java.io.IOException: Connection reset by peer
 
 其重试逻辑如下:
 
-1. 如果当前异常为IOException(网络就是一种IO)
-2. 并且此时还有重试次数未用尽，那就继续重试
+1. 如果当前异常为IOException(网络也是一种IO)。
+2. 并且此时还有重试次数未用尽，那就继续重试。
 
-但是当初设计这个重试逻辑的人可能忽略了ExecutorDynamicAllocation，因为executor很容易被回收，这同样是IO异常，但是这样的重试显然是毫无意义的，因此你永远不可能向一个已经死掉的executor索要数据。
+但是当初设计这个重试逻辑的人可能忽略了ExecutorDynamicAllocation，因为executor很容易被回收，当fetch数据时相关的节点已经死掉时，也会抛出IO异常，因此这会触发`RetryingBlockFetcher`的重试逻辑，但是这样的重试显然是毫无意义的，因此你永远不可能向一个已经死掉的executor索要数据。
 
 因此，我对此重试进行了优化。
 
-1. 设置一种新的消息类型, `IsExecutorAlive`.在BlockTransferService捕获到IOException时，发往driver
-2. driver根据消息中的executorID来查找自己维护的executorsMap，时间复杂度为o(1)
-3. 回复给索要信息的executor
+1. 设置一种新的消息类型, `IsExecutorAlive`.在BlockTransferService捕获到IOException时，发往driver。
+2. driver根据消息中的executorID来查找自己维护的一个以executorId为key的map，时间复杂度为o(1)，如果此executorId在map中则代表存活，否则，该Executor已经被回收.
+3. 回复executorId对应的Executor状态给索要信息的executor。
 4. 根据返回结果，如果该executor依然存活，则重试，否则，抛出ExecutorDeadException，重试结束。
 
 
@@ -198,7 +198,7 @@ try {
           }
 ```
 
-通过对shuffle-client重试逻辑的优化，我们可以高效率的进行数据传输，避免无意义的重试，提高应用性能。
+通过对shuffle-client(blockTransferService)重试逻辑的优化，我们可以避免无意义的重试，高效率的进行数据传输，提高应用性能。
 
 #### 相关链接
 
@@ -226,11 +226,11 @@ shuffle read端在拉取到数据之后，首先会进行数据校验，然后�
 18/11/13 08:10:08 INFO client.TransportClientFactory: Successfully created connection to hadoop2997.lt.163.org/hostIp:7337 after 0 ms (0 ms spent in bootstraps) 18/11/13 08:10:08 ERROR util.Utils: Aborting task java.io.IOException: FAILED_TO_UNCOMPRESS(5) at org.xerial.snappy.SnappyNative.throw_error(SnappyNative.java:98) at org.xerial.snappy.SnappyNative.rawUncompress(Native Method) at org.xerial.snappy.Snappy.rawUncompress(Snappy.java:474) at 
 ```
 
-这个异常时在后续计算过程中报的，说明目前的spark shuffle 数据校验机制存在问题。
+这个异常是在后续计算过程中报的，说明目前的spark shuffle 数据校验机制存在问题。
 
 首先描述一下在一个[相关PR SPARK-26089](https://github.com/apache/spark/pull/23453)合入之前存在的问题.
 
-- 只校验使用数据压缩格式(例如snappy,lz4)的数据，种类局限
+- 只校验使用数据压缩格式(例如snappy,lz4)的数据，而非压缩的数据不进行校验。
 - 只能校验小于`maxBytesInFlight/3`(默认maxBytesInflight为48M)的数据,大小有局限
 - 采用创建的一个outputStream,然后将InputStream传入，然后再基于这个outputStream创建inputStream的方式来校验，会浪费内存
 
@@ -260,7 +260,7 @@ shuffle read端在拉取到数据之后，首先会进行数据校验，然后�
 
 ##### Shuffle Write Phase
 
-首先简单介绍一下shuffle write, shuffle writer分为三种，`BypassMergeSortShuffleWriter`, `SortShuffleWriter`和`UnsafeShuffleWriter`. BypassShuffleWriter最后写的shuffle block组织方式与后两种不同，后两种shuffle writer的shuffle block文件组织方式是相同的。
+首先简单介绍一下shuffle write。shuffle writer分为三种，`BypassMergeSortShuffleWriter`, `SortShuffleWriter`和`UnsafeShuffleWriter`. BypassShuffleWriter最后写的shuffle block组织方式与后两种不同，后两种shuffle writer的shuffle block文件组织方式是相同的。
 
 如下图所示.
 
@@ -270,7 +270,7 @@ shuffle read端在拉取到数据之后，首先会进行数据校验，然后�
 
 而SortShuffleWriter和UnsafeShuffleWriter的组织shuffle文件的方法是一样的，这是针对BypassShuffleWriter的改进。由图可见，这两种shuffleWriter只会针对一个mapTask创建一个shuffle文件，建立一个索引文件记录每个划分之后的partition数据在这个文件中的偏移量(BypassShuffleWriter也有这样的索引文件)。这样每个mapTask只创建了两个文件，一个数据文件，一个索引文件，大大减小了文件的数量，减小了系统的压力。
 
-而我们会在shuffle阶段数据处理完成之后，根据索引文件中记录的每个partition的偏移量计算每个partition的crc值，这个计算过程是很快的，crc是一个高效的校验码，而且通常我们只需打开一个输入流，从头计算到尾，这是一个很高效的过程。
+而我们会在shuffle阶段数据处理完成之后，根据索引文件中记录的每个partition的偏移量计算每个partition的crc值，这个计算过程是很快的，crc是一个高效的校验码，而且通常(后两种ShuffleWriter是通常使用的)我们只需打开一个输入流，从头计算到尾，这是一个很高效的过程。
 
 计算完成之后，我们将这些计算的crc值也存到到前面提到的shuffle索引文件，组织方式如下图。
 
