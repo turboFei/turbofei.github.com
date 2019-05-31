@@ -3,6 +3,14 @@
 	"data" : [
 	 
 	{
+		"title" : "Optimization For Spark Shuffle In Netease - spark_shuffle",
+		"url" : "/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "Java Concurrent Collection - java_concurrent",
 		"url" : "/coding/2019/05/26/java-concurrent-collection"
 	}
