@@ -115,9 +115,9 @@ java.lang.IllegalArgumentException: Too large frame: 2991947178
 
 另外由于近期[PR-SPARK-27665](https://github.com/apache/spark/pull/24565)的合入，我对新的shuffle fetch消息类型，也进行了适配。
 
-对应Jira[ SPARK-27876](https://issues.apache.org/jira/browse/SPARK-27876)
+对应Jira [ SPARK-27876](https://issues.apache.org/jira/browse/SPARK-27876)
 
-对应PR[SPARK-27876](https://github.com/apache/spark/pull/24740)
+对应PR [SPARK-27876](https://github.com/apache/spark/pull/24740)
 
 ### Fetch Efficiently
 
@@ -204,9 +204,9 @@ try {
 
 该PR已经合入Spark master分支.
 
-对应Jira[ SPARK-27637](https://issues.apache.org/jira/browse/SPARK-27637)
+对应Jira [ SPARK-27637](https://issues.apache.org/jira/browse/SPARK-27637)
 
-对应PR[SPARK-27637](https://github.com/apache/spark/pull/24533)
+对应PR [SPARK-27637](https://github.com/apache/spark/pull/24533)
 
 
 
@@ -302,6 +302,6 @@ shuffle read端在拉取到数据之后，首先会进行数据校验，然后�
 
 #### 相关链接
 
-对应Jira[ SPARK-27562](https://issues.apache.org/jira/browse/SPARK-27562)
+对应Jira [ SPARK-27562](https://issues.apache.org/jira/browse/SPARK-27562)
 
-对应PR[SPARK-27562](https://github.com/apache/spark/pull/24447)
+对应PR [SPARK-27562](https://github.com/apache/spark/pull/24447)

@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://turbofei.github.io</link>
         <link>http://turbofei.github.io</link>
-        <lastBuildDate>2019-06-01T01:30:29+08:00</lastBuildDate>
-        <pubDate>2019-06-01T01:30:29+08:00</pubDate>
+        <lastBuildDate>2019-06-01T01:34:06+08:00</lastBuildDate>
+        <pubDate>2019-06-01T01:34:06+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -158,9 +158,9 @@ java.lang.IllegalArgumentException: Too large frame: 2991947178
 
 &lt;p&gt;另外由于近期&lt;a href=&quot;https://github.com/apache/spark/pull/24565&quot;&gt;PR-SPARK-27665&lt;/a&gt;的合入，我对新的shuffle fetch消息类型，也进行了适配。&lt;/p&gt;
 
-&lt;p&gt;对应Jira&lt;a href=&quot;https://issues.apache.org/jira/browse/SPARK-27876&quot;&gt; SPARK-27876&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;对应Jira &lt;a href=&quot;https://issues.apache.org/jira/browse/SPARK-27876&quot;&gt; SPARK-27876&lt;/a&gt;&lt;/p&gt;
 
-&lt;p&gt;对应PR&lt;a href=&quot;https://github.com/apache/spark/pull/24740&quot;&gt;SPARK-27876&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;对应PR &lt;a href=&quot;https://github.com/apache/spark/pull/24740&quot;&gt;SPARK-27876&lt;/a&gt;&lt;/p&gt;
 
 &lt;h3 id=&quot;fetch-efficiently&quot;&gt;Fetch Efficiently&lt;/h3&gt;
 
@@ -251,9 +251,9 @@ java.io.IOException: Connection reset by peer
 
 &lt;p&gt;该PR已经合入Spark master分支.&lt;/p&gt;
 
-&lt;p&gt;对应Jira&lt;a href=&quot;https://issues.apache.org/jira/browse/SPARK-27637&quot;&gt; SPARK-27637&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;对应Jira &lt;a href=&quot;https://issues.apache.org/jira/browse/SPARK-27637&quot;&gt; SPARK-27637&lt;/a&gt;&lt;/p&gt;
 
-&lt;p&gt;对应PR&lt;a href=&quot;https://github.com/apache/spark/pull/24533&quot;&gt;SPARK-27637&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;对应PR &lt;a href=&quot;https://github.com/apache/spark/pull/24533&quot;&gt;SPARK-27637&lt;/a&gt;&lt;/p&gt;
 
 &lt;h3 id=&quot;reliable-fetch&quot;&gt;Reliable Fetch&lt;/h3&gt;
 
@@ -355,9 +355,9 @@ java.io.IOException: Connection reset by peer
 
 &lt;h4 id=&quot;相关链接-2&quot;&gt;相关链接&lt;/h4&gt;
 
-&lt;p&gt;对应Jira&lt;a href=&quot;https://issues.apache.org/jira/browse/SPARK-27562&quot;&gt; SPARK-27562&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;对应Jira &lt;a href=&quot;https://issues.apache.org/jira/browse/SPARK-27562&quot;&gt; SPARK-27562&lt;/a&gt;&lt;/p&gt;
 
-&lt;p&gt;对应PR&lt;a href=&quot;https://github.com/apache/spark/pull/24447&quot;&gt;SPARK-27562&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;对应PR &lt;a href=&quot;https://github.com/apache/spark/pull/24447&quot;&gt;SPARK-27562&lt;/a&gt;&lt;/p&gt;
 </description>
                 <link>http://turbofei.github.io/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease</link>
                 <guid>http://turbofei.github.io/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease</guid>
