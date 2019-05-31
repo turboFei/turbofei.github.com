@@ -2,7 +2,7 @@
 layout: post
 category: spark
 tagline: ""
-summary: 本文讲一下从去年校招进网易以来所做的关于Spark Shuffle方面的优化。
+summary: 本文讲在网易工作将近一年来所做的关于Spark Shuffle方面的三点优化。
 tags: [spark, shuffle]
 ---
 {% include JB/setup %}
@@ -20,17 +20,17 @@ Spark是目前主流的大数据计算引擎，而Shuffle操作是Spark计算中
 
 ![Spark Shuffle 过程](/imgs/spark-shuffle-optimization/shuffle-1.png)
 
-map端负责对数据进行重新分区(Shuffle Write)，可能有排序操作，而reduce端拉取数据各个mapper对应分区的数据(Shuffle Read)，之后对数据进行合并，然后进行计算。shuffle过程中伴随着大量的数据传输。在大数据生产环境中，数据规模日益增长，数据量大了什么事情都有可能发生，可能会产生各种各样的问题，而大多数问题都与shuffle有关。由于shuffle数据传输是由Shuffle read端fetch数据，因此本文使用fetch代表传输
+map端负责对数据进行重新分区(Shuffle Write)，可能有排序操作，而reduce端拉取数据各个mapper对应分区的数据(Shuffle Read)，然后对这些数据进行计算。Shuffle过程中伴随着大量的数据传输。在大数据生产环境中，数据规模日益增长，数据量大了什么事情都有可能发生，可能会产生各种各样的问题，而大多数问题都与shuffle有关。由于Shuffle数据传输是由Shuffle read端fetch数据，因此本文使用fetch代表传输。
 
 本文主要讲关于Spark Shuffle传输方面的三点优化。
 
-- 可以传输  Can Fetch
-- 高效率传输 Fetch Efficiently
+- 可以传输  Can Fetch.
+- 高效率传输 Fetch Efficiently.
 - 可靠的传输 Reliable Fetch.
 
 ### Can Fetch
 
-通常来说，spark作为一个主流的大数据计算引擎，是可以传输大多数的Shuffle数据的。但是在大数据生产中，往往面临一些极端的shuffle情况。下面的案例是来自网易云音乐的用户。
+通常来说，Spark作为一个主流的大数据计算引擎，是可以传输大多数的Shuffle数据的。但是在大数据生产中，往往面临一些极端的shuffle情况。下面的案例是来自网易云音乐的用户。
 
 #### 描述
 
