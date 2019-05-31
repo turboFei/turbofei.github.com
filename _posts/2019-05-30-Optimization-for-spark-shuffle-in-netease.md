@@ -2,7 +2,7 @@
 layout: post
 category: spark
 tagline: ""
-summary: 本文讲在网易工作将近一年来所做的关于Spark Shuffle方面的三点优化。
+summary: 本文讲在网易工作将近一年来关于Spark Shuffle方面所做的三点优化。
 tags: [spark, shuffle]
 ---
 {% include JB/setup %}
@@ -228,13 +228,13 @@ shuffle read端在拉取到数据之后，首先会进行数据校验，然后�
 
 这个异常时在后续计算过程中报的，说明目前的spark shuffle 数据校验机制存在问题。
 
-首先描述一下在一个[相关PR](https://github.com/apache/spark/pull/23453)合入之前存在的问题.
+首先描述一下在一个[相关PR SPARK-26089](https://github.com/apache/spark/pull/23453)合入之前存在的问题.
 
 - 只校验使用数据压缩格式(例如snappy,lz4)的数据，种类局限
 - 只能校验小于`maxBytesInFlight/3`(默认maxBytesInflight为48M)的数据,大小有局限
 - 采用创建的一个outputStream,然后将InputStream传入，然后再基于这个outputStream创建inputStream的方式来校验，会浪费内存
 
-[相关PR](https://github.com/apache/spark/pull/23453)合入解决了部分问题:
+[相关PR SPARK-26089](https://github.com/apache/spark/pull/23453)合入解决了部分问题:
 
 - 针对较大的数据，也可以校验，但是只校验开头的一小部分，后面的数据不进行校验，如果后面的数据出错依然会造成task失败
 - 采用新的校验方法取代之前的流拷贝校验方法，内存浪费情况得到改善。
@@ -298,7 +298,7 @@ shuffle read端在拉取到数据之后，首先会进行数据校验，然后�
 
 ####  性能测试
 
-我们使用tpcds测试工具，针对1t和10t的数据进行了该校验算法的性能测试，其测试结果表明该算法不会对spark本身的执行性能造成影响，且在10T测试数据下， 由于最老版本的shuffle校验采用流拷贝，可能开销比较重，我们的shuffle校验机制，对比其有轻微的性能提升。针对最近合入的[相关PR](https://github.com/apache/spark/pull/23453)，我们还没有进行性能测试对比，但是相信，我们的shuffle校验机制对比其不会有性能下降。
+我们使用tpcds测试工具，针对1t和10t的数据进行了该校验算法的性能测试，其测试结果表明该算法不会对spark本身的执行性能造成影响，且在10T测试数据下， 由于最老版本的shuffle校验采用流拷贝，可能开销比较重，我们的shuffle校验机制，对比其有轻微的性能提升。针对最近合入的[相关PR SPARK-26089](https://github.com/apache/spark/pull/23453)，我们还没有进行性能测试对比，但是相信，我们的shuffle校验机制对比其不会有性能下降。
 
 #### 相关链接
 
