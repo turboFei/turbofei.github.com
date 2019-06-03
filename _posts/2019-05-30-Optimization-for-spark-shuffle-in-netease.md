@@ -57,7 +57,7 @@ java.lang.IllegalArgumentException: Too large frame: 2991947178
 
 
 
-继续分析这个问题，spark有一个参数`spark.maxRemoteBlockSizeFetchToMem`,代表着可以从远端拉取数据放入内存的最大size。如果这一批要拉取的数据大小之和小于这个值，那么spark 使用fetch chunk的方式，都是一次拉取一整块的partition数据，然后放在内存里。如果一批要拉取数据大小之和大于这个size，就会才用fetchStream的方式，将这些partition数据流式拉取到本地保存为本地文件。
+继续分析这个问题，spark有一个参数`spark.maxRemoteBlockSizeFetchToMem`,代表着可以从远端拉取数据放入内存的最大size。如果这一批要拉取的数据大小之和小于这个值，那么spark 使用fetch chunk的方式，都是一次拉取一整块的partition数据，然后放在内存里。如果一批要拉取数据大小之和大于这个size，就会采用fetchStream的方式，将这些partition数据流式拉取到本地保存为本地文件。
 
 在spark2.4之前这个参数默认都是`Long.MaxValue`，这个值是超级大的，所以可以认为spark2.4之前如果你没有对这个参数进行额外设置，比如设置为2G，1500m，就可以说你的所有partition拉取都是一次进行。
 

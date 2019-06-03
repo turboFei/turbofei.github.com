@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://turbofei.github.io/" rel="self"/>
  <link href="http://turbofei.github.io"/>
- <updated>2019-06-01T01:34:06+08:00</updated>
+ <updated>2019-06-03T11:47:19+08:00</updated>
  <id>http://turbofei.github.io</id>
  <author>
    <name>turboFei</name>
@@ -94,7 +94,7 @@ java.lang.IllegalArgumentException: Too large frame: 2991947178
 
 &lt;p&gt;看来用户还是比较幸运的，重试之后可以刚好调度在数据所在节点执行task。那么如果有两个partition的数据都发生了严重的倾斜，而且这两个partition不在同一个节点之上，那样无论任务怎么重新调度，都必然至少有一个partition无法fetch，这必然造成了task的失败，进一步造成application的失败。&lt;/p&gt;
 
-&lt;p&gt;继续分析这个问题，spark有一个参数&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.maxRemoteBlockSizeFetchToMem&lt;/code&gt;,代表着可以从远端拉取数据放入内存的最大size。如果这一批要拉取的数据大小之和小于这个值，那么spark 使用fetch chunk的方式，都是一次拉取一整块的partition数据，然后放在内存里。如果一批要拉取数据大小之和大于这个size，就会才用fetchStream的方式，将这些partition数据流式拉取到本地保存为本地文件。&lt;/p&gt;
+&lt;p&gt;继续分析这个问题，spark有一个参数&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.maxRemoteBlockSizeFetchToMem&lt;/code&gt;,代表着可以从远端拉取数据放入内存的最大size。如果这一批要拉取的数据大小之和小于这个值，那么spark 使用fetch chunk的方式，都是一次拉取一整块的partition数据，然后放在内存里。如果一批要拉取数据大小之和大于这个size，就会采用fetchStream的方式，将这些partition数据流式拉取到本地保存为本地文件。&lt;/p&gt;
 
 &lt;p&gt;在spark2.4之前这个参数默认都是&lt;code class=&quot;highlighter-rouge&quot;&gt;Long.MaxValue&lt;/code&gt;，这个值是超级大的，所以可以认为spark2.4之前如果你没有对这个参数进行额外设置，比如设置为2G，1500m，就可以说你的所有partition拉取都是一次进行。&lt;/p&gt;
 
