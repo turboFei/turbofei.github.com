@@ -14,6 +14,7 @@ http://turbofei.github.io/rss.xml
 http://turbofei.github.io/sitemap.txt
 http://turbofei.github.io/tags
 
+http://turbofei.github.io/essay/2019/06/07/about-jvm
 http://turbofei.github.io/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease
 http://turbofei.github.io/coding/2019/05/26/java-concurrent-collection
 http://turbofei.github.io/spark/2019/05/26/about-spark-streaming

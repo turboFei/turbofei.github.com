@@ -3,6 +3,14 @@
 	"data" : [
 	 
 	{
+		"title" : "About Jvm - jvm_java",
+		"url" : "/essay/2019/06/07/about-jvm"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "Optimization For Spark Shuffle In Netease - spark_shuffle",
 		"url" : "/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease"
 	}
