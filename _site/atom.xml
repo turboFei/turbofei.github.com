@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://turbofei.github.io/" rel="self"/>
  <link href="http://turbofei.github.io"/>
- <updated>2019-06-07T11:57:29+08:00</updated>
+ <updated>2019-06-07T12:03:34+08:00</updated>
  <id>http://turbofei.github.io</id>
  <author>
    <name>turboFei</name>
@@ -1791,7 +1791,7 @@ fei&quot;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;//可直接�
    <id>http://turbofei.github.io/bigdata/2019/05/19/[转载]-Raft译文</id>
    <content type="html">
 &lt;ul id=&quot;markdown-toc&quot;&gt;
-  &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#前言&quot; id=&quot;markdown-toc-前言&quot;&gt;前言&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#寻找一种易于理解的一致性算法扩展版&quot; id=&quot;markdown-toc-寻找一种易于理解的一致性算法扩展版&quot;&gt;寻找一种易于理解的一致性算法（扩展版）&lt;/a&gt;    &lt;ul&gt;
       &lt;li&gt;&lt;a href=&quot;#摘要&quot; id=&quot;markdown-toc-摘要&quot;&gt;摘要&lt;/a&gt;&lt;/li&gt;
       &lt;li&gt;&lt;a href=&quot;#1-介绍&quot; id=&quot;markdown-toc-1-介绍&quot;&gt;1 介绍&lt;/a&gt;&lt;/li&gt;
@@ -1829,11 +1829,13 @@ fei&quot;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;//可直接�
   &lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+&lt;h3 id=&quot;前言&quot;&gt;前言&lt;/h3&gt;
 
 &lt;p&gt;Raft的译文&lt;/p&gt;
 
 &lt;p&gt;&lt;a href=&quot;https://github.com/maemual/raft-zh_cn/edit/master/raft-zh_cn.md&quot;&gt;原文地址&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://thesecretlivesofdata.com/raft/&quot;&gt;动画演示&lt;/a&gt;&lt;/p&gt;
 
 &lt;h1 id=&quot;寻找一种易于理解的一致性算法扩展版&quot;&gt;寻找一种易于理解的一致性算法（扩展版）&lt;/h1&gt;
 
