@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
  
  <title>turboFei's blog</title>
- <link href="http://turbofei.github.io/" rel="self"/>
- <link href="http://turbofei.github.io"/>
- <updated>2019-06-07T12:03:34+08:00</updated>
- <id>http://turbofei.github.io</id>
+ <link href="http://www.turbofei.wang/" rel="self"/>
+ <link href="http://www.turbofei.wang"/>
+ <updated>2019-06-20T02:56:14+08:00</updated>
+ <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
    <email>turbofei@foxmail.com</email>
@@ -14,9 +14,9 @@
  
  <entry>
    <title>About Jvm</title>
-   <link href="http://turbofei.github.io/essay/2019/06/07/about-jvm"/>
+   <link href="http://www.turbofei.wang/essay/2019/06/07/about-jvm"/>
    <updated>2019-06-07T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/essay/2019/06/07/about-jvm</id>
+   <id>http://www.turbofei.wang/essay/2019/06/07/about-jvm</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 &lt;ul id=&quot;markdown-toc&quot;&gt;
@@ -261,9 +261,9 @@
  
  <entry>
    <title>Optimization For Spark Shuffle In Netease</title>
-   <link href="http://turbofei.github.io/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease"/>
+   <link href="http://www.turbofei.wang/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease"/>
    <updated>2019-05-30T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease</id>
+   <id>http://www.turbofei.wang/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -615,9 +615,9 @@ java.io.IOException: Connection reset by peer
  
  <entry>
    <title>Java Concurrent Collection</title>
-   <link href="http://turbofei.github.io/coding/2019/05/26/java-concurrent-collection"/>
+   <link href="http://www.turbofei.wang/coding/2019/05/26/java-concurrent-collection"/>
    <updated>2019-05-26T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/coding/2019/05/26/java-concurrent-collection</id>
+   <id>http://www.turbofei.wang/coding/2019/05/26/java-concurrent-collection</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 &lt;ul id=&quot;markdown-toc&quot;&gt;
@@ -803,9 +803,9 @@ java.io.IOException: Connection reset by peer
  
  <entry>
    <title>About Spark Streaming</title>
-   <link href="http://turbofei.github.io/spark/2019/05/26/about-spark-streaming"/>
+   <link href="http://www.turbofei.wang/spark/2019/05/26/about-spark-streaming"/>
    <updated>2019-05-26T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2019/05/26/about-spark-streaming</id>
+   <id>http://www.turbofei.wang/spark/2019/05/26/about-spark-streaming</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 &lt;ul id=&quot;markdown-toc&quot;&gt;
@@ -1118,9 +1118,9 @@ java.io.IOException: Connection reset by peer
  
  <entry>
    <title>Scala Match And Regex</title>
-   <link href="http://turbofei.github.io/coding/2019/05/25/scala-match-and-regex"/>
+   <link href="http://www.turbofei.wang/coding/2019/05/25/scala-match-and-regex"/>
    <updated>2019-05-25T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/coding/2019/05/25/scala-match-and-regex</id>
+   <id>http://www.turbofei.wang/coding/2019/05/25/scala-match-and-regex</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -1310,9 +1310,9 @@ fei&quot;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;//可直接�
  
  <entry>
    <title>Spark Sql Execution</title>
-   <link href="http://turbofei.github.io/spark/2019/05/20/spark-sql-execution"/>
+   <link href="http://www.turbofei.wang/spark/2019/05/20/spark-sql-execution"/>
    <updated>2019-05-20T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2019/05/20/spark-sql-execution</id>
+   <id>http://www.turbofei.wang/spark/2019/05/20/spark-sql-execution</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 &lt;ul id=&quot;markdown-toc&quot;&gt;
@@ -1471,9 +1471,9 @@ fei&quot;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;//可直接�
  
  <entry>
    <title>Scala Concurrent Programming: Future And Thread</title>
-   <link href="http://turbofei.github.io/coding/2019/05/19/scala-concurrent-programming-Future-And-Thread"/>
+   <link href="http://www.turbofei.wang/coding/2019/05/19/scala-concurrent-programming-Future-And-Thread"/>
    <updated>2019-05-19T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/coding/2019/05/19/scala-concurrent-programming:-Future-And-Thread</id>
+   <id>http://www.turbofei.wang/coding/2019/05/19/scala-concurrent-programming:-Future-And-Thread</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -1786,9 +1786,9 @@ fei&quot;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;//可直接�
  
  <entry>
    <title>[转载] Raft译文</title>
-   <link href="http://turbofei.github.io/bigdata/2019/05/19/%E8%BD%AC%E8%BD%BD-Raft%E8%AF%91%E6%96%87"/>
+   <link href="http://www.turbofei.wang/bigdata/2019/05/19/%E8%BD%AC%E8%BD%BD-Raft%E8%AF%91%E6%96%87"/>
    <updated>2019-05-19T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/bigdata/2019/05/19/[转载]-Raft译文</id>
+   <id>http://www.turbofei.wang/bigdata/2019/05/19/[转载]-Raft译文</id>
    <content type="html">
 &lt;ul id=&quot;markdown-toc&quot;&gt;
   &lt;li&gt;&lt;a href=&quot;#前言&quot; id=&quot;markdown-toc-前言&quot;&gt;前言&lt;/a&gt;&lt;/li&gt;
@@ -2643,9 +2643,9 @@ fei&quot;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;//可直接�
  
  <entry>
    <title>About Maven</title>
-   <link href="http://turbofei.github.io/coding/2019/05/19/About-Maven"/>
+   <link href="http://www.turbofei.wang/coding/2019/05/19/About-Maven"/>
    <updated>2019-05-19T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/coding/2019/05/19/About-Maven</id>
+   <id>http://www.turbofei.wang/coding/2019/05/19/About-Maven</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -3472,9 +3472,9 @@ layout：default或者legacy&lt;/p&gt;
  
  <entry>
    <title>My Contribution To Apache Spark</title>
-   <link href="http://turbofei.github.io/spark/2019/05/18/my-contribution-to-apache-spark"/>
+   <link href="http://www.turbofei.wang/spark/2019/05/18/my-contribution-to-apache-spark"/>
    <updated>2019-05-18T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2019/05/18/my-contribution-to-apache-spark</id>
+   <id>http://www.turbofei.wang/spark/2019/05/18/my-contribution-to-apache-spark</id>
    <content type="html">
 &lt;ul id=&quot;markdown-toc&quot;&gt;
   &lt;li&gt;&lt;a href=&quot;#background&quot; id=&quot;markdown-toc-background&quot;&gt;Background&lt;/a&gt;&lt;/li&gt;
@@ -3829,9 +3829,9 @@ layout：default或者legacy&lt;/p&gt;
  
  <entry>
    <title>Scala Concurrent Programing: Promise And Forkjoinpool</title>
-   <link href="http://turbofei.github.io/coding/2019/05/18/scala-concurrent-programing-Promise-And-ForkJoinPool"/>
+   <link href="http://www.turbofei.wang/coding/2019/05/18/scala-concurrent-programing-Promise-And-ForkJoinPool"/>
    <updated>2019-05-18T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/coding/2019/05/18/scala-concurrent-programing:-Promise-And-ForkJoinPool</id>
+   <id>http://www.turbofei.wang/coding/2019/05/18/scala-concurrent-programing:-Promise-And-ForkJoinPool</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -4192,9 +4192,9 @@ ForkJoinPool是一个用于运行ForkJoinTask的线程池. ForkJoinPool和其他
  
  <entry>
    <title>Transactions Suuport For Spark Greenlum</title>
-   <link href="http://turbofei.github.io/spark/2019/05/12/transactions-suuport-for-spark-greenlum"/>
+   <link href="http://www.turbofei.wang/spark/2019/05/12/transactions-suuport-for-spark-greenlum"/>
    <updated>2019-05-12T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2019/05/12/transactions-suuport-for-spark-greenlum</id>
+   <id>http://www.turbofei.wang/spark/2019/05/12/transactions-suuport-for-spark-greenlum</id>
    <content type="html">
 &lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 
@@ -4318,9 +4318,9 @@ ForkJoinPool是一个用于运行ForkJoinTask的线程池. ForkJoinPool和其他
  
  <entry>
    <title>Spark External Shuffle Service</title>
-   <link href="http://turbofei.github.io/spark/2018/12/10/spark-external-shuffle-service"/>
+   <link href="http://www.turbofei.wang/spark/2018/12/10/spark-external-shuffle-service"/>
    <updated>2018-12-10T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2018/12/10/spark-external-shuffle-service</id>
+   <id>http://www.turbofei.wang/spark/2018/12/10/spark-external-shuffle-service</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 &lt;ul id=&quot;markdown-toc&quot;&gt;
@@ -4444,9 +4444,9 @@ ForkJoinPool是一个用于运行ForkJoinTask的线程池. ForkJoinPool和其他
  
  <entry>
    <title>Spark Cbo Code Analysis</title>
-   <link href="http://turbofei.github.io/spark/2018/12/04/spark-cbo-code-analysis"/>
+   <link href="http://www.turbofei.wang/spark/2018/12/04/spark-cbo-code-analysis"/>
    <updated>2018-12-04T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2018/12/04/spark-cbo-code-analysis</id>
+   <id>http://www.turbofei.wang/spark/2018/12/04/spark-cbo-code-analysis</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 &lt;ul id=&quot;markdown-toc&quot;&gt;
@@ -4806,9 +4806,9 @@ level 3: p({A, B, C, D})&lt;/p&gt;
  
  <entry>
    <title>Spark Sql Catalyst</title>
-   <link href="http://turbofei.github.io/spark/2018/08/01/spark-sql-catalyst"/>
+   <link href="http://www.turbofei.wang/spark/2018/08/01/spark-sql-catalyst"/>
    <updated>2018-08-01T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2018/08/01/spark-sql-catalyst</id>
+   <id>http://www.turbofei.wang/spark/2018/08/01/spark-sql-catalyst</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -5240,9 +5240,9 @@ Aggregate [sum(v#12L) AS sum(v)#28L]
  
  <entry>
    <title>Spark Sql Analysis</title>
-   <link href="http://turbofei.github.io/spark/2018/07/27/Spark-Sql-Analysis"/>
+   <link href="http://www.turbofei.wang/spark/2018/07/27/Spark-Sql-Analysis"/>
    <updated>2018-07-27T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2018/07/27/Spark-Sql-Analysis</id>
+   <id>http://www.turbofei.wang/spark/2018/07/27/Spark-Sql-Analysis</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -5585,9 +5585,9 @@ protected def doExecute(): RDD[InternalRow]
  
  <entry>
    <title>Rdd Basics</title>
-   <link href="http://turbofei.github.io/spark/2018/07/12/rdd-basics"/>
+   <link href="http://www.turbofei.wang/spark/2018/07/12/rdd-basics"/>
    <updated>2018-07-12T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2018/07/12/rdd-basics</id>
+   <id>http://www.turbofei.wang/spark/2018/07/12/rdd-basics</id>
    <content type="html">
 &lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 &lt;p&gt;从RDD入手, 对Spark进行深入理解&lt;/p&gt;
@@ -5599,9 +5599,9 @@ protected def doExecute(): RDD[InternalRow]
  
  <entry>
    <title>Deca项目总结</title>
-   <link href="http://turbofei.github.io/essay/2017/07/01/deca%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93"/>
+   <link href="http://www.turbofei.wang/essay/2017/07/01/deca%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93"/>
    <updated>2017-07-01T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/essay/2017/07/01/deca项目总结</id>
+   <id>http://www.turbofei.wang/essay/2017/07/01/deca项目总结</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -5727,9 +5727,9 @@ protected def doExecute(): RDD[InternalRow]
  
  <entry>
    <title>Spark源码分析shuffle实现</title>
-   <link href="http://turbofei.github.io/spark/2016/12/26/spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90Shuffle%E5%AE%9E%E7%8E%B0"/>
+   <link href="http://www.turbofei.wang/spark/2016/12/26/spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90Shuffle%E5%AE%9E%E7%8E%B0"/>
    <updated>2016-12-26T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2016/12/26/spark源码分析Shuffle实现</id>
+   <id>http://www.turbofei.wang/spark/2016/12/26/spark源码分析Shuffle实现</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -6246,9 +6246,9 @@ override def read(): Iterator[Product2[K, C]] = {
  
  <entry>
    <title>Spark内存预测</title>
-   <link href="http://turbofei.github.io/spark/2016/12/26/spark%E5%86%85%E5%AD%98%E9%A2%84%E6%B5%8B"/>
+   <link href="http://www.turbofei.wang/spark/2016/12/26/spark%E5%86%85%E5%AD%98%E9%A2%84%E6%B5%8B"/>
    <updated>2016-12-26T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2016/12/26/spark内存预测</id>
+   <id>http://www.turbofei.wang/spark/2016/12/26/spark内存预测</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -6477,9 +6477,9 @@ private def visitArray(array: AnyRef, arrayClass: Class[_], state: SearchState) 
  
  <entry>
    <title>Spark应用执行流程</title>
-   <link href="http://turbofei.github.io/spark/2016/12/22/spark%E5%BA%94%E7%94%A8%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"/>
+   <link href="http://www.turbofei.wang/spark/2016/12/22/spark%E5%BA%94%E7%94%A8%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B"/>
    <updated>2016-12-22T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2016/12/22/spark应用执行流程</id>
+   <id>http://www.turbofei.wang/spark/2016/12/22/spark应用执行流程</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -7322,9 +7322,9 @@ f(context, split.index, firstParent[T].iterator(split, context))
  
  <entry>
    <title>spark统一内存管理</title>
-   <link href="http://turbofei.github.io/spark/2016/12/19/spark%E7%BB%9F%E4%B8%80%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86"/>
+   <link href="http://www.turbofei.wang/spark/2016/12/19/spark%E7%BB%9F%E4%B8%80%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86"/>
    <updated>2016-12-19T00:00:00+08:00</updated>
-   <id>http://turbofei.github.io/spark/2016/12/19/spark统一内存管理</id>
+   <id>http://www.turbofei.wang/spark/2016/12/19/spark统一内存管理</id>
    <content type="html">
 &lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
 &lt;p&gt;spark统一内存管理是spark1.6.0的新特性，是对shuffle memory 和 storage memory 进行统一的管理，打破了以往的参数限制。&lt;/p&gt;
@@ -7422,9 +7422,9 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
  
  <entry>
    <title>java unsafe类的使用</title>
-   <link href="http://turbofei.github.io/coding/2016/11/13/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8"/>
+   <link href="http://www.turbofei.wang/coding/2016/11/13/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8"/>
    <updated>2016-11-13T08:24:19+08:00</updated>
-   <id>http://turbofei.github.io/coding/2016/11/13/java-unsafe类的使用</id>
+   <id>http://www.turbofei.wang/coding/2016/11/13/java-unsafe类的使用</id>
    <content type="html">
 &lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
 
@@ -7747,9 +7747,9 @@ public  static long grow (long  baseAddress,int vType,int minCapacity) {
  
  <entry>
    <title>ganglia 安装</title>
-   <link href="http://turbofei.github.io/bigdata/2016/08/17/ganglia-%E5%AE%89%E8%A3%85"/>
+   <link href="http://www.turbofei.wang/bigdata/2016/08/17/ganglia-%E5%AE%89%E8%A3%85"/>
    <updated>2016-08-17T05:15:03+08:00</updated>
-   <id>http://turbofei.github.io/bigdata/2016/08/17/ganglia-安装</id>
+   <id>http://www.turbofei.wang/bigdata/2016/08/17/ganglia-安装</id>
    <content type="html">
 &lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
 
