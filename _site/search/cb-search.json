@@ -75,14 +75,6 @@
 	
     
 	{
-		"title" : "My Contribution To Apache Spark - spark_PR_Apache",
-		"url" : "/spark/2019/05/18/my-contribution-to-apache-spark"
-	}
-	
-	,
-	
-    
-	{
 		"title" : "Scala Concurrent Programing: Promise And Forkjoinpool - concurrent_scala_future",
 		"url" : "/coding/2019/05/18/scala-concurrent-programing-Promise-And-ForkJoinPool"
 	}

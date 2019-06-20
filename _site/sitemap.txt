@@ -23,7 +23,6 @@ http://www.turbofei.wang/spark/2019/05/20/spark-sql-execution
 http://www.turbofei.wang/coding/2019/05/19/scala-concurrent-programming-Future-And-Thread
 http://www.turbofei.wang/bigdata/2019/05/19/%E8%BD%AC%E8%BD%BD-Raft%E8%AF%91%E6%96%87
 http://www.turbofei.wang/coding/2019/05/19/About-Maven
-http://www.turbofei.wang/spark/2019/05/18/my-contribution-to-apache-spark
 http://www.turbofei.wang/coding/2019/05/18/scala-concurrent-programing-Promise-And-ForkJoinPool
 http://www.turbofei.wang/spark/2019/05/12/transactions-suuport-for-spark-greenlum
 http://www.turbofei.wang/spark/2018/12/10/spark-external-shuffle-service
