@@ -14,6 +14,7 @@ http://www.turbofei.wang/rss.xml
 http://www.turbofei.wang/sitemap.txt
 http://www.turbofei.wang/tags
 
+http://www.turbofei.wang/coding/2019/06/20/about-threadLocal
 http://www.turbofei.wang/essay/2019/06/07/about-jvm
 http://www.turbofei.wang/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease
 http://www.turbofei.wang/coding/2019/05/26/java-concurrent-collection
