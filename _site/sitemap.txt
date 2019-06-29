@@ -14,6 +14,7 @@ http://www.turbofei.wang/rss.xml
 http://www.turbofei.wang/sitemap.txt
 http://www.turbofei.wang/tags
 
+http://www.turbofei.wang/coding/2019/06/29/jvm-tools-usage
 http://www.turbofei.wang/spark/2019/06/26/spark-sql-%E5%8F%82%E6%95%B0%E8%B0%83%E4%BC%98
 http://www.turbofei.wang/coding/2019/06/20/about-threadLocal
 http://www.turbofei.wang/essay/2019/06/07/about-jvm
