@@ -82,7 +82,7 @@ abstract class GenericStrategy[PhysicalPlan <: TreeNode[PhysicalPlan]] extends L
 
 ### SparkSessionExtensions
 
-`SparkSessionExtensions`是一个用来让用户自己扩展Catalyst 中的Rule, Strategy，甚至自己定义解析规则等等。用户只需要实现自己的Extensions，`class MyExtensions extends (SparkSessionExtensions => Unit)`,然后配置`spark.sql.extensions=MyExtensions`.
+`SparkSessionExtensions`是用来让用户自己扩展Catalyst 中的Rule, Strategy，甚至自己定义解析规则等等。用户只需要实现自己的Extensions，例如`class MyExtensions extends (SparkSessionExtensions => Unit)`,然后配置`spark.sql.extensions=MyExtensions`.
 
 首先介绍里面定义的几种type.
 
@@ -111,7 +111,7 @@ abstract class GenericStrategy[PhysicalPlan <: TreeNode[PhysicalPlan]] extends L
 
 这个方法是添加一个Rule用于resolve unResolvedLogicalPlan。 只需要自己实现一个Rule，然后使用这个方法进行Rule注入。
 
-#### Analysis阶段的`Post-Hoc Resolution`子阶段添加Rule
+#### 在Analysis阶段的`Post-Hoc Resolution`子阶段添加Rule
 
 ```scala
   def injectPostHocResolutionRule(builder: RuleBuilder): Unit 
