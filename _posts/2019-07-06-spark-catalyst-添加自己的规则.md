@@ -273,3 +273,6 @@ class GreenPlumColumnCheckerExtension extends (SparkSessionExtensions => Unit) {
 }
 ```
 
+
+
+PS:  Spark-2.3.2只能指定一个spark.sql.extensions，可以合入[PR-26493](https://github.com/apache/spark/pull/23398)来支持多个extensions.
