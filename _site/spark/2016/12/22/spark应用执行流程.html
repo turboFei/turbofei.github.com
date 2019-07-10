@@ -394,11 +394,9 @@ object SparkWC {
 <h3 id="理论剖析">理论剖析</h3>
 <p>里面的RDD链，用他们的操作表示，就是textFile-&gt;flatMap-&gt;map-&gt;reduceBykey-&gt;saveAsTextFile.</p>
 
-<p>spark里面有两种操作，<code class="highlighter-rouge">action</code> 和<code class="highlighter-rouge">transformation</code>，其中action会触发提交job的操作，transformation不会触发job，只是进行rdd的转换。而不同transformation操作的rdd链两端的依赖关系也不同，spark中的rdd依赖有两种，分别是<code class="highlighter-rouge">narrow dependency</code> 和 <code class="highlighter-rouge">wide dependency</code> ,这两种依赖如下图所示。
-<br />
-<img src="http://ogk82bfkr.bkt.clouddn.com/upload/narrow-depen.png" height="200" width="200" />
-      
-<img src="http://ogk82bfkr.bkt.clouddn.com/upload/wide-depen.png" height="200" width="200" /></p>
+<p>spark里面有两种操作，<code class="highlighter-rouge">action</code> 和<code class="highlighter-rouge">transformation</code>，其中action会触发提交job的操作，transformation不会触发job，只是进行rdd的转换。而不同transformation操作的rdd链两端的依赖关系也不同，spark中的rdd依赖有两种，分别是<code class="highlighter-rouge">narrow dependency</code> 和 <code class="highlighter-rouge">wide dependency</code> ,这两种依赖如下图所示。</p>
+
+<p><img src="/imgs/spark-basic/rdd_dependency.png" alt="" /></p>
 
 <p>左边图是窄依赖，右边图是宽依赖，窄依赖里面的partition的对应顺序是不变的，款依赖会涉及shuffle操作，会造成partition混洗，因此往往以款依赖划分stage。在上面的操作中，saveAsTextFile是action，reduceByKey是宽依赖，因此这个应用总共有1个job，两个stage，然后在不同的stage中会执行tasks。</p>
 

@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-07-06T23:06:27+08:00</updated>
+ <updated>2019-07-10T11:23:30+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -7721,11 +7721,9 @@ object SparkWC {
 &lt;h3 id=&quot;理论剖析&quot;&gt;理论剖析&lt;/h3&gt;
 &lt;p&gt;里面的RDD链，用他们的操作表示，就是textFile-&amp;gt;flatMap-&amp;gt;map-&amp;gt;reduceBykey-&amp;gt;saveAsTextFile.&lt;/p&gt;
 
-&lt;p&gt;spark里面有两种操作，&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt; 和&lt;code class=&quot;highlighter-rouge&quot;&gt;transformation&lt;/code&gt;，其中action会触发提交job的操作，transformation不会触发job，只是进行rdd的转换。而不同transformation操作的rdd链两端的依赖关系也不同，spark中的rdd依赖有两种，分别是&lt;code class=&quot;highlighter-rouge&quot;&gt;narrow dependency&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;wide dependency&lt;/code&gt; ,这两种依赖如下图所示。
-&lt;br /&gt;
-&lt;img src=&quot;http://ogk82bfkr.bkt.clouddn.com/upload/narrow-depen.png&quot; height=&quot;200&quot; width=&quot;200&quot; /&gt;
-      
-&lt;img src=&quot;http://ogk82bfkr.bkt.clouddn.com/upload/wide-depen.png&quot; height=&quot;200&quot; width=&quot;200&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;spark里面有两种操作，&lt;code class=&quot;highlighter-rouge&quot;&gt;action&lt;/code&gt; 和&lt;code class=&quot;highlighter-rouge&quot;&gt;transformation&lt;/code&gt;，其中action会触发提交job的操作，transformation不会触发job，只是进行rdd的转换。而不同transformation操作的rdd链两端的依赖关系也不同，spark中的rdd依赖有两种，分别是&lt;code class=&quot;highlighter-rouge&quot;&gt;narrow dependency&lt;/code&gt; 和 &lt;code class=&quot;highlighter-rouge&quot;&gt;wide dependency&lt;/code&gt; ,这两种依赖如下图所示。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/spark-basic/rdd_dependency.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;左边图是窄依赖，右边图是宽依赖，窄依赖里面的partition的对应顺序是不变的，款依赖会涉及shuffle操作，会造成partition混洗，因此往往以款依赖划分stage。在上面的操作中，saveAsTextFile是action，reduceByKey是宽依赖，因此这个应用总共有1个job，两个stage，然后在不同的stage中会执行tasks。&lt;/p&gt;
 
