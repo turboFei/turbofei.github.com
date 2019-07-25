@@ -354,18 +354,18 @@
       <li><a href="#源码剖析" id="markdown-toc-源码剖析">源码剖析</a></li>
       <li><a href="#提交job" id="markdown-toc-提交job">提交job</a></li>
       <li><a href="#划分stage" id="markdown-toc-划分stage">划分stage</a></li>
-      <li><a href="#提交tasks" id="markdown-toc-提交tasks">提交tasks</a></li>
-      <li><a href="#执行task" id="markdown-toc-执行task">执行task</a>        <ul>
+      <li><a href="#提交tasks" id="markdown-toc-提交tasks">提交tasks###</a></li>
+      <li><a href="#执行task" id="markdown-toc-执行task">执行task###</a>        <ul>
           <li><a href="#shufflemaptask" id="markdown-toc-shufflemaptask">ShuffleMapTask</a></li>
-          <li><a href="#resulttask" id="markdown-toc-resulttask">ResultTask</a></li>
+          <li><a href="#resulttask" id="markdown-toc-resulttask">ResultTask####</a></li>
           <li><a href="#rdd-迭代链" id="markdown-toc-rdd-迭代链">rdd 迭代链</a></li>
-          <li><a href="#检查点" id="markdown-toc-检查点">检查点</a></li>
+          <li><a href="#检查点" id="markdown-toc-检查点">检查点####</a></li>
         </ul>
       </li>
       <li><a href="#compute-链" id="markdown-toc-compute-链">compute 链</a></li>
     </ul>
   </li>
-  <li><a href="#参考" id="markdown-toc-参考">参考</a></li>
+  <li><a href="#参考" id="markdown-toc-参考">参考##</a></li>
 </ul>
 
 <h3 id="background">Background</h3>
@@ -375,7 +375,7 @@
 
 <p>word count是spark 最基本的小程序，主要功能就是统计一个文件里面各个单词出现的个数。代码很简洁，如下。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>import org.apache.spark.{SparkConf, SparkContext}
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>import org.apache.spark.{SparkConf, SparkContext}
 
 object SparkWC {
   def main(args: Array[String]) {
@@ -388,8 +388,7 @@ object SparkWC {
           .saveAsTextFile(args(1))
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="理论剖析">理论剖析</h3>
 <p>里面的RDD链，用他们的操作表示，就是textFile-&gt;flatMap-&gt;map-&gt;reduceBykey-&gt;saveAsTextFile.</p>
@@ -404,21 +403,20 @@ object SparkWC {
 
 <p>从rdd链开始分析。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>def textFile(
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def textFile(
       path: String,
       minPartitions: Int = defaultMinPartitions): RDD[String] = withScope {
     assertNotStopped()
     hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],
       minPartitions).map(pair =&gt; pair._2.toString).setName(path)
   }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>textFile 这个算子的返回结果是一个RDD，然后RDD链就开始了，可以看出来他调用了一些新的函数，比如hadoopFile啥的，这些我们都不管，因为他们都没有触发 commitJob，所以这些中间过程我们就省略，直到saveAsTextFile这个action。</p>
 
 <h3 id="提交job">提交job</h3>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>  def saveAsTextFile(path: String): Unit = withScope {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  def saveAsTextFile(path: String): Unit = withScope {
     // https://issues.apache.org/jira/browse/SPARK-2075
     //
     // NullWritable is a `Comparable` in Hadoop 1.+, so the compiler cannot find an implicit
@@ -515,11 +513,10 @@ object SparkWC {
     self.context.runJob(self, writeToFile)
     writer.commitJob()
   }
-</code></pre>
-</div>
+</code></pre></div></div>
 <p>上面是saveAstextFile的调用过程，中间省略了一个函数，看代码的最后两行。可以看出调用了<code class="highlighter-rouge"> self.context.runJob()</code>可以知道这里触发了job的提交。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code> def runJob[T, U: ClassTag](
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> def runJob[T, U: ClassTag](
       rdd: RDD[T],
       func: (TaskContext, Iterator[T]) =&gt; U,
       partitions: Seq[Int],
@@ -537,12 +534,11 @@ object SparkWC {
     progressBar.foreach(_.finishAll())
     rdd.doCheckpoint() //是否cache rdd
   }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>可以看出上面代码有 <code class="highlighter-rouge">dagScheduler.runJob</code>，开始进行调度。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>  def runJob[T, U](
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  def runJob[T, U](
       rdd: RDD[T],
       func: (TaskContext, Iterator[T]) =&gt; U,
       partitions: Seq[Int],
@@ -570,12 +566,11 @@ object SparkWC {
         throw exception
     }
   }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>在 dagScheduler.runJob()里面有 <code class="highlighter-rouge">submitJob</code>的操作，提交job。
 看下面<code class="highlighter-rouge">submitJob</code>的代码。</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>  def submitJob[T, U](
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  def submitJob[T, U](
       rdd: RDD[T],
       func: (TaskContext, Iterator[T]) =&gt; U,
       partitions: Seq[Int],
@@ -604,15 +599,13 @@ object SparkWC {
       SerializationUtils.clone(properties)))
     waiter
   }
-</code></pre>
-</div>
+</code></pre></div></div>
 <p>然后eventProcessLoop.post(JobSubmitted … 然后就有循环程序处理 这个post。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private def doOnReceive(event: DAGSchedulerEvent): Unit = event match {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def doOnReceive(event: DAGSchedulerEvent): Unit = event match {
   case JobSubmitted(jobId, rdd, func, partitions, callSite, listener, properties) =&gt;
     dagScheduler.handleJobSubmitted(jobId, rdd, func, partitions, callSite, listener, properties)
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="划分stage">划分stage</h3>
 
@@ -620,7 +613,7 @@ object SparkWC {
 
 <p><code class="highlighter-rouge">handleJobSubmitted</code>,如下代码。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private[scheduler] def handleJobSubmitted(jobId: Int,
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private[scheduler] def handleJobSubmitted(jobId: Int,
     finalRDD: RDD[_],
     func: (TaskContext, Iterator[_]) =&gt; _,
     partitions: Array[Int],
@@ -659,12 +652,11 @@ object SparkWC {
 
   submitWaitingStages()
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>解释下这段代码，先是找到最后一个stage， finalStage，然后就生成stageId还有stage的一些信息，然后post 出job开始的消息，然后提交最后一个stage，最后一行是提交等待的stages。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/** Submits stage, but first recursively submits any missing parents. */
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/** Submits stage, but first recursively submits any missing parents. */
 private def submitStage(stage: Stage) {
   val jobId = activeJobForStage(stage)
   if (jobId.isDefined) {
@@ -686,18 +678,17 @@ private def submitStage(stage: Stage) {
     abortStage(stage, "No active job for stage " + stage.id, None)
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>解释下这段代码，就是递归提交之前都没有提交的stage，因为之前是提交最后一个stage吗，但是前面stage也没操作，所以要不断地提交parentStage，直到job的头部。如果说这个stage没有未完成的parentStage，那就代表它前面都执行完毕。</p>
 
-<h3 id="提交tasks">提交tasks</h3>
+<h3 id="提交tasks">提交tasks###</h3>
 
 <p>找到最开始还没完成的stage，那么提交这个stage的Tasks。调用的函数是<code class="highlighter-rouge">submitMissingTasks(stage,jobId.get)</code>.</p>
 
 <p>下面是 这个函数的代码，有点长。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private def submitMissingTasks(stage: Stage, jobId: Int) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def submitMissingTasks(stage: Stage, jobId: Int) {
   logDebug("submitMissingTasks(" + stage + ")")
   // Get our pending tasks and remember them in our pendingTasks entry
   stage.pendingPartitions.clear()
@@ -828,8 +819,7 @@ private def submitStage(stage: Stage) {
     logDebug(debugString)
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>上面的代码出现了多次<code class="highlighter-rouge">ResultStage</code>和<code class="highlighter-rouge">ShuffleMapStage</code>，先介绍一下这个stage。</p>
 
@@ -849,7 +839,7 @@ private def submitStage(stage: Stage) {
   <li>创建完tasks就是后面的<code class="highlighter-rouge">taskScheduler.submitTasks()</code>，这样任务就交由taskScheduler调度了。</li>
 </ul>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>override def submitTasks(taskSet: TaskSet) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>override def submitTasks(taskSet: TaskSet) {
   val tasks = taskSet.tasks
   logInfo("Adding task set " + taskSet.id + " with " + tasks.length + " tasks")
   this.synchronized {
@@ -884,8 +874,7 @@ private def submitStage(stage: Stage) {
   }
   backend.reviveOffers()
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>这段代码前面部分就是先创建taskManager，然后判断是否有超过一个数目的tasks存在，如果冲突就报异常。</p>
 
@@ -895,16 +884,15 @@ private def submitStage(stage: Stage) {
 
 <p>最后backend就会让这个tasks唤醒。<code class="highlighter-rouge">backend.reviveOffers()</code>,这里我们的backend通常是<code class="highlighter-rouge">CoarseGrainedSchedulerBackend</code>，在执行reviveOffers之后，<code class="highlighter-rouge">driverEndpoint</code>会send消息，然后backend的receive函数会接收到消息，然后执行操作。看CoarseGrainedSchedulerBackend 的receive函数。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>override def receive: PartialFunction[Any, Unit] = {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>override def receive: PartialFunction[Any, Unit] = {
 ...
 case ReviveOffers =&gt;
   makeOffers()
 ...
   }
-</code></pre>
-</div>
+</code></pre></div></div>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private def makeOffers() {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def makeOffers() {
   // Filter out executors under killing
   val activeExecutors = executorDataMap.filterKeys(executorIsAlive)
   val workOffers = activeExecutors.map { case (id, executorData) =&gt;
@@ -912,16 +900,15 @@ case ReviveOffers =&gt;
   }.toSeq
   launchTasks(scheduler.resourceOffers(workOffers))
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>上面代码显示筛选出存活的<code class="highlighter-rouge">Executors</code>，然后就创建出<code class="highlighter-rouge">workerOffers</code>,参数是executorId,host,frescoers.</p>
 
-<h3 id="执行task">执行task</h3>
+<h3 id="执行task">执行task###</h3>
 
 <p>然后就launchTasks。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private def launchTasks(tasks: Seq[Seq[TaskDescription]]) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def launchTasks(tasks: Seq[Seq[TaskDescription]]) {
   for (task &lt;- tasks.flatten) {
     val serializedTask = ser.serialize(task)
     if (serializedTask.limit &gt;= maxRpcMessageSize) {
@@ -948,8 +935,7 @@ case ReviveOffers =&gt;
     }
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>上面的代码显示将task序列化，然后根据task.executorId 给他分配executor，然后就<code class="highlighter-rouge">executorData.executorEndpoint.send(LaunchTask(new SerializableBuffer(serializedTask)))</code>.</p>
 
@@ -967,7 +953,7 @@ case ReviveOffers =&gt;
 
 <p>然后这里的driverEndPoint就是代表这个信息会发给<code class="highlighter-rouge">CoarseGrainedSchedulerBackEnd</code>，executorEndPoint就是发给<code class="highlighter-rouge">coarseGrainedExecutorBackEnd</code>当然就是发给<code class="highlighter-rouge">coarseGrainedExecutorBackEnd</code>。接下来去看相应的recieve代码。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>override def receive: PartialFunction[Any, Unit] = {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>override def receive: PartialFunction[Any, Unit] = {
 ...
 
     case LaunchTask(data) =&gt;
@@ -981,12 +967,11 @@ case ReviveOffers =&gt;
       }
 ...
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>这里先将传过来的数据反序列化，然后<code class="highlighter-rouge">executor.launchTask</code>.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>def launchTask(
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def launchTask(
     context: ExecutorBackend,
     taskId: Long,
     attemptNumber: Int,
@@ -997,8 +982,7 @@ case ReviveOffers =&gt;
   runningTasks.put(taskId, tr)
   threadPool.execute(tr)
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>这里新建了taskRunner，然后之后交由线程池来运行，线程池既然要运行taskRunner，必定是运行taskRunner的run方法。看taskRunner的run方法，代码太长，懒得贴，大概描述下。</p>
 
@@ -1008,7 +992,7 @@ case ReviveOffers =&gt;
 
 <p>先看<code class="highlighter-rouge">ShuffleMapTask</code>。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>override def runTask(context: TaskContext): MapStatus = {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>override def runTask(context: TaskContext): MapStatus = {
   // Deserialize the RDD using the broadcast variable.
   val deserializeStartTime = System.currentTimeMillis()
   val ser = SparkEnv.get.closureSerializer.newInstance()
@@ -1035,16 +1019,15 @@ case ReviveOffers =&gt;
       throw e
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>前面部分代码就是反序列化那些，主要看中间的代码。获得shuffleManager,然后getWriter。因为shuffleMapTask有Shuffle操作，所以要shuffleWrite。</p>
 
-<h4 id="resulttask">ResultTask</h4>
+<h4 id="resulttask">ResultTask####</h4>
 
 <p>看下ResultTask的runTask。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>  override def runTask(context: TaskContext): U = {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  override def runTask(context: TaskContext): U = {
     // Deserialize the RDD and the func using the broadcast variables.
     val deserializeStartTime = System.currentTimeMillis()
     val ser = SparkEnv.get.closureSerializer.newInstance()
@@ -1054,23 +1037,21 @@ case ReviveOffers =&gt;
 
     func(context, rdd.iterator(partition, context))
   }
-</code></pre>
-</div>
+</code></pre></div></div>
 <p>跟那个差不多，只不过不是shuffleWrite，是func.</p>
 
 <h4 id="rdd-迭代链">rdd 迭代链</h4>
 
 <p>看这行代码<code class="highlighter-rouge">writer.write(rdd.iterator(partition, context).asInstanceOf[Iterator[_ &lt;: Product2[Any, Any]]])</code>，看write方法里面的参数，rdd.iterator方法。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>final def iterator(split: Partition, context: TaskContext): Iterator[T] = {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>final def iterator(split: Partition, context: TaskContext): Iterator[T] = {
   if (storageLevel != StorageLevel.NONE) {
     getOrCompute(split, context)
   } else {
     computeOrReadCheckpoint(split, context)
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>这个方法，是从后面的rdd开始迭代，首先判断这个rdd是否是已经被cache。</p>
 
@@ -1078,7 +1059,7 @@ case ReviveOffers =&gt;
 
 <p>如果没有被cache，则调用<code class="highlighter-rouge">computeOrReadCheckpoint</code>。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private[spark] def computeOrReadCheckpoint(split: Partition, context: TaskContext): Iterator[T] =
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private[spark] def computeOrReadCheckpoint(split: Partition, context: TaskContext): Iterator[T] =
 {
   if (isCheckpointedAndMaterialized) {
     firstParent[T].iterator(split, context)
@@ -1086,18 +1067,17 @@ case ReviveOffers =&gt;
     compute(split, context)
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>如果是检查点，先介绍下检查点。</p>
 
-<h4 id="检查点">检查点</h4>
+<h4 id="检查点">检查点####</h4>
 
 <p>检查点机制的实现和持久化的实现有着较大的区别。检查点并非第一次计算就将结果进行存储，而是等到一个作业结束后启动专门的一个作业完成存储的操作。</p>
 
 <p>checkPoint操作的实现在RDD类中，<em>checkPoint</em>方法会实例化ReliableRDDCheckpointData用于标记当前的RDD</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Mark this RDD for checkpointing. It will be saved to a file inside the checkpoint
  * directory set with `SparkContext#setCheckpointDir` and all references to its parent
  * RDDs will be removed. This function must be called before any job has been
@@ -1114,12 +1094,11 @@ def checkpoint(): Unit = RDDCheckpointData.synchronized {
     checkpointData = Some(new ReliableRDDCheckpointData(this))
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>RDDCheckpointData类内部有一个枚举类型 <code class="highlighter-rouge">CheckpointState </code></p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/** 
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/** 
  * Enumeration to manage state transitions of an RDD through checkpointing 
  * [ Initialized --&gt; checkpointing in progress --&gt; checkpointed ]. 
  */  
@@ -1127,8 +1106,7 @@ private[spark] object CheckpointState extends Enumeration {
   type CheckpointState = Value  
   val Initialized, CheckpointingInProgress, Checkpointed = Value  
 } 
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>用于表示RDD检查点的当前状态，其值有Initialized 、CheckpointingInProgress、 checkpointed。其转换过程如下
 (1)Initialized状态</p>
@@ -1149,10 +1127,9 @@ private[spark] object CheckpointState extends Enumeration {
 <p>上面有检查点的就直接去父Rdd的compute读取数据了。而非检查点，就compute，compute是一个链。
 拿<code class="highlighter-rouge">MapPartitionsRDD</code>举个例子，看看它的compute方法。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>override def compute(split: Partition, context: TaskContext): Iterator[U] =
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>override def compute(split: Partition, context: TaskContext): Iterator[U] =
 f(context, split.index, firstParent[T].iterator(split, context))
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>看这里 compute还是调用了iterator，所以还是接着往前找了，直到找到checkpoint或者就是到rdd头。</p>
 
@@ -1160,20 +1137,19 @@ f(context, split.index, firstParent[T].iterator(split, context))
 
 <p>看看<code class="highlighter-rouge">ShuffleRdd</code>.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>override def compute(split: Partition, context: TaskContext): Iterator[(K, C)] = {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>override def compute(split: Partition, context: TaskContext): Iterator[(K, C)] = {
   val dep = dependencies.head.asInstanceOf[ShuffleDependency[K, V, C]]
   SparkEnv.get.shuffleManager.getReader(dep.shuffleHandle, split.index, split.index + 1, context)
     .read()
     .asInstanceOf[Iterator[(K, C)]]
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>然后这里shuffleRdd的compute方法就是从shuffle 那里read 数据，这算是一个stage的开始了。</p>
 
 <p>当然一个stage的开始未必是shuffleRead开始啦，比如textFile，它最终是返回一个HadoopRdd，然后他的compute方法，就是返回一个迭代器。</p>
 
-<h2 id="参考">参考</h2>
+<h2 id="参考">参考##</h2>
 
 <p> <a href="http://blog.csdn.net/jiangpeng59/article/details/53213694">Spark核心RDD：计算函数compute</a></p>
 

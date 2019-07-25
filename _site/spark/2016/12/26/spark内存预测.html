@@ -364,7 +364,7 @@
 
 <p>SizeTracker的estimateSize方法就是预测当前集合的size。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Estimate the current size of the collection in bytes. O(1) time.
  */
 def estimateSize(): Long = {
@@ -372,14 +372,13 @@ def estimateSize(): Long = {
   val extrapolatedDelta = bytesPerUpdate * (numUpdates - samples.last.numUpdates)
   (samples.last.size + extrapolatedDelta).toLong
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>其实这个sizeTracker类有四个方法，其他三个方法分别是<code class="highlighter-rouge">resetSamples</code>,<code class="highlighter-rouge">afterUpdate</code>,<code class="highlighter-rouge">takeSample</code>.看了下SizeTrackingAppendOnlyMap的流程，afterUpdata方法是在update或者changeValue之后会调用，其实updata和changeValue没有什么区别，只不过一个是直接更新k-v，另一个是使用一个函数计算后更新k-v。然后resetSamples是在growTable之后调用（SizeTrackingAppendOnlyMap的growTable就是空间翻一倍）。</p>
 
 <p>看下sizeTracker里面的参数。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Controls the base of the exponential which governs the rate of sampling.
  * E.g., a value of 2 would mean we sample at 1, 2, 4, 8, ... elements.
  */
@@ -396,12 +395,11 @@ private var numUpdates: Long = _
 
 /** The value of 'numUpdates' at which we will take our next sample. */
 private var nextSampleNum: Long = _
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">SAMPLE_GROWTH_RATE</code>是一个斜率，代表下次抽样时候更新的次数应该是这次抽样更新次数的1.1倍，比如上次是更新10000次时候抽样，下次抽样就得是更新11000次时候再抽样，可以避免每次更新都抽样，减少抽样花销。<code class="highlighter-rouge">samples</code>是一个队列， 里面的类型是样例类<code class="highlighter-rouge">sample</code>。然后<code class="highlighter-rouge">bytesPerUpdate</code>是抽样之后得到区间增长量/个数增长量，就是一个斜率。然后<code class="highlighter-rouge">numUpdates</code>就是代表抽样集合里面元素个数，<code class="highlighter-rouge">nextSampleNum</code>代表下次要抽样的时候集合的个数，前面说过，就是此次抽样时候的个数*1.1.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Reset samples collected so far.
  * This should be called after the collection undergoes a dramatic change in size.
  */
@@ -411,12 +409,11 @@ protected def resetSamples(): Unit = {
   samples.clear()
   takeSample()
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>resetSamples会在每次翻倍增长后，重置抽样参数，没啥好说的。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Callback to be invoked after every update.
  */
 protected def afterUpdate(): Unit = {
@@ -425,12 +422,11 @@ protected def afterUpdate(): Unit = {
     takeSample()
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>这个是每次更新后，都更新次数+1，然后当他等于下次抽样次数时候就进行抽样。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Take a new sample of the current collection's size.
  */
 private def takeSample(): Unit = {
@@ -448,12 +444,11 @@ private def takeSample(): Unit = {
   bytesPerUpdate = math.max(0, bytesDelta)
   nextSampleNum = math.ceil(numUpdates * SAMPLE_GROWTH_RATE).toLong
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>抽样就是找出最近的两个sample，然后计算增长斜率，size增长量/num增长量，然后把下次抽样的次数*1.1更新下。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Estimate the current size of the collection in bytes. O(1) time.
  */
 def estimateSize(): Long = {
@@ -461,8 +456,7 @@ def estimateSize(): Long = {
   val extrapolatedDelta = bytesPerUpdate * (numUpdates - samples.last.numUpdates)
   (samples.last.size + extrapolatedDelta).toLong
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>然后这个estimateSize 就是上次的size+增长率*增长量。增长率和size就是上次抽样得到的。</p>
 
@@ -472,7 +466,7 @@ def estimateSize(): Long = {
 
 <p>看下这类的estimate方法。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private def estimate(obj: AnyRef, visited: IdentityHashMap[AnyRef, AnyRef]): Long = {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def estimate(obj: AnyRef, visited: IdentityHashMap[AnyRef, AnyRef]): Long = {
   val state = new SearchState(visited)
   state.enqueue(obj)
   while (!state.isFinished) {
@@ -480,12 +474,11 @@ def estimateSize(): Long = {
   }
   state.size
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>这里主要是调用visitSingleObject。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private def visitSingleObject(obj: AnyRef, state: SearchState) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def visitSingleObject(obj: AnyRef, state: SearchState) {
   val cls = obj.getClass
   if (cls.isArray) {
     visitArray(obj, cls, state)
@@ -509,14 +502,13 @@ def estimateSize(): Long = {
     }
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>如果是Array类型，就visitArray。如果是scala.reflect开头的类，因为这个包里面涉及全局反射对象，因此涉及很多其他的大对象，所以这种对象不做任何操作。然后如果是classLoader类型，hadoop 作业在解释器中创建了classLoader，因为涉及整个REPL（读取-求值-处理-循环），所以很难处理。一般，所有classLoader和classes都是共享的。然后有的就是已经预测过的，直接读取。然后其他类型，就是拆解，拆成实际对象和引用，实际对象算出size相加，然后指针类型就把它指向的对象加入state队列，然后再进入while循环。直到state isFinished。</p>
 
 <p>接下来看看visitArray.</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>// Estimate the size of arrays larger than ARRAY_SIZE_FOR_SAMPLING by sampling.
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Estimate the size of arrays larger than ARRAY_SIZE_FOR_SAMPLING by sampling.
 private val ARRAY_SIZE_FOR_SAMPLING = 400
 private val ARRAY_SAMPLE_SIZE = 100 // should be lower than ARRAY_SIZE_FOR_SAMPLING
 
@@ -554,8 +546,7 @@ private def visitArray(array: AnyRef, arrayClass: Class[_], state: SearchState) 
     }
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>这段代码，首先要把<code class="highlighter-rouge">Array 的object 头部,长度 filed</code>算进去，然后如果array里面的元素是基本类型，那么长度就固定，就可以直接算出来。</p>
 

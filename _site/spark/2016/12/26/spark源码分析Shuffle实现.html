@@ -351,14 +351,14 @@
 
 <ul id="markdown-toc">
   <li><a href="#background" id="markdown-toc-background">Background</a></li>
-  <li><a href="#shuffle" id="markdown-toc-shuffle">Shuffle</a>    <ul>
-      <li><a href="#bypassmergesortshufflewriter" id="markdown-toc-bypassmergesortshufflewriter">BypassMergeSortShuffleWriter</a></li>
+  <li><a href="#shuffle" id="markdown-toc-shuffle">Shuffle##</a>    <ul>
+      <li><a href="#bypassmergesortshufflewriter" id="markdown-toc-bypassmergesortshufflewriter">BypassMergeSortShuffleWriter###</a></li>
       <li><a href="#sortshufflewriter" id="markdown-toc-sortshufflewriter">SortShuffleWriter</a></li>
       <li><a href="#unsafeshufflewriter" id="markdown-toc-unsafeshufflewriter">unsafeShuffleWriter</a></li>
-      <li><a href="#blockstoreshufflereader" id="markdown-toc-blockstoreshufflereader">BlockStoreShuffleReader</a></li>
+      <li><a href="#blockstoreshufflereader" id="markdown-toc-blockstoreshufflereader">BlockStoreShuffleReader###</a></li>
     </ul>
   </li>
-  <li><a href="#总结" id="markdown-toc-总结">总结</a></li>
+  <li><a href="#总结" id="markdown-toc-总结">总结##</a></li>
 </ul>
 
 <h3 id="background">Background</h3>
@@ -366,13 +366,13 @@
 
 <p>本文基于spark2.0。</p>
 
-<h2 id="shuffle">Shuffle</h2>
+<h2 id="shuffle">Shuffle##</h2>
 
 <p>shuffle是Mapreduce框架中一个特定的phase，介于Map和Reduce之间。shuffle的英文意思是混洗，包含两个部分，shuffle write 和shuffle read。这里有一篇文章:<a href="http://jerryshao.me/architecture/2014/01/04/spark-shuffle-detail-investigation/">详细探究Spark的shuffle实现</a>，这篇文章写于2014年，讲的是早期版本的shuffle实现。随着源码的更新，shuffle机制也做出了相应的优化，下面分析spark-2.0的shuffle机制。</p>
 
 <p><code class="highlighter-rouge">shuffleWriter</code>是一个抽象类，具体实现有三种，<code class="highlighter-rouge">BypassMergeSortShuffleWriter</code>,<code class="highlighter-rouge">sortShuffleWriter</code>,<code class="highlighter-rouge">UnsafeShuffleWriter</code>.</p>
 
-<h3 id="bypassmergesortshufflewriter">BypassMergeSortShuffleWriter</h3>
+<h3 id="bypassmergesortshufflewriter">BypassMergeSortShuffleWriter###</h3>
 
 <p>-_-,我先翻译下这个类开头给的注释，注释是很好的全局理解代码的工具，要好好理解。如下：</p>
 
@@ -382,7 +382,7 @@
 
 <p>这个代码曾经是ExternalSorter的一部分，但是为了减少代码复杂度就独立了出来。好，翻译结束。-_-</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>@Override
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Override
 public void write(Iterator&lt;Product2&lt;K, V&gt;&gt; records) throws IOException {
   assert (partitionWriters == null);
   if (!records.hasNext()) {
@@ -429,12 +429,11 @@ public void write(Iterator&lt;Product2&lt;K, V&gt;&gt; records) throws IOExcepti
   }
   mapStatus = MapStatus$.MODULE$.apply(blockManager.shuffleServerId(), partitionLengths);
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>前面都很好理解，就是根据key的哈希值写到不同的文件里面，然后就是<code class="highlighter-rouge">writePartitionedFile</code>和<code class="highlighter-rouge">writeIndexFileAndCommit</code>。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Concatenate all of the per-partition files into a single combined file.
  *
  * @return array of lengths, in bytes, of each partition of the file (used by map output tracker).
@@ -475,12 +474,11 @@ private long[] writePartitionedFile(File outputFile) throws IOException {
   partitionWriters = null;
   return lengths;
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>这个就是按顺序把之前写的分区文件里的数据合并到一个大文件里面，然后返回每个分区文件的长度。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/**
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Write an index file with the offsets of each block, plus a final offset at the end for the
  * end of the output file. This will be used by getBlockData to figure out where each block
  * begins and ends.
@@ -547,8 +545,7 @@ def writeIndexFileAndCommit(
     }
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>解释下这段代码，上来先写indexTmp，是把分区文件长度写进去，便于索引需要的那部分数据。然后就判断这个任务是不是第一次执行到这里，如果之前执行成功过，那就不用写了，直接用以前的结果就行。</p>
 
@@ -562,7 +559,7 @@ def writeIndexFileAndCommit(
 
 <p>首先描述下大概。因为是sort，所以要排序，这里就用到了ExternalSoter这个数据结构。然后把要处理的数据全部插入到ExternalSorter里面，在插入的过程中是不排序的，就是插入，插入数据是(partitionId,key,value)。然后是调用<code class="highlighter-rouge"> sorter.writePartitionedFile</code>,在这里会排序，会按照partitionId和key（或者key的hashcode）进行排序，其他的就和上面bypassShuffleWriter的差不多了，最后也是写到一个indexFile里面。返回mapStatus。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/** Write a bunch of records to this task's output */
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/** Write a bunch of records to this task's output */
 override def write(records: Iterator[Product2[K, V]]): Unit = {
   sorter = if (dep.mapSideCombine) {
     require(dep.aggregator.isDefined, "Map-side combine without Aggregator specified!")
@@ -593,8 +590,7 @@ override def write(records: Iterator[Product2[K, V]]): Unit = {
     }
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>这里面ExternalSorter是核心。看它的源码，它存数据是使用的两种数据结构。<code class="highlighter-rouge">PartitionedAppendOnlyMap</code>、<code class="highlighter-rouge">PartitionedPairBuffer</code>，其中有聚合操作使用map，没有聚合操作使用buffer。PartitionedAppendOnlyMap 继承了SizeTrackingAppendOnlyMap 和WritablePartitionedPairCollection 。 其中SizeTrackingAppendOnlyMap是用于预测空间（SizeTracker），然后加存储数据（AppendOnlyMap）,然后WritablePartitionedPairCollection是用于插入数据时候插入partitionId（insert(partition: Int, key: K, value: V)）加上里面实现了对数据按照partitionId和Key排序的方法。</p>
 
@@ -604,7 +600,7 @@ override def write(records: Iterator[Product2[K, V]]): Unit = {
 
 <p>然后map的Update和changeValue函数是差不多的，只不过后者的changeValue是由计算函数计算的value，所以我们就看update方法。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/** Set the value for a key */
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/** Set the value for a key */
 def update(key: K, value: V): Unit = {
   assert(!destroyed, destructionMessage)
   val k = key.asInstanceOf[AnyRef]
@@ -635,8 +631,7 @@ def update(key: K, value: V): Unit = {
     }
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>看源码可以看出，这里插入数据，采用的二次探测法。java.util.collection的HashMap在hash冲突时候采用的是链接法，而这里的二次探测法缺点就是删除元素时候比较复杂，不能简单的把数组中的相应位置设为null，这样就没办法查找元素，通常是把被删除的元素标记为已删除，但是又需要占据额外的空间。但是此处是appendOnlyMap，也就是只会追加（插入或者更新），不会删除，所以这个自定义的map更省内存。</p>
 
@@ -648,7 +643,7 @@ def update(key: K, value: V): Unit = {
 
 <p>这里之所以叫作unsafe，是因为要操纵堆外内存，把数据写到堆外，堆外内存是不受jvm控制的，需要手动进行申请内存与释放内存空间，所以是unsafe的。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>@Override
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Override
 public void write(scala.collection.Iterator&lt;Product2&lt;K, V&gt;&gt; records) throws IOException {
   // Keep track of success so we know if we encountered an exception
   // We do this rather than a standard try/catch/re-throw to handle
@@ -677,16 +672,15 @@ public void write(scala.collection.Iterator&lt;Product2&lt;K, V&gt;&gt; records)
     }
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>除了是写到堆外，其他应该跟sortShuffleWriter 差不多吧，懒得写了，以后发现有什么特别之处再补充。</p>
 
-<h3 id="blockstoreshufflereader">BlockStoreShuffleReader</h3>
+<h3 id="blockstoreshufflereader">BlockStoreShuffleReader###</h3>
 
 <p>前面三个shuffleWriter，shuffle分为shuffleWriter和shuffleReader。shuffleReadr只有一个具体实现类就是BlockStoreShuffleReader。看开头注释为：读取（startPartition和endPartition）之间的partition的数据，从其他节点。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>/** Read the combined key-values for this reduce task */
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/** Read the combined key-values for this reduce task */
 override def read(): Iterator[Product2[K, C]] = {
   val blockFetcherItr = new ShuffleBlockFetcherIterator(
     context,
@@ -757,14 +751,13 @@ override def read(): Iterator[Product2[K, C]] = {
       aggregatedIter
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>首先是建立一个<code class="highlighter-rouge">ShuffleBlockFetcherIterator</code>，传入的参数有<code class="highlighter-rouge">mapOutputTracker.getMapSizesByExecutorId(handle.shuffleId, startPartition, endPartition)</code>,这个是必须的，只取需要的partition的数据。</p>
 
 <p>点进去ShuffleBlockFetcherIterator这个类，发现这个类会自动调用initialize()方法。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private[this] def initialize(): Unit = {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private[this] def initialize(): Unit = {
   // Add a task completion callback (called in both success case and failure case) to cleanup.
   context.addTaskCompletionListener(_ =&gt; cleanup())
 
@@ -786,12 +779,11 @@ override def read(): Iterator[Product2[K, C]] = {
   fetchLocalBlocks()
   logDebug("Got local blocks in " + Utils.getUsedTimeMs(startTime))
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>这个方法里面会<code class="highlighter-rouge">fetchUpToMaxBytes()</code>和<code class="highlighter-rouge">fetchLocalBlocks()</code>,一个是取远程数据一个是取本地数据。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private def fetchUpToMaxBytes(): Unit = {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def fetchUpToMaxBytes(): Unit = {
   // Send fetch requests up to maxBytesInFlight
   while (fetchRequests.nonEmpty &amp;&amp;
     (bytesInFlight == 0 ||
@@ -800,12 +792,11 @@ override def read(): Iterator[Product2[K, C]] = {
     sendRequest(fetchRequests.dequeue())
   }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>这里会设置一个阈值，避免过度负载的。<code class="highlighter-rouge">sendRequest</code>来请求数据。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private[this] def sendRequest(req: FetchRequest) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private[this] def sendRequest(req: FetchRequest) {
   logDebug("Sending request for %d blocks (%s) from %s".format(
     req.blocks.size, Utils.bytesToString(req.size), req.address.hostPort))
   bytesInFlight += req.size
@@ -843,8 +834,7 @@ override def read(): Iterator[Product2[K, C]] = {
     }
   )
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>后面一大堆代码，反正就是取数据吗，就不细看了。</p>
 
@@ -854,7 +844,7 @@ override def read(): Iterator[Product2[K, C]] = {
 
 <p>到这里shuffle过程就结束啦。</p>
 
-<h2 id="总结">总结</h2>
+<h2 id="总结">总结##</h2>
 
 <p>前两种shuffleWriter（UnsafeShuffleWriter没细看）里的shuffleWrite端最后得到的文件都只是一个IndexFile，这跟<a href="http://jerryshao.me/architecture/2014/01/04/spark-shuffle-detail-investigation/">早期的shuffle机制</a>还是不一样的。</p>
 
