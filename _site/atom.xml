@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-08-17T11:16:47+08:00</updated>
+ <updated>2019-08-18T18:45:51+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -39,13 +39,15 @@
 
 &lt;p&gt;由于之前对线上操作不多，而最近开始接触线上操作，因此也在这个过程中学习到了一些Linux命令。&lt;/p&gt;
 
-&lt;ul&gt;
-  &lt;li&gt;telnet&lt;/li&gt;
-  &lt;li&gt;ss  &amp;amp; somaxconn&lt;/li&gt;
-  &lt;li&gt;netstat&lt;/li&gt;
-  &lt;li&gt;top&lt;/li&gt;
-  &lt;li&gt;sysctl &amp;amp; systemctl&lt;/li&gt;
-&lt;/ul&gt;
+&lt;p&gt;解决问题的思维也需要慢慢进行转变，之前在定位Spark问题的时候，总是会从PAAS层进行寻找问题，例如去看是否是Spark自身的问题，而往往不会去考虑是否是Linux系统的问题。这也是自己所欠缺的地方。&lt;/p&gt;
+
+&lt;p&gt;例如本周遇到的问题，是说executor 向External Shuffle Service发出连接请求，而总是connect timeout,当时我的第一想法就是说看是否是ESS所在的nodemanager比较繁忙。&lt;/p&gt;
+
+&lt;p&gt;我的思路是首先查看PID，然后查看其jstack信息，以及gcutil信息，查看之后就发现其GC并不严重。到此，我就不知道该如何去定位问题了。但是在组里经验更加丰富的同事进行排查跟踪后，发现是其系统配置的&lt;code class=&quot;highlighter-rouge&quot;&gt;somaxconn&lt;/code&gt;参数过小，不能处理处于大量的请求，导致丢包。&lt;/p&gt;
+
+&lt;p&gt;因此这就需要深入了解Linux系统，了解TCP连接建立的过程，以及使用对应的命令进行排查。&lt;/p&gt;
+
+&lt;p&gt;下面讲线上操作常见的操作命令。&lt;/p&gt;
 
 &lt;h3 id=&quot;telnet&quot;&gt;telnet&lt;/h3&gt;
 
