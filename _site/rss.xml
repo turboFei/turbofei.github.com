@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2019-08-18T18:45:51+08:00</lastBuildDate>
-        <pubDate>2019-08-18T18:45:51+08:00</pubDate>
+        <lastBuildDate>2019-08-27T18:26:15+08:00</lastBuildDate>
+        <pubDate>2019-08-27T18:26:15+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -1081,7 +1081,6 @@ jmap_Top_Components.zip
       &lt;li&gt;&lt;a href=&quot;#sparksqlautobroadcastjointhreshold---sparksqlbroadcasttimeout&quot; id=&quot;markdown-toc-sparksqlautobroadcastjointhreshold---sparksqlbroadcasttimeout&quot;&gt;spark.sql.autoBroadcastJoinThreshold &amp;amp;&amp;amp;  spark.sql.broadcastTimeout&lt;/a&gt;&lt;/li&gt;
       &lt;li&gt;&lt;a href=&quot;#sparksqladaptiveenabled--sparksqladaptiveshuffletargetpostshuffleinputsize&quot; id=&quot;markdown-toc-sparksqladaptiveenabled--sparksqladaptiveshuffletargetpostshuffleinputsize&quot;&gt;spark.sql.adaptive.enabled &amp;amp;&amp;amp; spark.sql.adaptive.shuffle.targetPostShuffleInputSize&lt;/a&gt;&lt;/li&gt;
       &lt;li&gt;&lt;a href=&quot;#sparksqlparquetmergeschema&quot; id=&quot;markdown-toc-sparksqlparquetmergeschema&quot;&gt;spark.sql.parquet.mergeSchema&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#sparksqlfilesopencostinbytes&quot; id=&quot;markdown-toc-sparksqlfilesopencostinbytes&quot;&gt;Spark.sql.files.opencostInBytes&lt;/a&gt;&lt;/li&gt;
       &lt;li&gt;&lt;a href=&quot;#sparkhadoopmapreducefileoutputcommitteralgorithmversion&quot; id=&quot;markdown-toc-sparkhadoopmapreducefileoutputcommitteralgorithmversion&quot;&gt;spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version&lt;/a&gt;&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
@@ -1198,10 +1197,6 @@ jmap_Top_Components.zip
 &lt;h4 id=&quot;sparksqlparquetmergeschema&quot;&gt;spark.sql.parquet.mergeSchema&lt;/h4&gt;
 
 &lt;p&gt;默认false。当设为true，parquet会聚合所有parquet文件的schema，否则是直接读取parquet summary文件，或者在没有parquet summary文件时候随机选择一个文件的schema作为最终的schema。&lt;/p&gt;
-
-&lt;h4 id=&quot;sparksqlfilesopencostinbytes&quot;&gt;Spark.sql.files.opencostInBytes&lt;/h4&gt;
-
-&lt;p&gt;该参数默认4M，表示小于4M的小文件会合并到一个分区中，用于减小小文件，防止太多单个小文件占一个分区情况。&lt;/p&gt;
 
 &lt;h4 id=&quot;sparkhadoopmapreducefileoutputcommitteralgorithmversion&quot;&gt;spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version&lt;/h4&gt;
 
