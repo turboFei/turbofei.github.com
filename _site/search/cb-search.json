@@ -3,6 +3,14 @@
 	"data" : [
 	 
 	{
+		"title" : "Spark Blacklist Mechanism Introduction - spark_scheduler",
+		"url" : "/spark/2019/08/30/Spark-Blacklist-Mechanism-Introduction"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "Linux Ops Commands - linux_Ops",
 		"url" : "/bigdata/2019/08/16/Linux-Ops-Commands"
 	}
