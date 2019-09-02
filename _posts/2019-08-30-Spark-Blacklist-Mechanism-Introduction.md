@@ -48,9 +48,21 @@ BlackList机制是由PR[SPARK-8425](https://issues.apache.org/jira/browse/SPARK-
 
 还有一个就是在FetchFailed错误的时候进行的blacklist了。
 
+首先介绍一下fetch Failure。
+
+这里的fetch是指shuffle fetch。参与的角色有三个，拉取数据的executor，发送数据的executor或者ExternalShuffleService，以及网络。
+
+往往拉取数据的executor不会是过错方，除非是说其在fetch的时候使用，一批数据的大小超过了其最大可放置在内存的阈值，需要这些数据进行落盘，然后之后创建inputStream的时候发生了IOException(可能是因为磁盘坏了，或者是网络传输问题)，所以过错方是拉取数据的executor可能性比较小。
+
+所以，问题就丢给了双方之间的网络以及被拉取的executor或者ESS。
+
 在进行shuffle fetch的时候，如果没有开启ExternalShuffleService，那么我们是向remote 的 executor索要数据，所以这时候会将这个executor 加入blacklist。
 
 而如果是开启了ESS，那么就是说我们向那个节点的nodemanager里面的ESS服务索要数据失败，那么就会将这个ESS所在的整个Node加入到blackList。
+
+如果是未开启ESS，那么在发生fetchFailure时候，将对应的被拉取的executor加入BlackList，影响并不大。
+
+但是线上通常开启了ESS，是需要将整个Node加入到BlackList，这个影响还是挺大的，最好是要保证网络的健壮。
 
 #### Yarn Node launch Failure
 
