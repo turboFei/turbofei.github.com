@@ -15,7 +15,7 @@ tags: [spark, scheduler]
 
 Spark是一个分布式计算框架，task会分发到各个节点去执行，难免会有一些bad node 会导致task的失败，task失败的次数多了会导致stage失败，如果stage连续失败达到阈值又会导致application级别的失败。而blacklist,即黑名单机制，就是为了减少这些由于bad node从而导致应用最终失败的情况。
 
-BlackList机制是由PR[SPARK-8425](https://issues.apache.org/jira/browse/SPARK-8425)提出，里面有设计文档以及相关sub-task.
+BlackList机制是由PR [SPARK-8425](https://issues.apache.org/jira/browse/SPARK-8425)提出，里面有设计文档以及相关sub-task.
 
 ### BlackList机制
 
@@ -59,10 +59,6 @@ BlackList机制是由PR[SPARK-8425](https://issues.apache.org/jira/browse/SPARK-
 在进行shuffle fetch的时候，如果没有开启ExternalShuffleService，那么我们是向remote 的 executor索要数据，所以这时候会将这个executor 加入blacklist。
 
 而如果是开启了ESS，那么就是说我们向那个节点的nodemanager里面的ESS服务索要数据失败，那么就会将这个ESS所在的整个Node加入到blackList。
-
-如果是未开启ESS，那么在发生fetchFailure时候，将对应的被拉取的executor加入BlackList，影响并不大。
-
-但是线上通常开启了ESS，是需要将整个Node加入到BlackList，这个影响还是挺大的，最好是要保证网络的健壮。
 
 #### Yarn Node launch Failure
 

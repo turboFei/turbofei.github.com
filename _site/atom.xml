@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-09-02T10:59:24+08:00</updated>
+ <updated>2019-09-02T11:02:44+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -35,7 +35,7 @@
 
 &lt;p&gt;Spark是一个分布式计算框架，task会分发到各个节点去执行，难免会有一些bad node 会导致task的失败，task失败的次数多了会导致stage失败，如果stage连续失败达到阈值又会导致application级别的失败。而blacklist,即黑名单机制，就是为了减少这些由于bad node从而导致应用最终失败的情况。&lt;/p&gt;
 
-&lt;p&gt;BlackList机制是由PR&lt;a href=&quot;https://issues.apache.org/jira/browse/SPARK-8425&quot;&gt;SPARK-8425&lt;/a&gt;提出，里面有设计文档以及相关sub-task.&lt;/p&gt;
+&lt;p&gt;BlackList机制是由PR &lt;a href=&quot;https://issues.apache.org/jira/browse/SPARK-8425&quot;&gt;SPARK-8425&lt;/a&gt;提出，里面有设计文档以及相关sub-task.&lt;/p&gt;
 
 &lt;h3 id=&quot;blacklist机制&quot;&gt;BlackList机制&lt;/h3&gt;
 
@@ -95,10 +95,6 @@
 &lt;p&gt;在进行shuffle fetch的时候，如果没有开启ExternalShuffleService，那么我们是向remote 的 executor索要数据，所以这时候会将这个executor 加入blacklist。&lt;/p&gt;
 
 &lt;p&gt;而如果是开启了ESS，那么就是说我们向那个节点的nodemanager里面的ESS服务索要数据失败，那么就会将这个ESS所在的整个Node加入到blackList。&lt;/p&gt;
-
-&lt;p&gt;如果是未开启ESS，那么在发生fetchFailure时候，将对应的被拉取的executor加入BlackList，影响并不大。&lt;/p&gt;
-
-&lt;p&gt;但是线上通常开启了ESS，是需要将整个Node加入到BlackList，这个影响还是挺大的，最好是要保证网络的健壮。&lt;/p&gt;
 
 &lt;h4 id=&quot;yarn-node-launch-failure&quot;&gt;Yarn Node launch Failure&lt;/h4&gt;
 
