@@ -13,9 +13,7 @@ tags: [spark,sql]
 
 ### 前言
 
-eBay的Hadoop集群上面每天运行着大量的Spark计算任务，对于数据计算任务，数据质量非常重要，特别是对于金融数据，数据发生corruption将会产生很严重的后果。本文分享一次数据质量相关的case以及我们的Solution。
-
-
+eBay的Hadoop集群上面每天运行着大量的Spark计算任务，对于数据计算任务，数据质量非常重要，特别是对于金融数据，数据发生corruption将会产生很严重的后果。本文分享一次数据质量相关的issue以及我们的Solution。
 
 #### 场景：
 
@@ -163,11 +161,9 @@ https://github.com/apache/spark/blob/a75467432eab2ee38b93906d86416fe9e110e82e/sq
 
 经过 nonDecimalAndDecimal处理之后的两个Decimal类型在进行后续的MultiPly操作时。
 
-针对上述提到的case， p1=34, s1=24, p2 =1, s2=0. ResultType为Decimal(36,24)。
+针对上述提到的case， p1=34, s1=24, p2 =1, s2=0. ResultType为Decimal(36,24)，也就是说可以有12位表示整数部分，不容易溢出。
 
-也就是说可以有12位表示整数部分，不容易溢出。
-
-因此，我们可以在ImplicitTypeCasts规则中对操作数类型进行判断，如果有Decimal类型涉及的BinaryOperator涉及到，则此处跳过处理，这个BinaryOperator后续会被DecimalPrecision规则中的nonDecimalAndDecimal方法处理。
+因此，我们可以在ImplicitTypeCasts规则中对操作数类型进行判断，如果在一个BinaryOperator中有Decimal类型的操作数，则此处跳过处理，这个BinaryOperator后续会被DecimalPrecision规则中的nonDecimalAndDecimal方法处理。
 
 我们向Spark社区提了一个Pull Request SPARK-29000，PR地址为:https://github.com/apache/spark/pull/25701, 目前已经合入master分支。
 
@@ -175,4 +171,12 @@ https://github.com/apache/spark/blob/a75467432eab2ee38b93906d86416fe9e110e82e/sq
 
 除此之外，默认的DecimalOperation如果发生了overflow，那么其结果将返回为空，这样的错误是不容易被用户感知的, 是很危险的。
 
-PR-SPARK-23179 引入了一个参数`spark.sql.decimalOperations.nullOnOverflow` 用来控制在Decimal Operation 发生overflow时候的处理方式。默认是true，此时会返回为NULL的结果。如果设置为false，则会在发生overflow时候抛出一个异常。 
+SQL ANSI 2011提出了当算术操作发生overflow时候，应该抛出一个异常。这也是大多数数据库的做法(例如SQLService, DB2). 
+
+PR SPARK-23179 引入了一个参数`spark.sql.decimalOperations.nullOnOverflow` 用来控制在Decimal Operation 发生overflow时候的处理方式。
+
+默认是true，代表在DecimalOperation发生overflow时返回NULL的结果。
+
+如果设置为false，则会在发生overflow时候抛出一个异常。 
+
+因此，我们在上面的基础上合入该PR，以保证我们的计算任务的数据质量。

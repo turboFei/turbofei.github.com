@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-09-10T01:55:02+08:00</updated>
+ <updated>2019-09-10T02:06:04+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -30,7 +30,7 @@
 
 &lt;h3 id=&quot;前言&quot;&gt;前言&lt;/h3&gt;
 
-&lt;p&gt;eBay的Hadoop集群上面每天运行着大量的Spark计算任务，对于数据计算任务，数据质量非常重要，特别是对于金融数据，数据发生corruption将会产生很严重的后果。本文分享一次数据质量相关的case以及我们的Solution。&lt;/p&gt;
+&lt;p&gt;eBay的Hadoop集群上面每天运行着大量的Spark计算任务，对于数据计算任务，数据质量非常重要，特别是对于金融数据，数据发生corruption将会产生很严重的后果。本文分享一次数据质量相关的issue以及我们的Solution。&lt;/p&gt;
 
 &lt;h4 id=&quot;场景&quot;&gt;场景：&lt;/h4&gt;
 
@@ -196,17 +196,23 @@
 
 &lt;p&gt;经过 nonDecimalAndDecimal处理之后的两个Decimal类型在进行后续的MultiPly操作时。&lt;/p&gt;
 
-&lt;p&gt;针对上述提到的case， p1=34, s1=24, p2 =1, s2=0. ResultType为Decimal(36,24)。&lt;/p&gt;
+&lt;p&gt;针对上述提到的case， p1=34, s1=24, p2 =1, s2=0. ResultType为Decimal(36,24)，也就是说可以有12位表示整数部分，不容易溢出。&lt;/p&gt;
 
-&lt;p&gt;也就是说可以有12位表示整数部分，不容易溢出。&lt;/p&gt;
-
-&lt;p&gt;因此，我们可以在ImplicitTypeCasts规则中对操作数类型进行判断，如果有Decimal类型涉及的BinaryOperator涉及到，则此处跳过处理，这个BinaryOperator后续会被DecimalPrecision规则中的nonDecimalAndDecimal方法处理。&lt;/p&gt;
+&lt;p&gt;因此，我们可以在ImplicitTypeCasts规则中对操作数类型进行判断，如果在一个BinaryOperator中有Decimal类型的操作数，则此处跳过处理，这个BinaryOperator后续会被DecimalPrecision规则中的nonDecimalAndDecimal方法处理。&lt;/p&gt;
 
 &lt;p&gt;我们向Spark社区提了一个Pull Request SPARK-29000，PR地址为:https://github.com/apache/spark/pull/25701, 目前已经合入master分支。&lt;/p&gt;
 
 &lt;p&gt;除此之外，默认的DecimalOperation如果发生了overflow，那么其结果将返回为空，这样的错误是不容易被用户感知的, 是很危险的。&lt;/p&gt;
 
-&lt;p&gt;PR-SPARK-23179 引入了一个参数&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.decimalOperations.nullOnOverflow&lt;/code&gt; 用来控制在Decimal Operation 发生overflow时候的处理方式。默认是true，此时会返回为NULL的结果。如果设置为false，则会在发生overflow时候抛出一个异常。&lt;/p&gt;
+&lt;p&gt;SQL ANSI 2011提出了当算术操作发生overflow时候，应该抛出一个异常。这也是大多数数据库的做法(例如SQLService, DB2).&lt;/p&gt;
+
+&lt;p&gt;PR SPARK-23179 引入了一个参数&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.decimalOperations.nullOnOverflow&lt;/code&gt; 用来控制在Decimal Operation 发生overflow时候的处理方式。&lt;/p&gt;
+
+&lt;p&gt;默认是true，代表在DecimalOperation发生overflow时返回NULL的结果。&lt;/p&gt;
+
+&lt;p&gt;如果设置为false，则会在发生overflow时候抛出一个异常。&lt;/p&gt;
+
+&lt;p&gt;因此，我们在上面的基础上合入该PR，以保证我们的计算任务的数据质量。&lt;/p&gt;
 </content>
  </entry>
  
