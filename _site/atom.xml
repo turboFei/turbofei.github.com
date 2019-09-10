@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-09-10T10:17:34+08:00</updated>
+ <updated>2019-09-10T10:34:11+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -72,7 +72,7 @@
   &lt;/tbody&gt;
 &lt;/table&gt;
 
-&lt;p&gt;可以看出来这列的数据，在zeta中查询是有的，但是在部署的spark-2.3的CLI中去查询，出现了部分缺失。&lt;/p&gt;
+&lt;p&gt;可以看出来这列的数据，在zeta中查询是有的，但是在部署的spark-2.3的client中去查询，出现了部分缺失。&lt;/p&gt;
 
 &lt;h4 id=&quot;排查&quot;&gt;排查&lt;/h4&gt;
 
@@ -84,9 +84,13 @@
 
 &lt;p&gt;该参数为PR SPARK-22036 引入，是为了控制在两个Decimal类型做计算的时候，是否允许丢失精度。&lt;/p&gt;
 
-&lt;p&gt;在详细介绍该参数之前，介绍一下Decimal。&lt;/p&gt;
+&lt;p&gt;在详细介绍该参数之前，先介绍一下Decimal。&lt;/p&gt;
 
-&lt;p&gt;Decimal是数据库中的一种数据类型，不属于浮点数类型，可以在定义时划定整数部分以及小数部分的位数。对于一个Decimal类型，scale表示其小数部分的位数，precision表示整数部分位数和小数部分位数之和。一个Decimal 类型表示为Decimal(precision, scale)，在Spark中，precision和scale的上限都是38。&lt;/p&gt;
+&lt;p&gt;Decimal是数据库中的一种数据类型，不属于浮点数类型，可以在定义时划定整数部分以及小数部分的位数。对于一个Decimal类型，scale表示其小数部分的位数，precision表示整数部分位数和小数部分位数之和。&lt;/p&gt;
+
+&lt;p&gt;一个Decimal 类型表示为Decimal(precision, scale)，在Spark中，precision和scale的上限都是38。&lt;/p&gt;
+
+&lt;p&gt;对于一个double类型，其可以精确的表示小数点后15位，有效位数位16位。而Decimal类型相对于double类型可以更加精确的表示保证数据计算，例如对于一个Decimal(38, 24)类型，其可以精确的表示小数点后23位。&lt;/p&gt;
 
 &lt;p&gt;下面介绍&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.decimalOperations.allowPrecisionLoss&lt;/code&gt;参数。&lt;/p&gt;
 

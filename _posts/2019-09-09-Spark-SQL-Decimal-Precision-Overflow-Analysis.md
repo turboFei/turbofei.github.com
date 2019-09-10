@@ -29,7 +29,7 @@ eBay的Hadoop集群上面每天运行着大量的Spark计算任务，对于数�
 | 139.1228  | NULL      |
 | -0.485562 | -0.485562 |
 
-可以看出来这列的数据，在zeta中查询是有的，但是在部署的spark-2.3的CLI中去查询，出现了部分缺失。
+可以看出来这列的数据，在zeta中查询是有的，但是在部署的spark-2.3的client中去查询，出现了部分缺失。
 
 #### 排查
 
@@ -43,9 +43,15 @@ eBay的Hadoop集群上面每天运行着大量的Spark计算任务，对于数�
 
 
 
-在详细介绍该参数之前，介绍一下Decimal。
+在详细介绍该参数之前，先介绍一下Decimal。
 
-Decimal是数据库中的一种数据类型，不属于浮点数类型，可以在定义时划定整数部分以及小数部分的位数。对于一个Decimal类型，scale表示其小数部分的位数，precision表示整数部分位数和小数部分位数之和。一个Decimal 类型表示为Decimal(precision, scale)，在Spark中，precision和scale的上限都是38。
+Decimal是数据库中的一种数据类型，不属于浮点数类型，可以在定义时划定整数部分以及小数部分的位数。对于一个Decimal类型，scale表示其小数部分的位数，precision表示整数部分位数和小数部分位数之和。
+
+一个Decimal 类型表示为Decimal(precision, scale)，在Spark中，precision和scale的上限都是38。
+
+对于一个double类型，其可以精确的表示小数点后15位，有效位数位16位。而Decimal类型相对于double类型可以更加精确的表示保证数据计算，例如对于一个Decimal(38, 24)类型，其可以精确的表示小数点后23位。
+
+
 
 下面介绍`spark.sql.decimalOperations.allowPrecisionLoss`参数。
 
