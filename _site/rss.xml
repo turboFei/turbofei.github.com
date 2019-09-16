@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2019-09-11T00:02:59+08:00</lastBuildDate>
-        <pubDate>2019-09-11T00:02:59+08:00</pubDate>
+        <lastBuildDate>2019-09-16T20:13:22+08:00</lastBuildDate>
+        <pubDate>2019-09-16T20:13:22+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -15,32 +15,31 @@
                 <description>
 &lt;p&gt;目录&lt;/p&gt;
 &lt;ul id=&quot;markdown-toc&quot;&gt;
-  &lt;li&gt;&lt;a href=&quot;#前言&quot; id=&quot;markdown-toc-前言&quot;&gt;前言&lt;/a&gt;    &lt;ul&gt;
-      &lt;li&gt;&lt;a href=&quot;#场景&quot; id=&quot;markdown-toc-场景&quot;&gt;场景：&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#排查&quot; id=&quot;markdown-toc-排查&quot;&gt;排查&lt;/a&gt;&lt;/li&gt;
-      &lt;li&gt;&lt;a href=&quot;#解决方案&quot; id=&quot;markdown-toc-解决方案&quot;&gt;解决方案&lt;/a&gt;        &lt;ul&gt;
-          &lt;li&gt;&lt;a href=&quot;#用户可感知的overflow&quot; id=&quot;markdown-toc-用户可感知的overflow&quot;&gt;用户可感知的overflow&lt;/a&gt;&lt;/li&gt;
-        &lt;/ul&gt;
-      &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#前言&quot; id=&quot;markdown-toc-前言&quot;&gt;前言&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#场景&quot; id=&quot;markdown-toc-场景&quot;&gt;场景：&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#排查&quot; id=&quot;markdown-toc-排查&quot;&gt;排查&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#解决方案&quot; id=&quot;markdown-toc-解决方案&quot;&gt;解决方案&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#用户可感知的overflow&quot; id=&quot;markdown-toc-用户可感知的overflow&quot;&gt;用户可感知的overflow&lt;/a&gt;&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
 &lt;/ul&gt;
+&lt;p&gt;An analysis of Spark data quality issue and relative solution.&lt;/p&gt;
 
-&lt;h3 id=&quot;前言&quot;&gt;前言&lt;/h3&gt;
+&lt;h4 id=&quot;前言&quot;&gt;前言&lt;/h4&gt;
 
 &lt;p&gt;eBay的Hadoop集群上面每天运行着大量的Spark计算任务，对于数据计算任务，不仅看重计算性能，数据质量也非常重要，特别是对于金融数据，数据发生corruption将会产生很严重的后果。本文分享一次数据质量相关的issue以及我们排查问题的过程和解决方案。&lt;/p&gt;
 
 &lt;h4 id=&quot;场景&quot;&gt;场景：&lt;/h4&gt;
 
-&lt;p&gt;一天，金融分析团队的同事报告了一个issue，他们发现在Zeta(数据开发IDE，此case中也是使用Spark引擎)和Spark-2.3上运行同样的SQL语句，其中一列数据结果不一致。&lt;/p&gt;
+&lt;p&gt;一天，金融分析团队的同事报告了一个issue，他们发现在两个环境中，为了区分，命名为环境A和环境B，都运行Spark计算引擎，大版本都为2.3，运行同样的Sql语句，对结果进行对比，发现有一列数据不一致，环境B中的数据有部分丢失。&lt;/p&gt;
 
 &lt;p&gt;此处对数据进行脱敏，仅显示发生数据丢失那一列的数据，如下:&lt;/p&gt;
 
 &lt;table&gt;
   &lt;thead&gt;
     &lt;tr&gt;
-      &lt;th&gt;zeta&lt;/th&gt;
-      &lt;th&gt;spark-2.3&lt;/th&gt;
+      &lt;th&gt;环境A&lt;/th&gt;
+      &lt;th&gt;环境B&lt;/th&gt;
     &lt;/tr&gt;
   &lt;/thead&gt;
   &lt;tbody&gt;
@@ -67,13 +66,13 @@
   &lt;/tbody&gt;
 &lt;/table&gt;
 
-&lt;p&gt;可以看出来这列的数据，在zeta中查询是有的，但是在部署的Spark-2.3的client中去查询，出现了部分缺失。&lt;/p&gt;
+&lt;p&gt;可以看出来这列的数据，在环境A中查询是有的，但是在环境B中Spark client中去查询，出现了部分缺失。&lt;/p&gt;
 
 &lt;h4 id=&quot;排查&quot;&gt;排查&lt;/h4&gt;
 
 &lt;p&gt;上述两个查询中用的spark大版本是一致的，team的同事通过对比两个环境中的配置，发现有一个参数在最近进行了变更。该参数为，&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.decimalOperations.allowPrecisionLoss&lt;/code&gt;,默认为true。&lt;/p&gt;
 
-&lt;p&gt;在zeta环境中未设置此参数，所以为true，而在Spark-2.3 client的defaults conf中，配置了该参数为false。&lt;/p&gt;
+&lt;p&gt;在环境A中未设置此参数，所以为true，而在环境B中Spark client的spark-defaults.conf中，配置了该参数为false。&lt;/p&gt;
 
 &lt;p&gt;该参数为PR SPARK-22036 引入，是为了控制在两个Decimal类型做计算的时候，是否允许丢失精度。&lt;/p&gt;
 
@@ -152,7 +151,7 @@
 
 &lt;p&gt;如果不允许精度丢失，那么resultType就是 DecimalType.bounded(p1+p2+1, s1+s2), bounded方法代表precision 和 scale都不能超过38，所以这里的ResultType就是Decimal(38, 38), 也就是小数部分为38位，那么整数部分就只剩下0位来表示，也就是说如果整数部分非0，那么这个结果就会overflow。在当前版本中，如果发生Decimal Operation 计算发生了overflow，那么就会返回一个Null的结果。&lt;/p&gt;
 
-&lt;p&gt;这也解释了前面的场景中，为什么使用Spark-2.3客户端跑的结果，非Null的结果中整数部分都是0，而且小数部分精度更高(因为不允许精度丢失)。&lt;/p&gt;
+&lt;p&gt;这也解释了前面的场景中，为什么使用环境B中Spark客户端跑的结果，非Null的结果中整数部分都是0，而且小数部分精度更高(因为不允许精度丢失)。&lt;/p&gt;
 
 &lt;p&gt;好了，问题定位到这里结束，下面讲解决方案。&lt;/p&gt;
 
