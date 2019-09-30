@@ -4,13 +4,352 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-09-16T20:13:22+08:00</updated>
+ <updated>2019-09-30T14:36:47+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
    <email>turbofei@foxmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>关于spark数据计算结果异常的场景分析</title>
+   <link href="http://www.turbofei.wang/spark/2019/09/30/%E5%85%B3%E4%BA%8ESpark%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E5%BC%82%E5%B8%B8%E7%9A%84%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90"/>
+   <updated>2019-09-30T00:00:00+08:00</updated>
+   <id>http://www.turbofei.wang/spark/2019/09/30/关于Spark数据计算结果异常的场景分析</id>
+   <content type="html">
+&lt;p&gt;目录&lt;/p&gt;
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#前言&quot; id=&quot;markdown-toc-前言&quot;&gt;前言&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#数据读取&quot; id=&quot;markdown-toc-数据读取&quot;&gt;数据读取&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#表类型&quot; id=&quot;markdown-toc-表类型&quot;&gt;表类型&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#兼容性问题与规避方案&quot; id=&quot;markdown-toc-兼容性问题与规避方案&quot;&gt;兼容性问题与规避方案&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#数据计算&quot; id=&quot;markdown-toc-数据计算&quot;&gt;数据计算&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#关于decimal-和decimal计算精度参数&quot; id=&quot;markdown-toc-关于decimal-和decimal计算精度参数&quot;&gt;关于Decimal 和Decimal计算精度参数&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#场景分析&quot; id=&quot;markdown-toc-场景分析&quot;&gt;场景分析&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#解决方案&quot; id=&quot;markdown-toc-解决方案&quot;&gt;解决方案&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#数据写入&quot; id=&quot;markdown-toc-数据写入&quot;&gt;数据写入&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#场景a&quot; id=&quot;markdown-toc-场景a&quot;&gt;场景A&lt;/a&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#场景b&quot; id=&quot;markdown-toc-场景b&quot;&gt;场景B&lt;/a&gt;        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#fileoutputcommitter&quot; id=&quot;markdown-toc-fileoutputcommitter&quot;&gt;FileOutputCommitter&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#表写入&quot; id=&quot;markdown-toc-表写入&quot;&gt;表写入&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#应用被kill掉working数据未被清理&quot; id=&quot;markdown-toc-应用被kill掉working数据未被清理&quot;&gt;应用被kill掉，working数据未被清理&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#两个应用并发写入一个表&quot; id=&quot;markdown-toc-两个应用并发写入一个表&quot;&gt;两个应用并发写入一个表&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;关于Spark中结果计算，写入，读取的异常&lt;/p&gt;
+
+&lt;h3 id=&quot;前言&quot;&gt;前言&lt;/h3&gt;
+
+&lt;p&gt;Spark是目前主流的分布式计算框架之一，本文谈在使用Spark进行计算时与结果正确性相关的一些issue的场景以及分析。&lt;/p&gt;
+
+&lt;p&gt;计算可以分为三个过程，数据读取，数据计算，数据写入，本文就从这三个部分来阐述可能遇到的问题以及规避方案(如有错误，请指正)。&lt;/p&gt;
+
+&lt;h3 id=&quot;数据读取&quot;&gt;数据读取&lt;/h3&gt;
+
+&lt;p&gt;首先，spark在生产中最常用的使用场景就是spark-sql。在spark-sql中，使用 hive 的metastore进行元数据存储，因此在使用中，往往是spark DataSource表和hive表共存。&lt;/p&gt;
+
+&lt;h4 id=&quot;表类型&quot;&gt;表类型&lt;/h4&gt;
+
+&lt;p&gt;表的类型，可以分为以下几种。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;hive内部表: 表不用指定location，直接存储在数据库对应的目录下，如果进行drop 操作，会将对应的数据删掉。&lt;/li&gt;
+  &lt;li&gt;hive外部表: 对表指定location，数据存在指定的路径下，如果进行drop操作，不会删除对应的数据，这样相对来说会更安全一些，减小一些误操作造成数据丢失的风险。&lt;/li&gt;
+  &lt;li&gt;spark DataSource表: 使用spark DataSource创建的表，都是内部表。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;parquet是一种列式存储格式，在数据库场景中可以在查询时过滤掉不必要的数据，适用于读多写少的场景。&lt;/p&gt;
+
+&lt;p&gt;Spark选择了parquet作为常用的存储格式，因此在生产中，最常见的表就是parquet表。&lt;/p&gt;
+
+&lt;p&gt;parquet是一种存储格式，既然是存储，就会有写入和读取的过程，也就是序列化和反序列化。&lt;/p&gt;
+
+&lt;p&gt;在Spark-sql场景中，有两种parquet 版本，一种是spark内置的parquet，一种是hive内置的parquet版本，往往hive中的parquet版本较老，而spark中的parquet较新，其序列化和反序列化性能更好，但是可能会出现一些不兼容的情况。&lt;/p&gt;
+
+&lt;p&gt;下面谈一下创建spark DataSource表和hive表的方式。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Spark Datasource 表&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;使用Spark DataFrame API进行创建&lt;/li&gt;
+  &lt;li&gt;使用&lt;code class=&quot;highlighter-rouge&quot;&gt;using parquet&lt;/code&gt;的方式创建
+    &lt;ul&gt;
+      &lt;li&gt;例如: `create table ta (id int, name string) using parquet;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;Hive 表&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;使用&lt;code class=&quot;highlighter-rouge&quot;&gt;stored as parquet&lt;/code&gt;进行创建
+    &lt;ul&gt;
+      &lt;li&gt;例如: &lt;code class=&quot;highlighter-rouge&quot;&gt;create table ta(id int, name string) stored as parquet&lt;/code&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;如果想判断一张已经建的表是hive表还是spark DataSource表可以使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;show create table&lt;/code&gt;命令查看信息。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;hive表 可以看到其INPUTFORMAT/OUTPUTFORMAT是 hive开头的。&lt;/p&gt;
+
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;CREATE TABLE `ta`(`id` int, `name` string)
+ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+WITH SERDEPROPERTIES (
+  'serialization.format' = '1'
+)
+STORED AS
+  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
+  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+TBLPROPERTIES (
+  'transient_lastDdlTime' = '1569816513'
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Spark DataSource表&lt;/p&gt;
+    &lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;CREATE TABLE `ta` (`id` INT, `name` STRING)
+USING parquet
+OPTIONS (
+  `serialization.format` '1'
+)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h4 id=&quot;兼容性问题与规避方案&quot;&gt;兼容性问题与规避方案&lt;/h4&gt;
+
+&lt;p&gt;前面通过&lt;code class=&quot;highlighter-rouge&quot;&gt;show create table&lt;/code&gt;命令也看到了，hive表就是使用hive 的parquet序列化方式。而spark由于自带的parquet性能更加卓越，所以在spark中有一个参数，&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.hive.convertMetastoreParquet&lt;/code&gt;, 其默认是true，表示将使用spark内置的parquet的序列化和反序列化去读取使用hive语法创建的hive表，而非使用hive内置的parquet序列化和反序列化。&lt;/p&gt;
+
+&lt;p&gt;所以，有时候就会出现使用spark读取hive表时数据全为null的情况(spark中遇到数据解释不了，或者overflow，默认就是返回null)。&lt;/p&gt;
+
+&lt;p&gt;这时候，可以将&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.hive.convertMetastoreParquet&lt;/code&gt;设为false，来解决这个问题。&lt;/p&gt;
+
+&lt;h3 id=&quot;数据计算&quot;&gt;数据计算&lt;/h3&gt;
+
+&lt;p&gt;关于数据计算，分析一个关于Decimal 计算异常的问题。&lt;/p&gt;
+
+&lt;h4 id=&quot;关于decimal-和decimal计算精度参数&quot;&gt;关于Decimal 和Decimal计算精度参数&lt;/h4&gt;
+
+&lt;p&gt;介绍一下Decimal类型。&lt;/p&gt;
+
+&lt;p&gt;Decimal是数据库中的一种数据类型，不属于浮点数类型，可以在定义时划定整数部分以及小数部分的位数。对于一个Decimal类型，scale表示其小数部分的位数，precision表示整数部分位数和小数部分位数之和。&lt;/p&gt;
+
+&lt;p&gt;一个Decimal 类型表示为Decimal(precision, scale)，在Spark中，precision和scale的上限都是38。&lt;/p&gt;
+
+&lt;p&gt;对于一个double类型，其可以精确的表示小数点后15位，有效位数位16位。而Decimal类型相对于double类型可以更加精确的表示保证数据计算，例如对于一个Decimal(38, 24)类型，其可以精确的表示小数点后23位。&lt;/p&gt;
+
+&lt;p&gt;下面介绍&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.decimalOperations.allowPrecisionLoss&lt;/code&gt;参数。&lt;/p&gt;
+
+&lt;p&gt;当该参数为true(默认)，表示允许丢失精度，会根据Hive行为和SQL ANSI 2011规范来决定result的类型，即如果无法精确的表示，则舍入结果的小数部分。&lt;/p&gt;
+
+&lt;p&gt;当该参数为false时，代表不允许丢失精度，这样会将数据表示的更加精确。&lt;/p&gt;
+
+&lt;h4 id=&quot;场景分析&quot;&gt;场景分析&lt;/h4&gt;
+
+&lt;p&gt;介绍一下这个场景。下面的语句:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;set&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;spark&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;decimalOperations&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;allowPrecisionLoss&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;when&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;then&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123456789012345678901234&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 
+&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;结果为空&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;set&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;spark&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;decimalOperations&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;allowPrecisionLoss&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;when&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;then&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;123456789012345678901234&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; 
+&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;结果是&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;12345678901234568&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;，丢失了部分精度，因为允许丢失精度。&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;我们将上面语句的执行计划打印出来。&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nv&quot;&gt;&quot;== Physical Plan ==
+*(1) Project [null AS (CASE WHEN (1 = 2) THEN CAST(1 AS DECIMAL(34,24)) ELSE CAST(1.123456789012345678901234 AS DECIMAL(34,24)) END * CAST(1 AS DECIMAL(34,24)))#170]
++- Scan OneRowRelation[]&quot;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;执行计划很简单，里面有一个二元操作(乘法)，左边的case when 是一个Decimal(34, 24)类型，右边是一个Literal(1)。&lt;/p&gt;
+
+&lt;p&gt;程序员都知道，在编程中，如果两个不同类型的操作数做计算，会将低级别的类型向高级别的类型进行类型转换，Spark中也是如此。&lt;/p&gt;
+
+&lt;p&gt;一条SQL语句进入Spark-sql引擎之后，要经历Analysis-&amp;gt;optimization-&amp;gt;生成可执行物理计划的过程，而这个过程就是不同的Rule作用在Plan上面不断作用，然后Plan随之转化的过程。&lt;/p&gt;
+
+&lt;p&gt;在Spark sql中有一系列关于类型转换的Rule，这些Rule作用在Analysis阶段的Resolution子阶段。&lt;/p&gt;
+
+&lt;p&gt;我们来看一下其中一条Rule,  &lt;code class=&quot;highlighter-rouge&quot;&gt;ImplicitTypeCasts&lt;/code&gt; 中和BinaryOperator相关的代码。&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/analysis/TypeCoercion.scala
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;BinaryOperator&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;left&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;left&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;dataType&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;dataType&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; 
+  &lt;span class=&quot;nf&quot;&gt;findTightestCommonType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;left&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;dataType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;dataType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commonType&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; 
+    &lt;span class=&quot;nf&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;inputType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;acceptsType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;commonType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; 
+      &lt;span class=&quot;c1&quot;&gt;// If the expression accepts the tightest common type, cast to that. 
+&lt;/span&gt;      &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;newLeft&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;left&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;dataType&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commonType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;left&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Cast&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;left&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commonType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 
+      &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;newRight&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;dataType&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commonType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;right&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Cast&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commonType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 
+      &lt;span class=&quot;nv&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;withNewChildren&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;Seq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;newLeft&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;newRight&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; 
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; 
+      &lt;span class=&quot;c1&quot;&gt;// Otherwise, don't do anything with the expression. 
+&lt;/span&gt;      &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; 
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; 
+ &lt;span class=&quot;o&quot;&gt;}.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getOrElse&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;  &lt;span class=&quot;c1&quot;&gt;// If there is no applicable conversion, leave expression unchanged. 
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;解释一下上面的代码，针对一个BinaryOperator(例如 + - * /), 如果左边的数据类型和右边不一致，那么会寻找一个左右操作数的common type, 然后将左右操作数都转换为common type。针对我们此处case中的 Decimal(34, 24) 和Literal(1), 它们的common type就是Decimal(34, 24),所以这里的Literal(1)将被转换为Decimal(34, 24)。&lt;/p&gt;
+
+&lt;p&gt;这样该二元操作的两边就都是Decimal类型。接下来这个二元操作会被Rule &lt;code class=&quot;highlighter-rouge&quot;&gt;DecimalPrecision&lt;/code&gt;中的decimalAndDecimal方法处理。由于该二元操作是乘法操作，我们看乘法操作部分的代码。&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/analysis/DecimalPrecision.scala
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Multiply&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;DecimalType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;Expression&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;e2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;DecimalType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;Expression&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;resultType&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;SQLConf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;decimalOperationsAllowPrecisionLoss&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;DecimalType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;adjustPrecisionScale&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;nv&quot;&gt;DecimalType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;bounded&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p2&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s1&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;widerType&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;widerDecimalType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;p2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;nc&quot;&gt;CheckOverflow&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;Multiply&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;promotePrecision&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;widerType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;promotePrecision&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;e2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;widerType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;resultType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;此处我们的操作数已经都是Decimal(34, 24)类型，所以p1=p2=34, s1=s2=24.&lt;/p&gt;
+
+&lt;p&gt;如果不允许精度丢失，那么resultType就是 DecimalType.bounded(p1+p2+1, s1+s2), bounded方法代表precision 和 scale都不能超过38，所以这里的ResultType就是Decimal(38, 38), 也就是小数部分为38位，那么整数部分就只剩下0位来表示，也就是说如果整数部分非0，那么这个结果就会overflow。在当前版本中，如果发生Decimal Operation 计算发生了overflow，那么就会返回一个Null的结果。&lt;/p&gt;
+
+&lt;h4 id=&quot;解决方案&quot;&gt;解决方案&lt;/h4&gt;
+
+&lt;p&gt;解决此问题，可以合入PR&lt;a href=&quot;https://github.com/apache/spark/pull/25701&quot;&gt;SPARK-29000&lt;/a&gt;来解决在非Decimal和Decimal之间操作数转化时，精度转换不当的问题，合入  &lt;a href=&quot;https://github.com/apache/spark/pull/20350&quot;&gt;SPARK-23179&lt;/a&gt; 来在Decimal计算overflow时抛出一个异常来提醒用户计算出现问题，让用户感知。&lt;/p&gt;
+
+&lt;p&gt;有兴趣的话，可以查看具体的分析和解决方案描述&lt;a href=&quot;https://www.turbofei.wang/spark/2019/09/09/Spark-SQL-Decimal-Precision-Overflow-Analysis&quot;&gt;Spark Sql Decimal Precision Overflow Analysis&lt;/a&gt;。&lt;/p&gt;
+
+&lt;h3 id=&quot;数据写入&quot;&gt;数据写入&lt;/h3&gt;
+
+&lt;p&gt;分析一下在数据写入时候会发生的异常。&lt;/p&gt;
+
+&lt;h4 id=&quot;场景a&quot;&gt;场景A&lt;/h4&gt;
+
+&lt;p&gt;前面提到了外部表，可以在进行drop操作的时候不删数据。但这可能也会造成一个问题。&lt;/p&gt;
+
+&lt;p&gt;对于一个外部分区表。&lt;/p&gt;
+
+&lt;p&gt;如果我们先drop掉这张表的一个分区，然后再overwrite这个分区，可能会造成数据重复。&lt;/p&gt;
+
+&lt;p&gt;下面是一个可复现的场景。&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;创建外部分区表&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;create&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;external&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partitioned&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stored&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;parquet&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;location&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'file://path'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;一个分区&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;也因此创建了这个分区&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'n1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;drop&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;掉&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;这个分区&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ALTER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DROP&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'n1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;这个分区&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'n1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;通过测试，发现在spark-2.3版本，进行上述操作，最后select这张表，得到的结果如下:&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Id&lt;/th&gt;
+      &lt;th&gt;Name&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;1&lt;/td&gt;
+      &lt;td&gt;n1&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;2&lt;/td&gt;
+      &lt;td&gt;n1&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;这个结果是异常的，正确的结果应该只有一条&lt;code class=&quot;highlighter-rouge&quot;&gt; 2, n1&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;P.S. 在master分支，对hive table做了一些优化，如果将&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.hive.convertMetastoreParquet&lt;/code&gt;设为true是可以得到正确的结果，但是如果将&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.hive.convertMetastoreParquet&lt;/code&gt;设为false，依然会得到上述异常数据。&lt;/p&gt;
+
+&lt;p&gt;暂时规避方案，就是在对外部表做overwrite partition操作前，先不要进行drop partition操作(已提jira，希望可后续解决)。&lt;/p&gt;
+
+&lt;h4 id=&quot;场景b&quot;&gt;场景B&lt;/h4&gt;
+
+&lt;p&gt;此场景发生在对表进行写入操作时候。&lt;/p&gt;
+
+&lt;h5 id=&quot;fileoutputcommitter&quot;&gt;FileOutputCommitter&lt;/h5&gt;
+
+&lt;p&gt;Spark对HDFS的写入实现，依赖于Hadoop 的FileOutputCommitter。&lt;/p&gt;
+
+&lt;p&gt;简单介绍一下FileOutputCommitter。首先其有一个outputPath和一个committer 算法版本，1或者2。&lt;/p&gt;
+
+&lt;p&gt;其会有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;$tablePath/_temporary/number&lt;/code&gt;（对于Spark来说是&lt;code class=&quot;highlighter-rouge&quot;&gt;$tablePath/_temporary/0&lt;/code&gt;）作为一个working 目录(存放中间数据)，task在未完成之前的数据在这个working目录中进行。&lt;/p&gt;
+
+&lt;p&gt;如果committer算法版本为1，task完成之后会首先commit到一个 task_attempt_output目录(在_temporary/0下面)，在所有task完成之后会将所有task_attempt_output 下面的数据commit到outputPath中，这是一个二阶段提交。&lt;/p&gt;
+
+&lt;p&gt;而如果committer算法版本为2，那么task完成之后会直接commit到最终目录里，这是一个非二阶段提交，所以会产生应用失败，但是部分数据写入的问题，但是由于其实一次写入到最终目录，所以性能较版本1要好。&lt;/p&gt;
+
+&lt;p&gt;目前Spark默认的commit算法版本是1.&lt;/p&gt;
+
+&lt;h5 id=&quot;表写入&quot;&gt;表写入&lt;/h5&gt;
+
+&lt;p&gt;表按照是否有分区来划分，可以分为分区表和非分区表。&lt;/p&gt;
+
+&lt;p&gt;针对非分区表，spark在进行写入时候的working目录都是 &lt;code class=&quot;highlighter-rouge&quot;&gt;$tablePath/_temporary/0&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;针对分区表，spark在写入时候会判断这个写入操作是否是dynamicPartitionOverwrite。如果是，则其working目录是&lt;code class=&quot;highlighter-rouge&quot;&gt;$tablePath/.spark-staging-${UUID}&lt;/code&gt;,也就是不会重复的，每次都独一无二的。如果不是，则其working目录还是&lt;code class=&quot;highlighter-rouge&quot;&gt;$tablePath/_temporary/0&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;介绍一下dynamicPartitionOverwrite。对分区表分区进行overwrite分为static 和dynamic两种类型。&lt;/p&gt;
+
+&lt;p&gt;首先有一个参数控制是否允许dynamicPartitionOverwrite，&lt;/p&gt;
+
+&lt;p&gt;在Spark中其参数为&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.sources.partitionOverwriteMode&lt;/code&gt;(hive中也有对应的参数),默认为&lt;code class=&quot;highlighter-rouge&quot;&gt;static&lt;/code&gt;，代表不允许进行dynamicPartitionOverwrite，如果设为&lt;code class=&quot;highlighter-rouge&quot;&gt;dynamic&lt;/code&gt;代表允许dynamicPartitionOverwrite。&lt;/p&gt;
+
+&lt;p&gt;针对一个分区表，比如tablea, 其中 p1, p2… pn, n个partition key。&lt;/p&gt;
+
+&lt;p&gt;dynamic 的partition overwrite代表，如果在写入操作时，没有完全的指定这些partition key对应的值。&lt;/p&gt;
+
+&lt;p&gt;比如下面的这个查询:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tablea&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,...,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;而如果你完全指定了所有的partition key的值，即使你允许进行dynamic partition overwrite，依然是进行static的partition overwrite，因为一切都是确定的。&lt;/p&gt;
+
+&lt;p&gt;针对上面的语句，&lt;/p&gt;
+
+&lt;p&gt;如果是static的overwrite，其会首先删掉 表下面的 &lt;code class=&quot;highlighter-rouge&quot;&gt;p1=v1/p2=v2&lt;/code&gt;分区(会删掉下面所有的p3子分区)，然后在数据计算完之后，将数据写入。&lt;/p&gt;
+
+&lt;p&gt;如果是dynamic的overwrite，其不会首先删掉表下面的 &lt;code class=&quot;highlighter-rouge&quot;&gt;p1=v1/p2=v2&lt;/code&gt;分区，而是会根据计算的结果去判断，我应该删掉哪些子分区。&lt;/p&gt;
+
+&lt;p&gt;比如说在进行overwrite之前, &lt;code class=&quot;highlighter-rouge&quot;&gt;p1=v1/p2=v2&lt;/code&gt;下面有 &lt;code class=&quot;highlighter-rouge&quot;&gt;p3=v31&lt;/code&gt; 和&lt;code class=&quot;highlighter-rouge&quot;&gt;p3=v32&lt;/code&gt;两个子分区，而实际&lt;code class=&quot;highlighter-rouge&quot;&gt;select ...&lt;/code&gt;语句产生的结果只有&lt;code class=&quot;highlighter-rouge&quot;&gt;p3=v31&lt;/code&gt;的结果。&lt;/p&gt;
+
+&lt;p&gt;如果是static overwrite，会先把&lt;code class=&quot;highlighter-rouge&quot;&gt;p3=v31&lt;/code&gt; 和&lt;code class=&quot;highlighter-rouge&quot;&gt;p3=v32&lt;/code&gt;两个子分区都删掉，而dynamic overwrite，只会在最后根据计算结果只overwrite &lt;code class=&quot;highlighter-rouge&quot;&gt;p3=v31&lt;/code&gt;这个分区。&lt;/p&gt;
+
+&lt;p&gt;关于表的写入背景知识介绍到这里，下面介绍具体场景。&lt;/p&gt;
+
+&lt;h5 id=&quot;应用被kill掉working数据未被清理&quot;&gt;应用被kill掉，working数据未被清理&lt;/h5&gt;
+
+&lt;p&gt;如果应用appA 是对tableA一个static partition overwrite，其由于某个task hang住，然后被kill掉，所以其working目录($tableA/_temporary/0)没有被清理掉.&lt;/p&gt;
+
+&lt;p&gt;而我们在其被kill掉之后，又重新跑这个应用，新的应用继续使用&lt;code class=&quot;highlighter-rouge&quot;&gt;$tableA/_temporary/0&lt;/code&gt;作为working目录，之后新应用运行成功，但是提交时候将上次遗留的一些task的数据提交到最终目录，造成数据重复。&lt;/p&gt;
+
+&lt;p&gt;针对这个场景，暂时解决方案，我们需要在应用被kill之后，手动清理&lt;code class=&quot;highlighter-rouge&quot;&gt;_temporary/0&lt;/code&gt;.&lt;/p&gt;
+
+&lt;h5 id=&quot;两个应用并发写入一个表&quot;&gt;两个应用并发写入一个表&lt;/h5&gt;
+
+&lt;p&gt;如果在kill应用的时候，resourceManager发生了异常，造成了我们以为应用已经被kill掉，然后我们又重新提交了一样的应用去写数据。两个应用会共用&lt;code class=&quot;highlighter-rouge&quot;&gt;_temporary/0&lt;/code&gt;,互相干扰，可能造成结果异常。&lt;/p&gt;
+
+&lt;p&gt;针对这个场景，我们可能不容易察觉。&lt;/p&gt;
+
+&lt;p&gt;其实针对dynamicPartitionOverwrite写入一张表在进行并发的时候也会产生问题。&lt;/p&gt;
+
+&lt;p&gt;关于该问题长期解决方案，PR &lt;a href=&quot;https://issues.apache.org/jira/browse/SPARK-29037&quot;&gt;SPARK-29037&lt;/a&gt; 正在致力于解决这个问题，希望可以解决数据重复以及在多个操作并发写入一张表可能造成干扰的问题。&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Spark Sql Decimal Precision Overflow Analysis</title>
