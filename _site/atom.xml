@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-09-30T14:36:47+08:00</updated>
+ <updated>2019-09-30T14:50:26+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -44,7 +44,7 @@
     &lt;/ul&gt;
   &lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;关于Spark中结果计算，写入，读取的异常&lt;/p&gt;
+&lt;p&gt;关于Spark中读取，计算和写入造成结果异常的场景分析&lt;/p&gt;
 
 &lt;h3 id=&quot;前言&quot;&gt;前言&lt;/h3&gt;
 
