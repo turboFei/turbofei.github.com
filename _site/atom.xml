@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-09-30T17:25:18+08:00</updated>
+ <updated>2019-09-30T18:00:42+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -292,7 +292,7 @@ OPTIONS (
 
 &lt;p&gt;如果committer算法版本为1，task完成之后会首先commit到一个 task_attempt_output目录(在_temporary/0下面)，在所有task完成之后会将所有task_attempt_output 下面的数据commit到outputPath中，这是一个二阶段提交。&lt;/p&gt;
 
-&lt;p&gt;而如果committer算法版本为2，那么task完成之后会直接commit到最终目录里，这是一个非二阶段提交，所以会产生应用失败，但是部分数据写入的问题，但是由于其实一次写入到最终目录，所以性能较版本1要好。&lt;/p&gt;
+&lt;p&gt;而如果committer算法版本为2，那么task完成之后会直接commit到最终目录里，这是一个非二阶段提交，所以会产生应用失败，但是部分数据写入的问题，但是由于其是一次写入到最终目录，所以性能较版本1要好。&lt;/p&gt;
 
 &lt;p&gt;目前Spark默认的commit算法版本是1.&lt;/p&gt;
 
