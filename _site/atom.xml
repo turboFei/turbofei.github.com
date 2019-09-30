@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-09-30T14:50:26+08:00</updated>
+ <updated>2019-09-30T17:03:05+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -274,6 +274,8 @@ OPTIONS (
 
 &lt;p&gt;P.S. 在master分支，对hive table做了一些优化，如果将&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.hive.convertMetastoreParquet&lt;/code&gt;设为true是可以得到正确的结果，但是如果将&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.hive.convertMetastoreParquet&lt;/code&gt;设为false，依然会得到上述异常数据。&lt;/p&gt;
 
+&lt;p&gt;其实这是Hive的一个bug，相关patch为 &lt;a href=&quot;https://issues.apache.org/jira/browse/HIVE-17063.&quot;&gt;HIVE-17063&lt;/a&gt;&lt;/p&gt;
+
 &lt;p&gt;暂时规避方案，就是在对外部表做overwrite partition操作前，先不要进行drop partition操作(已提jira，希望可后续解决)。&lt;/p&gt;
 
 &lt;h4 id=&quot;场景b&quot;&gt;场景B&lt;/h4&gt;
@@ -304,22 +306,16 @@ OPTIONS (
 
 &lt;p&gt;介绍一下dynamicPartitionOverwrite。对分区表分区进行overwrite分为static 和dynamic两种类型。&lt;/p&gt;
 
-&lt;p&gt;首先有一个参数控制是否允许dynamicPartitionOverwrite，&lt;/p&gt;
+&lt;p&gt;在Spark中相关参数为&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.sources.partitionOverwriteMode&lt;/code&gt;(hive中也有对应的参数),默认为&lt;code class=&quot;highlighter-rouge&quot;&gt;static&lt;/code&gt;，代表不允许进行dynamicPartitionOverwrite，如果设为&lt;code class=&quot;highlighter-rouge&quot;&gt;dynamic&lt;/code&gt;代表允许dynamicPartitionOverwrite。&lt;/p&gt;
 
-&lt;p&gt;在Spark中其参数为&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.sources.partitionOverwriteMode&lt;/code&gt;(hive中也有对应的参数),默认为&lt;code class=&quot;highlighter-rouge&quot;&gt;static&lt;/code&gt;，代表不允许进行dynamicPartitionOverwrite，如果设为&lt;code class=&quot;highlighter-rouge&quot;&gt;dynamic&lt;/code&gt;代表允许dynamicPartitionOverwrite。&lt;/p&gt;
+&lt;p&gt;dynamic代表你不必指定所有partition key的值，由spark来根据结果，确定你要overwrite哪些partition，因此其在数据计算完成之前，不会去删表中的分区。&lt;/p&gt;
 
-&lt;p&gt;针对一个分区表，比如tablea, 其中 p1, p2… pn, n个partition key。&lt;/p&gt;
-
-&lt;p&gt;dynamic 的partition overwrite代表，如果在写入操作时，没有完全的指定这些partition key对应的值。&lt;/p&gt;
+&lt;p&gt;而static代表，你必须指定你要overwrite哪些分区，所以需要被overwrite的分区是可确定的，因此会在操作开始的时候就把对应的分区删除掉。&lt;/p&gt;
 
 &lt;p&gt;比如下面的这个查询:&lt;/p&gt;
 
 &lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tablea&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,...,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;pn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;而如果你完全指定了所有的partition key的值，即使你允许进行dynamic partition overwrite，依然是进行static的partition overwrite，因为一切都是确定的。&lt;/p&gt;
-
-&lt;p&gt;针对上面的语句，&lt;/p&gt;
 
 &lt;p&gt;如果是static的overwrite，其会首先删掉 表下面的 &lt;code class=&quot;highlighter-rouge&quot;&gt;p1=v1/p2=v2&lt;/code&gt;分区(会删掉下面所有的p3子分区)，然后在数据计算完之后，将数据写入。&lt;/p&gt;
 
