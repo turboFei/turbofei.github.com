@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2019-09-30T17:03:05+08:00</lastBuildDate>
-        <pubDate>2019-09-30T17:03:05+08:00</pubDate>
+        <lastBuildDate>2019-09-30T17:16:48+08:00</lastBuildDate>
+        <pubDate>2019-09-30T17:16:48+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -267,7 +267,7 @@ OPTIONS (
 
 &lt;p&gt;这个结果是异常的，正确的结果应该只有一条&lt;code class=&quot;highlighter-rouge&quot;&gt; 2, n1&lt;/code&gt;.&lt;/p&gt;
 
-&lt;p&gt;P.S. 在master分支，对hive table做了一些优化，如果将&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.hive.convertMetastoreParquet&lt;/code&gt;设为true是可以得到正确的结果，但是如果将&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.hive.convertMetastoreParquet&lt;/code&gt;设为false，依然会得到上述异常数据。&lt;/p&gt;
+&lt;p&gt;P.S. 在master分支，对hive table做了一些优化，如果将&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.hive.convertMetastoreParquet&lt;/code&gt;设为true(此时会将InsertIntoHiveTable的操作转换为使用Spark DataSource的写入)是可以得到正确的结果，但是如果将&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.hive.convertMetastoreParquet&lt;/code&gt;设为false，依然会得到上述异常数据。&lt;/p&gt;
 
 &lt;p&gt;其实这是Hive的一个bug，相关patch为 &lt;a href=&quot;https://issues.apache.org/jira/browse/HIVE-17063.&quot;&gt;HIVE-17063&lt;/a&gt;&lt;/p&gt;
 
@@ -336,7 +336,7 @@ OPTIONS (
 
 &lt;p&gt;针对这个场景，我们可能不容易察觉。&lt;/p&gt;
 
-&lt;p&gt;其实针对dynamicPartitionOverwrite写入一张表在进行并发的时候也会产生问题。&lt;/p&gt;
+&lt;p&gt;其实即使是dynamic partition overwrite 会用独一无二的working目录，其在多个操作并发写入同一张表时，仍然可能会发生干扰冲突。&lt;/p&gt;
 
 &lt;p&gt;关于该问题长期解决方案，PR &lt;a href=&quot;https://issues.apache.org/jira/browse/SPARK-29037&quot;&gt;SPARK-29037&lt;/a&gt; 正在致力于解决这个问题，希望可以解决数据重复以及在多个操作并发写入一张表可能造成干扰的问题。&lt;/p&gt;
 </description>
