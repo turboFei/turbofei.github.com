@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2019-09-30T18:18:58+08:00</lastBuildDate>
-        <pubDate>2019-09-30T18:18:58+08:00</pubDate>
+        <lastBuildDate>2019-10-01T08:53:38+08:00</lastBuildDate>
+        <pubDate>2019-10-01T08:53:38+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -275,7 +275,7 @@ OPTIONS (
 
 &lt;h4 id=&quot;场景b&quot;&gt;场景B&lt;/h4&gt;
 
-&lt;p&gt;此场景发生在对表进行写入操作时候。&lt;/p&gt;
+&lt;p&gt;此场景发生在使用Spark file source方式对表进行写入(InsertIntoHadoopFsRelation)操作时候。&lt;/p&gt;
 
 &lt;h5 id=&quot;fileoutputcommitter&quot;&gt;FileOutputCommitter&lt;/h5&gt;
 
@@ -339,7 +339,6 @@ OPTIONS (
 &lt;p&gt;其实即使是dynamic partition overwrite 会用独一无二的working目录，其在多个操作并发写入同一张表时，仍然可能会发生干扰冲突。&lt;/p&gt;
 
 &lt;p&gt;关于场景B中问题的长期解决方案，PR &lt;a href=&quot;https://github.com/apache/spark/pull/25863&quot;&gt;SPARK-29037&lt;/a&gt; 正在致力于解决这个问题，希望可以解决数据重复以及在多个操作并发写入一张表可能造成干扰的问题。&lt;/p&gt;
-
 </description>
                 <link>http://www.turbofei.wang/spark/2019/09/30/%E5%85%B3%E4%BA%8ESpark%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E5%BC%82%E5%B8%B8%E7%9A%84%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90</link>
                 <guid>http://www.turbofei.wang/spark/2019/09/30/关于Spark数据计算结果异常的场景分析</guid>
