@@ -11,14 +11,6 @@
 	
     
 	{
-		"title" : "Spark Sql Decimal Precision Overflow Analysis - spark_sql",
-		"url" : "/spark/2019/09/09/Spark-SQL-Decimal-Precision-Overflow-Analysis"
-	}
-	
-	,
-	
-    
-	{
 		"title" : "Spark Blacklist Mechanism Introduction - spark_scheduler",
 		"url" : "/spark/2019/08/30/Spark-Blacklist-Mechanism-Introduction"
 	}

@@ -15,7 +15,6 @@ http://www.turbofei.wang/sitemap.txt
 http://www.turbofei.wang/tags
 
 http://www.turbofei.wang/spark/2019/09/30/%E5%85%B3%E4%BA%8ESpark%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E5%BC%82%E5%B8%B8%E7%9A%84%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90
-http://www.turbofei.wang/spark/2019/09/09/Spark-SQL-Decimal-Precision-Overflow-Analysis
 http://www.turbofei.wang/spark/2019/08/30/Spark-Blacklist-Mechanism-Introduction
 http://www.turbofei.wang/bigdata/2019/08/16/Linux-Ops-Commands
 http://www.turbofei.wang/spark/2019/07/06/spark-catalyst-%E6%B7%BB%E5%8A%A0%E8%87%AA%E5%B7%B1%E7%9A%84%E8%A7%84%E5%88%99
