@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-10-29T21:43:36+08:00</updated>
+ <updated>2019-10-29T23:32:02+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -141,6 +141,8 @@
 &lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
+&lt;p&gt;此处更改有问题，正在想合理的替换方案，sql水好深，org.&lt;/p&gt;
+
 &lt;h3 id=&quot;结论&quot;&gt;结论&lt;/h3&gt;
 
 &lt;p&gt;Spark在进行一个 non-equal key join条件(可能join 条件为空，也可能非空但是不是key equal)，一定会有BroadcastJoin，即使是两个超大的表也会，这样可能会导致三种结果。&lt;/p&gt;
@@ -239,6 +241,12 @@ SortMergeJoin &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175], &lt;span cl
 +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Sort &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;c1#179 ASC NULLS FIRST], &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;, 0
    +- Exchange hashpartitioning&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;c1#179, 5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
       +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;4&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; FileScan parquet default.tc[c1#179,c2#180] Batched: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tc], PartitionFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, PushedFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, ReadSchema: struct&amp;lt;c1:int,c2:int&amp;gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;就比如说之前是  a left join b left join c on a.a1=b.b1 and b.b2=c.c1;  产生的结果是 a的key非空，而b 和c的key可以是空。
+
+而 (a left join b ) left join c 产生的结果是 a 的key是非空， 
 
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 

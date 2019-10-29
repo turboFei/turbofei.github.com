@@ -134,6 +134,8 @@ on
 d.b2=c.c1;
 ```
 
+此处更改有问题，正在想合理的替换方案，sql水好深，org.
+
 ### 结论
 
 Spark在进行一个 non-equal key join条件(可能join 条件为空，也可能非空但是不是key equal)，一定会有BroadcastJoin，即使是两个超大的表也会，这样可能会导致三种结果。
@@ -236,6 +238,19 @@ SortMergeJoin [a1#175], [c1#179], LeftOuter
 +- *(5) Sort [c1#179 ASC NULLS FIRST], false, 0
    +- Exchange hashpartitioning(c1#179, 5)
       +- *(4) FileScan parquet default.tc[c1#179,c2#180] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tc], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<c1:int,c2:int>
+
+```
+
+
+
+
+
+
+
+```
+就比如说之前是  a left join b left join c on a.a1=b.b1 and b.b2=c.c1;  产生的结果是 a的key非空，而b 和c的key可以是空。
+
+而 (a left join b ) left join c 产生的结果是 a 的key是非空， 
 
 ```
 
