@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-10-29T21:35:33+08:00</updated>
+ <updated>2019-10-29T21:43:36+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -26,6 +26,7 @@
   &lt;li&gt;&lt;a href=&quot;#问题描述&quot; id=&quot;markdown-toc-问题描述&quot;&gt;问题描述&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#问题排查&quot; id=&quot;markdown-toc-问题排查&quot;&gt;问题排查&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#解决方案&quot; id=&quot;markdown-toc-解决方案&quot;&gt;解决方案&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#结论&quot; id=&quot;markdown-toc-结论&quot;&gt;结论&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#附录&quot; id=&quot;markdown-toc-附录&quot;&gt;附录&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;Spark中有三种Join, BroadcastJoin, ShuffleHashJoin, SortMergeJoin。而BroadcastJoin通常认为是一种较为轻量的Join，因为其不走shuffle，本文描述一个与BroadcastJoin相关比较诡异的Issue。&lt;/p&gt;
@@ -139,6 +140,18 @@
 &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt;
 &lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;结论&quot;&gt;结论&lt;/h3&gt;
+
+&lt;p&gt;Spark在进行一个 non-equal key join条件(可能join 条件为空，也可能非空但是不是key equal)，一定会有BroadcastJoin，即使是两个超大的表也会，这样可能会导致三种结果。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;大表被Broadcast十分缓慢。&lt;/li&gt;
+  &lt;li&gt;由于BroadcastJoin要将数据拉取到driver，可能造成driver的OOM。&lt;/li&gt;
+  &lt;li&gt;即使不会造成OOM，大表也可能造成hard code的Broadcast 条数限制，导致无法执行。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;因此我们在使用left/right join，特别是表比较大的时候，已经要设置合适的join-key, 避免以上情况的发生。&lt;/p&gt;
 
 &lt;h3 id=&quot;附录&quot;&gt;附录&lt;/h3&gt;
 

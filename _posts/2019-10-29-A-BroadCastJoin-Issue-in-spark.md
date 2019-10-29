@@ -134,6 +134,16 @@ on
 d.b2=c.c1;
 ```
 
+### 结论
+
+Spark在进行一个 non-equal key join条件(可能join 条件为空，也可能非空但是不是key equal)，一定会有BroadcastJoin，即使是两个超大的表也会，这样可能会导致三种结果。
+
+- 大表被Broadcast十分缓慢。
+- 由于BroadcastJoin要将数据拉取到driver，可能造成driver的OOM。
+- 即使不会造成OOM，大表也可能造成hard code的Broadcast 条数限制，导致无法执行。
+
+因此我们在使用left/right join，特别是表比较大的时候，已经要设置合适的join-key, 避免以上情况的发生。
+
 
 
 ### 附录
