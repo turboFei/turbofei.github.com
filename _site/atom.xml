@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-10-29T21:30:08+08:00</updated>
+ <updated>2019-10-29T21:35:33+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -36,7 +36,7 @@
 
 &lt;ul&gt;
   &lt;li&gt;BroadcastJoin: 适用于一个极小表和一个大表的Join，其会把极小表由driver给各个executor，而不会触发Shuffle，而shuffle往往是任务的瓶颈所在，因此通常Broadcast被认为是一种十分轻量的Join。&lt;/li&gt;
-  &lt;li&gt;ShuffleHashJoin:适用于一个小表和一个大表进行Join，会触发Join。&lt;/li&gt;
+  &lt;li&gt;ShuffleHashJoin:适用于一个小表和一个大表进行Join，会触发shuffle。&lt;/li&gt;
   &lt;li&gt;SortMergeJoin：适用于两个大表进行Join，其首先会对两个表的数据进行划分partition排序，然后把相应的分区进行发送到task端进行merge执行，因此称之为SortMergeJoin。&lt;/li&gt;
 &lt;/ul&gt;
 

@@ -17,7 +17,7 @@ tags: [spark,sql]
 在Spark中，根据Join的物理执行方式来划分种类，可以分为以下三种。
 
 - BroadcastJoin: 适用于一个极小表和一个大表的Join，其会把极小表由driver给各个executor，而不会触发Shuffle，而shuffle往往是任务的瓶颈所在，因此通常Broadcast被认为是一种十分轻量的Join。
-- ShuffleHashJoin:适用于一个小表和一个大表进行Join，会触发Join。
+- ShuffleHashJoin:适用于一个小表和一个大表进行Join，会触发shuffle。
 - SortMergeJoin：适用于两个大表进行Join，其首先会对两个表的数据进行划分partition排序，然后把相应的分区进行发送到task端进行merge执行，因此称之为SortMergeJoin。
 
 本文讲一个和BroadcastJoin相关的比较诡异的issue。
