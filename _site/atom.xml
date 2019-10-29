@@ -4,13 +4,233 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-10-04T00:13:43+08:00</updated>
+ <updated>2019-10-29T21:30:08+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
    <email>turbofei@foxmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>A Broadcastjoin Issue In Spark</title>
+   <link href="http://www.turbofei.wang/spark/2019/10/29/A-BroadCastJoin-Issue-in-spark"/>
+   <updated>2019-10-29T00:00:00+08:00</updated>
+   <id>http://www.turbofei.wang/spark/2019/10/29/A-BroadCastJoin-Issue-in-spark</id>
+   <content type="html">
+&lt;p&gt;目录&lt;/p&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#前言&quot; id=&quot;markdown-toc-前言&quot;&gt;前言&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#broadcastjoin&quot; id=&quot;markdown-toc-broadcastjoin&quot;&gt;BroadcastJoin&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#问题描述&quot; id=&quot;markdown-toc-问题描述&quot;&gt;问题描述&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#问题排查&quot; id=&quot;markdown-toc-问题排查&quot;&gt;问题排查&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#解决方案&quot; id=&quot;markdown-toc-解决方案&quot;&gt;解决方案&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#附录&quot; id=&quot;markdown-toc-附录&quot;&gt;附录&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Spark中有三种Join, BroadcastJoin, ShuffleHashJoin, SortMergeJoin。而BroadcastJoin通常认为是一种较为轻量的Join，因为其不走shuffle，本文描述一个与BroadcastJoin相关比较诡异的Issue。&lt;/p&gt;
+
+&lt;h3 id=&quot;前言&quot;&gt;前言&lt;/h3&gt;
+
+&lt;p&gt;在Spark中，根据Join的物理执行方式来划分种类，可以分为以下三种。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;BroadcastJoin: 适用于一个极小表和一个大表的Join，其会把极小表由driver给各个executor，而不会触发Shuffle，而shuffle往往是任务的瓶颈所在，因此通常Broadcast被认为是一种十分轻量的Join。&lt;/li&gt;
+  &lt;li&gt;ShuffleHashJoin:适用于一个小表和一个大表进行Join，会触发Join。&lt;/li&gt;
+  &lt;li&gt;SortMergeJoin：适用于两个大表进行Join，其首先会对两个表的数据进行划分partition排序，然后把相应的分区进行发送到task端进行merge执行，因此称之为SortMergeJoin。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;本文讲一个和BroadcastJoin相关的比较诡异的issue。&lt;/p&gt;
+
+&lt;h3 id=&quot;broadcastjoin&quot;&gt;BroadcastJoin&lt;/h3&gt;
+&lt;p&gt;前面提到BroadcastJoin是在一个极小表和一个大表进行Join时候选择的join方式，由于BroadcastJoin不需要进行shuffle，所以大家比较喜欢这种Join方式。但是由于Broadcast是需要将数据拉取到driver然后分发到各个executor，因此driver内存是一个瓶颈。前面也提到是极小表，那么是多小的表才会使用这种Join呢？&lt;/p&gt;
+
+&lt;p&gt;Spark中有一个参数称之为&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.autoBroadcastJoinThreshold&lt;/code&gt;, 其代表当这个表在磁盘上size小于这个值时，会使用BroadcastJoin，而如果我们将其设为-1，代表disable BroadcastJoin（官方文档的解释)。&lt;/p&gt;
+
+&lt;p&gt;除了该threshold之外，Broadcast还有一个限制，就是广播的表的行数不能超过512 milions行，也就是5亿多行，这个值是hard code的。也就是说即使表的磁盘物理size小于threshold，条数超过这个行数也不能进行BroadcastJoin。&lt;/p&gt;
+
+&lt;h3 id=&quot;问题描述&quot;&gt;问题描述&lt;/h3&gt;
+
+&lt;p&gt;有一天我们遇到的一个Issue。其异常信息如下:&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Caused by: org.apache.spark.SparkException: Cannot broadcast the table with more than 512 millions rows: 620880056 rows
+	at org.apache.spark.sql.execution.exchange.BroadcastExchangeExec&lt;span class=&quot;nv&quot;&gt;$$&lt;/span&gt;anonfun&lt;span class=&quot;nv&quot;&gt;$relationFuture$1$$&lt;/span&gt;anonfun&lt;span class=&quot;nv&quot;&gt;$apply$1&lt;/span&gt;.apply&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;BroadcastExchangeExec.scala:78&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+	at org.apache.spark.sql.execution.exchange.BroadcastExchangeExec&lt;span class=&quot;nv&quot;&gt;$$&lt;/span&gt;anonfun&lt;span class=&quot;nv&quot;&gt;$relationFuture$1$$&lt;/span&gt;anonfun&lt;span class=&quot;nv&quot;&gt;$apply$1&lt;/span&gt;.apply&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;BroadcastExchangeExec.scala:73&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+	at org.apache.spark.sql.execution.SQLExecution&lt;span class=&quot;nv&quot;&gt;$.&lt;/span&gt;withExecutionId&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;SQLExecution.scala:97&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+	at org.apache.spark.sql.execution.exchange.BroadcastExchangeExec&lt;span class=&quot;nv&quot;&gt;$$&lt;/span&gt;anonfun&lt;span class=&quot;nv&quot;&gt;$relationFuture$1&lt;/span&gt;.apply&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;BroadcastExchangeExec.scala:72&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+	at org.apache.spark.sql.execution.exchange.BroadcastExchangeExec&lt;span class=&quot;nv&quot;&gt;$$&lt;/span&gt;anonfun&lt;span class=&quot;nv&quot;&gt;$relationFuture$1&lt;/span&gt;.apply&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;BroadcastExchangeExec.scala:72&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+	at scala.concurrent.impl.Future&lt;span class=&quot;nv&quot;&gt;$PromiseCompletingRunnable&lt;/span&gt;.liftedTree1&lt;span class=&quot;nv&quot;&gt;$1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;Future.scala:24&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+	at scala.concurrent.impl.Future&lt;span class=&quot;nv&quot;&gt;$PromiseCompletingRunnable&lt;/span&gt;.run&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;Future.scala:24&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+	at java.util.concurrent.ThreadPoolExecutor.runWorker&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;ThreadPoolExecutor.java:1142&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+	at java.util.concurrent.ThreadPoolExecutor&lt;span class=&quot;nv&quot;&gt;$Worker&lt;/span&gt;.run&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;ThreadPoolExecutor.java:617&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+	at java.lang.Thread.run&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;Thread.java:745&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;看到这个异常的第一反应就是去查询&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.autoBroadcastJoinThreshold&lt;/code&gt;的值，然后查到的结果100m。当时的想法是，为什么这个表在磁盘上不到100m大小，而其有6亿行数据，难道是列数十分少，并且压缩的特别的严重，不像是生产环境中的表。&lt;/p&gt;
+
+&lt;p&gt;当时没有产生其他怀疑，就建议用户将&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.autoBroadcastJoinThreshold&lt;/code&gt;设置为-1，禁用掉BroadcastJoin。&lt;/p&gt;
+
+&lt;p&gt;过了段时间，用户回复说设置了之后仍然报上面的异常。当时确认了线上的参数设置的确是-1.&lt;/p&gt;
+
+&lt;p&gt;用户的sql语句格式为:&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;from&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;left&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;left&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;c&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;on&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;问题排查&quot;&gt;问题排查&lt;/h3&gt;
+
+&lt;p&gt;首先，就是自己把用户的sql语句拿过来，使用 &lt;code class=&quot;highlighter-rouge&quot;&gt;setspark.sql.autoBroadcastJoinThreshold=-1&lt;/code&gt; 命令设置参数，使用&lt;code class=&quot;highlighter-rouge&quot;&gt;explain&lt;/code&gt;命令进行查询执行计划。&lt;/p&gt;
+
+&lt;p&gt;发现执行计划中有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;BroadcastNestedLoopJoin&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;然后去查看源码。发现其只有在&lt;code class=&quot;highlighter-rouge&quot;&gt;JoinSelection&lt;/code&gt;这个将执行计划转换为物理执行计划的规则&lt;code class=&quot;highlighter-rouge&quot;&gt;apply&lt;/code&gt;的时候才进行调用。&lt;/p&gt;
+
+&lt;p&gt;这个规则就是选择使用Join的方式，优先BroadcastJoin，其次ShuffleHashJoin，最次SortMergeJoin。&lt;/p&gt;
+
+&lt;p&gt;通过查看其apply方法.&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;apply&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plan&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;LogicalPlan&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Seq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;SparkPlan&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;plan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;match&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;ExtractEquiJoinKeys&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;joinType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;leftKeys&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rightKeys&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;condition&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;left&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+	&lt;span class=&quot;c1&quot;&gt;//省略若干关于决策BroadCastJoin, ShuffleHashJoin以及SortMergeJoin的代码
+&lt;/span&gt;  
+  &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;j&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;@&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;logical&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;Join&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;left&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;joinType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;condition&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;c1&quot;&gt;// 此处省略若干决策最优buildSide或根据BroadcastJoin Hint以及不得不选择一个buildSide的代码
+&lt;/span&gt;  &lt;span class=&quot;o&quot;&gt;...&lt;/span&gt;  
+  &lt;span class=&quot;nv&quot;&gt;joins&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;BroadcastNestedLoopJoinExec&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;nf&quot;&gt;planLater&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;left&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;planLater&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;buildSide&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;joinType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;condition&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Nil&lt;/span&gt;
+
+   &lt;span class=&quot;c1&quot;&gt;// 省略CrossJoin,即笛卡尔积
+&lt;/span&gt;	 &lt;span class=&quot;o&quot;&gt;...&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Nil&lt;/span&gt;
+&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;发现这个&lt;code class=&quot;highlighter-rouge&quot;&gt;BroadcastNestedLoopJoinExec&lt;/code&gt;只有在不能提取出equal的join key 的left/right Join 时才会调用，而且是一定会调用。&lt;/p&gt;
+
+&lt;p&gt;什么是equal Join key的Join。举个例子.&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;left&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;那么非equal 的left/right Join， 举个例子。&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;left&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;left&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;解决方案&quot;&gt;解决方案&lt;/h3&gt;
+
+&lt;p&gt;因此，问题就是用户在使用进行join时，表a 和表b的join key是空的，所以一定会调用&lt;code class=&quot;highlighter-rouge&quot;&gt;BroadcastNestedLoopJoinExec&lt;/code&gt;,即使我们将BroadcastJoinThreshold设为-1.&lt;/p&gt;
+
+&lt;p&gt;所以解决方案就是更改用户的sql语句，更改为(此处不考虑列名冲突，如冲突，请用alias).&lt;/p&gt;
+
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; 
+  &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;left&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;left&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;c&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;on&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;附录&quot;&gt;附录&lt;/h3&gt;
+
+&lt;p&gt;在附录中提供一个Unit test 以及对应的explain.&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &lt;span class=&quot;nf&quot;&gt;test&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;test brodacast join&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;nf&quot;&gt;withSQLConf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;spark.sql.crossJoin.enabled&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;true&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+        &lt;span class=&quot;s&quot;&gt;&quot;spark.sql.autoBroadcastJoinThreshold&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;-1&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;nf&quot;&gt;withTable&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;ta&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;tb&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;tc&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+          &lt;span class=&quot;nf&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;create table ta(a1 int, a2 int) using parquet&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;nf&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;create table tb(b1 int, b2 int) using parquet&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+          &lt;span class=&quot;nf&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;create table tc(c1 int, c2 int) using parquet&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+          &lt;span class=&quot;nf&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;select * from (&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;select a1 from ta where a1 &amp;lt;&amp;gt;'123')as a &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;left join tb as b &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;left join tc as c &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;on a.a1=b.b1 and a.a1=c.c1&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;explain&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+          &lt;span class=&quot;nf&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Select * from (select * from (&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;select a1 from ta where a1 &amp;lt;&amp;gt;'123')as a &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;left join tb as b on a.a1 = b.b1) as d &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;left join tc as c &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;on d.a1=c.c1&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;explain&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+          &lt;span class=&quot;nf&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Select * from (select * from (&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;select a1 from ta where a1 &amp;lt;&amp;gt;'123')as a &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;left join tb as b on a.a1 != b.b1) as d &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;left join tc as c &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;s&quot;&gt;&quot;on d.a1=c.c1&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;explain&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kc&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;第一条select语句的执行计划如下，由于其a 与b的 joinKey为空，所以其包含&lt;code class=&quot;highlighter-rouge&quot;&gt;BroadcastNestedLoopJoinExec&lt;/code&gt;。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; Physical Plan &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt;
+SortMergeJoin &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175], &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;c1#179], LeftOuter, &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1#175 &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; b1#177&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+:- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;3&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Sort &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175 ASC NULLS FIRST], &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;, 0
+:  +- Exchange hashpartitioning&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1#175, 5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+:     +- BroadcastNestedLoopJoin BuildRight, LeftOuter
+:        :- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Project &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175]
+:        :  +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Filter &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;isnotnull&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1#175&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; NOT &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1#175 &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; 123&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+:        :     +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; FileScan parquet default.ta[a1#175] Batched: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/ta], PartitionFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, PushedFilters: &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;IsNotNull&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;, Not&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;EqualTo&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1,123&lt;span class=&quot;o&quot;&gt;))]&lt;/span&gt;, ReadSchema: struct&amp;lt;a1:int&amp;gt;
+:        +- BroadcastExchange IdentityBroadcastMode
+:           +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;2&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; FileScan parquet default.tb[b1#177,b2#178] Batched: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tb], PartitionFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, PushedFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, ReadSchema: struct&amp;lt;b1:int,b2:int&amp;gt;
++- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Sort &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;c1#179 ASC NULLS FIRST], &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;, 0
+   +- Exchange hashpartitioning&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;c1#179, 5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;4&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; FileScan parquet default.tc[c1#179,c2#180] Batched: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tc], PartitionFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, PushedFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, ReadSchema: struct&amp;lt;c1:int,c2:int&amp;gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;第二条select语句执行计划如下，由于a 和b 和 b 和c之间都有equal 的join key，所以其不会触发Broadcast.&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; Physical Plan &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt;
+SortMergeJoin &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175], &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;c1#179], LeftOuter
+:- SortMergeJoin &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175], &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;b1#177], LeftOuter
+:  :- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;2&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Sort &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175 ASC NULLS FIRST], &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;, 0
+:  :  +- Exchange hashpartitioning&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1#175, 5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+:  :     +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Project &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175]
+:  :        +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Filter &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;isnotnull&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1#175&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; NOT &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1#175 &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; 123&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+:  :           +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; FileScan parquet default.ta[a1#175] Batched: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/ta], PartitionFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, PushedFilters: &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;IsNotNull&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;, Not&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;EqualTo&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1,123&lt;span class=&quot;o&quot;&gt;))]&lt;/span&gt;, ReadSchema: struct&amp;lt;a1:int&amp;gt;
+:  +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;4&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Sort &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;b1#177 ASC NULLS FIRST], &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;, 0
+:     +- Exchange hashpartitioning&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;b1#177, 5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+:        +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;3&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; FileScan parquet default.tb[b1#177,b2#178] Batched: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tb], PartitionFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, PushedFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, ReadSchema: struct&amp;lt;b1:int,b2:int&amp;gt;
++- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;6&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Sort &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;c1#179 ASC NULLS FIRST], &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;, 0
+   +- Exchange hashpartitioning&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;c1#179, 5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; FileScan parquet default.tc[c1#179,c2#180] Batched: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tc], PartitionFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, PushedFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, ReadSchema: struct&amp;lt;c1:int,c2:int&amp;gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;第三条语句由于a和b之间是一个不等的join key，所以其会触发&lt;code class=&quot;highlighter-rouge&quot;&gt;BroadcastNestedLoopJoinExec&lt;/code&gt;。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; Physical Plan &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt;
+SortMergeJoin &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175], &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;c1#179], LeftOuter
+:- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;3&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Sort &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175 ASC NULLS FIRST], &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;, 0
+:  +- Exchange hashpartitioning&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1#175, 5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+:     +- BroadcastNestedLoopJoin BuildRight, LeftOuter, NOT &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1#175 &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; b1#177&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+:        :- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Project &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175]
+:        :  +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Filter &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;isnotnull&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1#175&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;amp;&amp;amp;&lt;/span&gt; NOT &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1#175 &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; 123&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+:        :     +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; FileScan parquet default.ta[a1#175] Batched: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/ta], PartitionFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, PushedFilters: &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;IsNotNull&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;, Not&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;EqualTo&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;a1,123&lt;span class=&quot;o&quot;&gt;))]&lt;/span&gt;, ReadSchema: struct&amp;lt;a1:int&amp;gt;
+:        +- BroadcastExchange IdentityBroadcastMode
+:           +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;2&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; FileScan parquet default.tb[b1#177,b2#178] Batched: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tb], PartitionFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, PushedFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, ReadSchema: struct&amp;lt;b1:int,b2:int&amp;gt;
++- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Sort &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;c1#179 ASC NULLS FIRST], &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;, 0
+   +- Exchange hashpartitioning&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;c1#179, 5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;4&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; FileScan parquet default.tc[c1#179,c2#180] Batched: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tc], PartitionFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, PushedFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, ReadSchema: struct&amp;lt;c1:int,c2:int&amp;gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+</content>
+ </entry>
  
  <entry>
    <title>关于spark数据计算结果异常的场景分析</title>
