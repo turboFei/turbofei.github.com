@@ -117,7 +117,7 @@ select ... from a left join b on a.id!=b.id;
 
 ### 解决方案
 
-因此，问题就是用户在使用进行join时，表a 和表b的join key是空的，所以一定会调用`BroadcastNestedLoopJoinExec`,即使我们将BroadcastJoinThreshold设为-1.
+因此，问题就是用户在使用进行 left/right join时，表a 和表b的join key是空的，所以一定会调用`BroadcastNestedLoopJoinExec`,即使我们将BroadcastJoinThreshold设为-1.
 
 所以解决方案就是更改用户的sql语句，更改为(此处不考虑列名冲突，如冲突，请用alias).
 
@@ -126,15 +126,16 @@ select *
 from (
 select a.*, b.*
   from 
-  a left join b
-  on a.a1=b.b1
+  a cross join b
 ) d
 left join c 
 on
-d.b2=c.c1;
+d.b2=c.c1 and d.a1=d.b1;
 ```
 
-此处更改有问题，正在想合理的替换方案，sql水好深，org.
+ 此处使用`cross join`可以避开BroadcastNestedLoopJoin，而且其结果和上面的查询是完全一致的但是cross join 会产生 m*n个task。
+
+当然，首先是要明确用户的需求，到底这样的结果是不是期望的结果。
 
 ### 结论
 
@@ -144,9 +145,7 @@ Spark在进行一个 non-equal key join条件(可能join 条件为空，也可�
 - 由于BroadcastJoin要将数据拉取到driver，可能造成driver的OOM。
 - 即使不会造成OOM，大表也可能造成hard code的Broadcast 条数限制，导致无法执行。
 
-因此我们在使用left/right join，特别是表比较大的时候，已经要设置合适的join-key, 避免以上情况的发生。
-
-
+所以，我们要在明确需求的前提下，正确的使用left/right join以及设置合适的join条件。
 
 ### 附录
 
@@ -238,19 +237,4 @@ SortMergeJoin [a1#175], [c1#179], LeftOuter
 +- *(5) Sort [c1#179 ASC NULLS FIRST], false, 0
    +- Exchange hashpartitioning(c1#179, 5)
       +- *(4) FileScan parquet default.tc[c1#179,c2#180] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tc], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<c1:int,c2:int>
-
 ```
-
-
-
-
-
-
-
-```
-就比如说之前是  a left join b left join c on a.a1=b.b1 and b.b2=c.c1;  产生的结果是 a的key非空，而b 和c的key可以是空。
-
-而 (a left join b ) left join c 产生的结果是 a 的key是非空， 
-
-```
-

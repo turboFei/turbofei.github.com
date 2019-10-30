@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2019-10-29T23:32:02+08:00</lastBuildDate>
-        <pubDate>2019-10-29T23:32:02+08:00</pubDate>
+        <lastBuildDate>2019-10-30T12:28:22+08:00</lastBuildDate>
+        <pubDate>2019-10-30T12:28:22+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -120,7 +120,7 @@
 
 &lt;h3 id=&quot;解决方案&quot;&gt;解决方案&lt;/h3&gt;
 
-&lt;p&gt;因此，问题就是用户在使用进行join时，表a 和表b的join key是空的，所以一定会调用&lt;code class=&quot;highlighter-rouge&quot;&gt;BroadcastNestedLoopJoinExec&lt;/code&gt;,即使我们将BroadcastJoinThreshold设为-1.&lt;/p&gt;
+&lt;p&gt;因此，问题就是用户在使用进行 left/right join时，表a 和表b的join key是空的，所以一定会调用&lt;code class=&quot;highlighter-rouge&quot;&gt;BroadcastNestedLoopJoinExec&lt;/code&gt;,即使我们将BroadcastJoinThreshold设为-1.&lt;/p&gt;
 
 &lt;p&gt;所以解决方案就是更改用户的sql语句，更改为(此处不考虑列名冲突，如冲突，请用alias).&lt;/p&gt;
 
@@ -128,15 +128,16 @@
 &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;
   &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; 
-  &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;left&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;cross&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;left&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;join&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;c&lt;/span&gt; 
 &lt;span class=&quot;k&quot;&gt;on&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;and&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;p&gt;此处更改有问题，正在想合理的替换方案，sql水好深，org.&lt;/p&gt;
+&lt;p&gt;此处使用&lt;code class=&quot;highlighter-rouge&quot;&gt;cross join&lt;/code&gt;可以避开BroadcastNestedLoopJoin，而且其结果和上面的查询是完全一致的但是cross join 会产生 m*n个task。&lt;/p&gt;
+
+&lt;p&gt;当然，首先是要明确用户的需求，到底这样的结果是不是期望的结果。&lt;/p&gt;
 
 &lt;h3 id=&quot;结论&quot;&gt;结论&lt;/h3&gt;
 
@@ -148,7 +149,7 @@
   &lt;li&gt;即使不会造成OOM，大表也可能造成hard code的Broadcast 条数限制，导致无法执行。&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;因此我们在使用left/right join，特别是表比较大的时候，已经要设置合适的join-key, 避免以上情况的发生。&lt;/p&gt;
+&lt;p&gt;所以，我们要在明确需求的前提下，正确的使用left/right join以及设置合适的join条件。&lt;/p&gt;
 
 &lt;h3 id=&quot;附录&quot;&gt;附录&lt;/h3&gt;
 
@@ -236,15 +237,7 @@ SortMergeJoin &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;a1#175], &lt;span cl
 +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; Sort &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;c1#179 ASC NULLS FIRST], &lt;span class=&quot;nb&quot;&gt;false&lt;/span&gt;, 0
    +- Exchange hashpartitioning&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;c1#179, 5&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
       +- &lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;4&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; FileScan parquet default.tc[c1#179,c2#180] Batched: &lt;span class=&quot;nb&quot;&gt;true&lt;/span&gt;, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tc], PartitionFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, PushedFilters: &lt;span class=&quot;o&quot;&gt;[]&lt;/span&gt;, ReadSchema: struct&amp;lt;c1:int,c2:int&amp;gt;
-
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;就比如说之前是  a left join b left join c on a.a1=b.b1 and b.b2=c.c1;  产生的结果是 a的key非空，而b 和c的key可以是空。
-
-而 (a left join b ) left join c 产生的结果是 a 的key是非空， 
-
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
 </description>
                 <link>http://www.turbofei.wang/spark/2019/10/29/A-BroadCastJoin-Issue-in-spark</link>
                 <guid>http://www.turbofei.wang/spark/2019/10/29/A-BroadCastJoin-Issue-in-spark</guid>
