@@ -29,7 +29,7 @@ tags: [spark,sql]
 
 Spark中有一个参数称之为`spark.sql.autoBroadcastJoinThreshold`, 其代表当这个表在磁盘上size小于这个值时，会使用BroadcastJoin，而如果我们将其设为-1，代表disable BroadcastJoin（官方文档的解释)。
 
-除了该threshold之外，Broadcast还有一个限制，就是广播的表的行数不能超过512 milions行，也就是5亿多行，这个值是hard code的。也就是说即使表的磁盘物理size小于threshold，条数超过这个行数也不能进行BroadcastJoin。
+除了该threshold之外，Broadcast还有一个限制，就是广播的表的行数不能超过512 milions行，也就是5亿多行，这个值是hard code的, 因为BroadcastJoin是要基于小表构建hashMap, 行数就对应其构建hashMap的元素数量，因此必须对小表的行数有限制。也就是说即使表的磁盘物理size小于threshold，条数超过这个行数也不能进行BroadcastJoin。
 
 
 
@@ -44,20 +44,15 @@ Caused by: org.apache.spark.SparkException: Cannot broadcast the table with more
 	at org.apache.spark.sql.execution.SQLExecution$.withExecutionId(SQLExecution.scala:97)
 	at org.apache.spark.sql.execution.exchange.BroadcastExchangeExec$$anonfun$relationFuture$1.apply(BroadcastExchangeExec.scala:72)
 	at org.apache.spark.sql.execution.exchange.BroadcastExchangeExec$$anonfun$relationFuture$1.apply(BroadcastExchangeExec.scala:72)
-	at scala.concurrent.impl.Future$PromiseCompletingRunnable.liftedTree1$1(Future.scala:24)
-	at scala.concurrent.impl.Future$PromiseCompletingRunnable.run(Future.scala:24)
-	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
-	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
-	at java.lang.Thread.run(Thread.java:745)
 ```
-
-
 
 看到这个异常的第一反应就是去查询`spark.sql.autoBroadcastJoinThreshold`的值，然后查到的结果100m。当时的想法是，为什么这个表在磁盘上不到100m大小，而其有6亿行数据，难道是列数十分少，并且压缩的特别的严重，不像是生产环境中的表。
 
+然后查询了一下表的信息，果然这个表只有一列，类型为Decimal类型，然后使用的压缩方式是snappy，而表的大小只有3.5m，想必是由于列是数值类型，所以压缩十分恐怖。
+
 当时没有产生其他怀疑，就建议用户将`spark.sql.autoBroadcastJoinThreshold`设置为-1，禁用掉BroadcastJoin。
 
-过了段时间，用户回复说设置了之后仍然报上面的异常。当时确认了线上的参数设置的确是-1.
+过了段时间，用户回复说设置了之后仍然报上面的异常。
 
 用户的sql语句格式为:
 
@@ -89,12 +84,12 @@ def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
 	//省略若干关于决策BroadCastJoin, ShuffleHashJoin以及SortMergeJoin的代码
   
   case j @ logical.Join(left, right, joinType, condition)
-  // 此处省略若干决策最优buildSide或根据BroadcastJoin Hint以及不得不选择一个buildSide的代码
+  //此处省略若干决策最优buildSide或根据BroadcastJoin Hint以及不得不选择一个buildSide的代码
   ...  
   joins.BroadcastNestedLoopJoinExec(
     planLater(left), planLater(right), buildSide, joinType, condition) :: Nil
 
-   // 省略CrossJoin,即笛卡尔积
+   // 省略CrossJoin,即笛卡尔积的相关代码
 	 ...
   case _ => Nil
 }
@@ -119,27 +114,34 @@ select ... from a left join b on a.id!=b.id;
 
 因此，问题就是用户在使用进行 left/right join时，表a 和表b的join key是空的，所以一定会调用`BroadcastNestedLoopJoinExec`,即使我们将BroadcastJoinThreshold设为-1.
 
-所以解决方案就是更改用户的sql语句，更改为(此处不考虑列名冲突，如冲突，请用alias).
+所以解决方案就是更改用户的sql语句，其实用户之前的sql在`a left join b`的时候没有添加join 条件，所以就相当于一个cross join，所以如果我们将原来语句中a b之间的left  join 改成cross join 就可以绕过BroadcastJoin，而去使用Cross join。但是，Cross join 是一个很重的join，其会产生M*R个task(M为 mapTask数量,R为reduceTask数量)。
 
 ```sql
-select * 
-from (
-select a.*, b.*
-  from 
-  a cross join b
-) d
-left join c 
+select a.*, b.*, c.* 
+from
+a cross join b left join c 
 on
-d.b2=c.c1 and d.a1=d.b1;
+a.a1=b.b1 and b.b2=c.c1;
 ```
 
- 此处使用`cross join`可以避开BroadcastNestedLoopJoin，而且其结果和上面的查询是完全一致的但是cross join 会产生 m*n个task。
+所以在找到解决方案之后，我还是跟用户去确认了下，到底是不是想要cross join的结果，可以拿一个小数据集进行测试，跟用户沟通了之后，才发现之前的sql产生的结果并不是他想要的，他想要的是下面的SQL。
 
-当然，首先是要明确用户的需求，到底这样的结果是不是期望的结果。
+```sql
+select a.*, b.*, c.* 
+from
+a left join b
+on 
+a.a1=b.b1 
+left join c 
+on
+and b.b2=c.c1;
+```
 
-### 结论
+### 总结
 
-Spark在进行一个 non-equal key join条件(可能join 条件为空，也可能非空但是不是key equal)，一定会有BroadcastJoin，即使是两个超大的表也会，这样可能会导致三种结果。
+首先，明确需求很重要，可以先拿小数据集测试下自己想要的结果是否和测试结果一致。
+
+Spark在进行一个 non-equal key  left/right join条件(可能join 条件为空，也可能非空但是不是key equal)，一定会有BroadcastJoin，即使是两个超大的表也会，这样可能会导致三种结果。
 
 - 大表被Broadcast十分缓慢。
 - 由于BroadcastJoin要将数据拉取到driver，可能造成driver的OOM。
@@ -152,89 +154,103 @@ Spark在进行一个 non-equal key join条件(可能join 条件为空，也可�
 在附录中提供一个Unit test 以及对应的explain.
 
 ```scala
-    test("test brodacast join") {
-      withSQLConf("spark.sql.crossJoin.enabled" -> "true",
-        "spark.sql.autoBroadcastJoinThreshold" -> "-1") {
-        withTable("ta", "tb", "tc") {
-          sql("create table ta(a1 int, a2 int) using parquet")
-          sql("create table tb(b1 int, b2 int) using parquet")
-          sql("create table tc(c1 int, c2 int) using parquet")
+  test("test brodacast join") {
+    withSQLConf("spark.sql.crossJoin.enabled" -> "true",
+      "spark.sql.autoBroadcastJoinThreshold" -> "-1") {
+      withTable("ta", "tb", "tc") {
+        sql("create table ta(aid int) using parquet")
+        sql("create table tb(bid int, bid2 int) using parquet")
+        sql("create table tc(cid int) using parquet")
 
-          sql("select * from (" +
-            "select a1 from ta where a1 <>'123')as a " +
-            "left join tb as b " +
-            "left join tc as c " +
-            "on a.a1=b.b1 and a.a1=c.c1").explain(false)
+        sql("select * from " +
+          "ta left join tb left join tc " +
+          "on ta.aid=tb.bid and tb.bid2 = tc.cid").explain(false)
 
-          sql("Select * from (select * from (" +
-            "select a1 from ta where a1 <>'123')as a " +
-            "left join tb as b on a.a1 = b.b1) as d " +
-            "left join tc as c " +
-            "on d.a1=c.c1").explain(false)
+        sql("select * from " +
+          "ta cross join tb left join tc " +
+          "on ta.aid=tb.bid and tb.bid2 = tc.cid ").explain(false)
 
-          sql("Select * from (select * from (" +
-            "select a1 from ta where a1 <>'123')as a " +
-            "left join tb as b on a.a1 != b.b1) as d " +
-            "left join tc as c " +
-            "on d.a1=c.c1").explain(false)
-        }
+        sql("select * from " +
+          "ta left join tb " +
+          "on ta.aid = tb.bid " +
+          "left join tc " +
+          "on tb.bid2=tc.cid").explain(false)
+
+        sql("select * from " +
+          "ta left join tb " +
+          "on ta.aid != tb.bid " +
+          "left join tc " +
+          "on tb.bid2=tc.cid").explain(false)
       }
     }
+  }
 ```
 
 第一条select语句的执行计划如下，由于其a 与b的 joinKey为空，所以其包含`BroadcastNestedLoopJoinExec`。
 
-```bash
+```sql
 == Physical Plan ==
-SortMergeJoin [a1#175], [c1#179], LeftOuter, (a1#175 = b1#177)
-:- *(3) Sort [a1#175 ASC NULLS FIRST], false, 0
-:  +- Exchange hashpartitioning(a1#175, 5)
+SortMergeJoin [bid2#177], [cid#178], LeftOuter, (aid#175 = bid#176)
+:- *(3) Sort [bid2#177 ASC NULLS FIRST], false, 0
+:  +- Exchange hashpartitioning(bid2#177, 5)
 :     +- BroadcastNestedLoopJoin BuildRight, LeftOuter
-:        :- *(1) Project [a1#175]
-:        :  +- *(1) Filter (isnotnull(a1#175) && NOT (a1#175 = 123))
-:        :     +- *(1) FileScan parquet default.ta[a1#175] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/ta], PartitionFilters: [], PushedFilters: [IsNotNull(a1), Not(EqualTo(a1,123))], ReadSchema: struct<a1:int>
+:        :- *(1) FileScan parquet default.ta[aid#175] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/ta], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<aid:int>
 :        +- BroadcastExchange IdentityBroadcastMode
-:           +- *(2) FileScan parquet default.tb[b1#177,b2#178] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tb], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<b1:int,b2:int>
-+- *(5) Sort [c1#179 ASC NULLS FIRST], false, 0
-   +- Exchange hashpartitioning(c1#179, 5)
-      +- *(4) FileScan parquet default.tc[c1#179,c2#180] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tc], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<c1:int,c2:int>
+:           +- *(2) FileScan parquet default.tb[bid#176,bid2#177] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/tb], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<bid:int,bid2:int>
++- *(5) Sort [cid#178 ASC NULLS FIRST], false, 0
+   +- Exchange hashpartitioning(cid#178, 5)
+      +- *(4) FileScan parquet default.tc[cid#178] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/tc], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<cid:int>
+```
+
+第二条select语句执行计划如下，由于a 和b是cross join，而且b c之间有equi join key，所以其不会有`BroadcastNestedLoopJoinExec`.
+
+```sql
+== Physical Plan ==
+SortMergeJoin [bid2#177], [cid#178], LeftOuter, (aid#175 = bid#176)
+:- *(3) Sort [bid2#177 ASC NULLS FIRST], false, 0
+:  +- Exchange hashpartitioning(bid2#177, 5)
+:     +- CartesianProduct
+:        :- *(1) FileScan parquet default.ta[aid#175] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/ta], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<aid:int>
+:        +- *(2) FileScan parquet default.tb[bid#176,bid2#177] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/tb], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<bid:int,bid2:int>
++- *(5) Sort [cid#178 ASC NULLS FIRST], false, 0
+   +- Exchange hashpartitioning(cid#178, 5)
+      +- *(4) FileScan parquet default.tc[cid#178] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/tc], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<cid:int>
 
 ```
 
-第二条select语句执行计划如下，由于a 和b 和 b 和c之间都有equal 的join key，所以其不会触发Broadcast.
+第三条语句由于a b 和 b c之间都有equi join key，所以其不会触发`BroadcastNestedLoopJoinExec`。
 
-```bash
+```sql
 == Physical Plan ==
-SortMergeJoin [a1#175], [c1#179], LeftOuter
-:- SortMergeJoin [a1#175], [b1#177], LeftOuter
-:  :- *(2) Sort [a1#175 ASC NULLS FIRST], false, 0
-:  :  +- Exchange hashpartitioning(a1#175, 5)
-:  :     +- *(1) Project [a1#175]
-:  :        +- *(1) Filter (isnotnull(a1#175) && NOT (a1#175 = 123))
-:  :           +- *(1) FileScan parquet default.ta[a1#175] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/ta], PartitionFilters: [], PushedFilters: [IsNotNull(a1), Not(EqualTo(a1,123))], ReadSchema: struct<a1:int>
-:  +- *(4) Sort [b1#177 ASC NULLS FIRST], false, 0
-:     +- Exchange hashpartitioning(b1#177, 5)
-:        +- *(3) FileScan parquet default.tb[b1#177,b2#178] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tb], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<b1:int,b2:int>
-+- *(6) Sort [c1#179 ASC NULLS FIRST], false, 0
-   +- Exchange hashpartitioning(c1#179, 5)
-      +- *(5) FileScan parquet default.tc[c1#179,c2#180] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tc], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<c1:int,c2:int>
+SortMergeJoin [bid2#177], [cid#178], LeftOuter
+:- *(5) Sort [bid2#177 ASC NULLS FIRST], false, 0
+:  +- Exchange hashpartitioning(bid2#177, 5)
+:     +- SortMergeJoin [aid#175], [bid#176], LeftOuter
+:        :- *(2) Sort [aid#175 ASC NULLS FIRST], false, 0
+:        :  +- Exchange hashpartitioning(aid#175, 5)
+:        :     +- *(1) FileScan parquet default.ta[aid#175] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/ta], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<aid:int>
+:        +- *(4) Sort [bid#176 ASC NULLS FIRST], false, 0
+:           +- Exchange hashpartitioning(bid#176, 5)
+:              +- *(3) FileScan parquet default.tb[bid#176,bid2#177] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/tb], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<bid:int,bid2:int>
++- *(7) Sort [cid#178 ASC NULLS FIRST], false, 0
+   +- Exchange hashpartitioning(cid#178, 5)
+      +- *(6) FileScan parquet default.tc[cid#178] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/tc], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<cid:int>
 
 ```
 
-第三条语句由于a和b之间是一个不等的join key，所以其会触发`BroadcastNestedLoopJoinExec`。
+第四条语句由于a b之间虽然有 join key， 但是是非 equi的join key `ta.aid != tb.bid`，所以其会触发`BroadcastNestedLoopJoinExec`。
 
-```bash
+```sql
 == Physical Plan ==
-SortMergeJoin [a1#175], [c1#179], LeftOuter
-:- *(3) Sort [a1#175 ASC NULLS FIRST], false, 0
-:  +- Exchange hashpartitioning(a1#175, 5)
-:     +- BroadcastNestedLoopJoin BuildRight, LeftOuter, NOT (a1#175 = b1#177)
-:        :- *(1) Project [a1#175]
-:        :  +- *(1) Filter (isnotnull(a1#175) && NOT (a1#175 = 123))
-:        :     +- *(1) FileScan parquet default.ta[a1#175] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/ta], PartitionFilters: [], PushedFilters: [IsNotNull(a1), Not(EqualTo(a1,123))], ReadSchema: struct<a1:int>
+SortMergeJoin [bid2#177], [cid#178], LeftOuter
+:- *(3) Sort [bid2#177 ASC NULLS FIRST], false, 0
+:  +- Exchange hashpartitioning(bid2#177, 5)
+:     +- BroadcastNestedLoopJoin BuildRight, LeftOuter, NOT (aid#175 = bid#176)
+:        :- *(1) FileScan parquet default.ta[aid#175] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/ta], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<aid:int>
 :        +- BroadcastExchange IdentityBroadcastMode
-:           +- *(2) FileScan parquet default.tb[b1#177,b2#178] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tb], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<b1:int,b2:int>
-+- *(5) Sort [c1#179 ASC NULLS FIRST], false, 0
-   +- Exchange hashpartitioning(c1#179, 5)
-      +- *(4) FileScan parquet default.tc[c1#179,c2#180] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/mllib-local/spark-warehouse/tc], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<c1:int,c2:int>
+:           +- *(2) FileScan parquet default.tb[bid#176,bid2#177] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/tb], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<bid:int,bid2:int>
++- *(5) Sort [cid#178 ASC NULLS FIRST], false, 0
+   +- Exchange hashpartitioning(cid#178, 5)
+      +- *(4) FileScan parquet default.tc[cid#178] Batched: true, Format: Parquet, Location: InMemoryFileIndex[file:/Users/fwang12/ebay/spark-longwing/launcher/spark-warehouse/tc], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<cid:int>
 ```
+
