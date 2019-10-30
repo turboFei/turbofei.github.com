@@ -20,10 +20,6 @@ tags: [spark,sql]
 - ShuffleHashJoin:适用于一个小表和一个大表进行Join，会触发shuffle。
 - SortMergeJoin：适用于两个大表进行Join，其首先会对两个表的数据进行划分partition排序，然后把相应的分区进行发送到task端进行merge执行，因此称之为SortMergeJoin。
 
-本文讲一个和BroadcastJoin相关的比较诡异的issue。
-
-
-
 ### BroadcastJoin
 前面提到BroadcastJoin是在一个极小表和一个大表进行Join时候选择的join方式，由于BroadcastJoin不需要进行shuffle，所以大家比较喜欢这种Join方式。但是由于Broadcast是需要将数据拉取到driver然后分发到各个executor，因此driver内存是一个瓶颈。前面也提到是极小表，那么是多小的表才会使用这种Join呢？
 
