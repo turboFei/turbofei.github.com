@@ -116,6 +116,8 @@ select ... from a left join b on a.id!=b.id;
 
 所以解决方案就是更改用户的sql语句，其实用户之前的sql在`a left join b`的时候没有添加join 条件，所以就相当于一个cross join，所以如果我们将原来语句中a b之间的left  join 改成cross join 就可以绕过BroadcastJoin，而去使用Cross join。但是，Cross join 是一个很重的join，其会产生M*R个task(M为 mapTask数量,R为reduceTask数量)。
 
+PS: 此处看起来，如果你要进行一个大表和小表的cross join，而且小表的条数又不会超过Broadcast的条数上限，那么将cross join 替换为无join条件的left join，走Broadcast是一个不错的选择。
+
 ```sql
 select a.*, b.*, c.* 
 from

@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-10-30T19:24:10+08:00</updated>
+ <updated>2019-10-30T19:28:00+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -125,6 +125,8 @@
 &lt;p&gt;因此，问题就是用户在使用进行 left/right join时，表a 和表b的join key是空的，所以一定会调用&lt;code class=&quot;highlighter-rouge&quot;&gt;BroadcastNestedLoopJoinExec&lt;/code&gt;,即使我们将BroadcastJoinThreshold设为-1.&lt;/p&gt;
 
 &lt;p&gt;所以解决方案就是更改用户的sql语句，其实用户之前的sql在&lt;code class=&quot;highlighter-rouge&quot;&gt;a left join b&lt;/code&gt;的时候没有添加join 条件，所以就相当于一个cross join，所以如果我们将原来语句中a b之间的left  join 改成cross join 就可以绕过BroadcastJoin，而去使用Cross join。但是，Cross join 是一个很重的join，其会产生M*R个task(M为 mapTask数量,R为reduceTask数量)。&lt;/p&gt;
+
+&lt;p&gt;PS: 此处看起来，如果你要进行一个大表和小表的cross join，而且小表的条数又不会超过Broadcast的条数上限，那么将cross join 替换为无join条件的left join，走Broadcast是一个不错的选择。&lt;/p&gt;
 
 &lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; 
 &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt;
