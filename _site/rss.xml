@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2019-12-13T23:26:14+08:00</lastBuildDate>
-        <pubDate>2019-12-13T23:26:14+08:00</pubDate>
+        <lastBuildDate>2019-12-14T05:23:19+08:00</lastBuildDate>
+        <pubDate>2019-12-14T05:23:19+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -38,7 +38,7 @@
 
 &lt;p&gt;Spark中对于两个大表的join，采用的方式是SortMergeJoin.&lt;/p&gt;
 
-&lt;p&gt;而如果两个表都是bucket表，而且bucket数量相同(业界有公司针对这块的优化，如果两个bucket表bucket数量是倍数关系也可以进行bucket join)，那么可以跳过sort 和 shuffle，直接进行join, 会产生较好的性能，通常需要业务方会约定好bucket的数量。&lt;/p&gt;
+&lt;p&gt;而如果两个表都是bucket表，而且bucket数量相同(业界有公司针对这块的优化，如果两个bucket表bucket数量是倍数关系也可以进行bucket join)，那么可以跳过sort(或者加速) 和 shuffle，直接进行join, 会产生较好的性能，通常需要业务方会约定好bucket的数量。&lt;/p&gt;
 
 &lt;p&gt;Spark针对bucket表读取的时候，会对每一个bucket分配一个task来读取，因为如果进行bucket join就不能再对这个bucket的数据进行拆分。&lt;/p&gt;
 
