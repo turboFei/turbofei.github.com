@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2019-12-13T23:19:48+08:00</lastBuildDate>
-        <pubDate>2019-12-13T23:19:48+08:00</pubDate>
+        <lastBuildDate>2019-12-13T23:26:14+08:00</lastBuildDate>
+        <pubDate>2019-12-13T23:26:14+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -58,7 +58,7 @@
 
 &lt;p&gt;如果你有对一个Spark sql语句进行解析和更改部分语句的需求。&lt;/p&gt;
 
-&lt;p&gt;例如我需求对一条sql中的表名进行映射修改，或者对其中的UDF(其实在spark sql中function 和table 是很类似的东西)进行修改。&lt;/p&gt;
+&lt;p&gt;例如我需求对一条sql中的表名进行映射修改，或者对其中的UDF(其实在spark sql中function 和table 是很类似的东西)和location信息进行修改。&lt;/p&gt;
 
 &lt;p&gt;可能首先想到的就是使用正则进行字符串匹配，去寻找自己需要的字段，但是这种方法十分的不靠谱，因为sql的语法十分复杂，我们很难完全准确的抓取到自己需要的信息。&lt;/p&gt;
 
