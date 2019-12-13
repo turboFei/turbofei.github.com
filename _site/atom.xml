@@ -4,13 +4,102 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-11-26T00:14:06+08:00</updated>
+ <updated>2019-12-13T23:19:48+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
    <email>turbofei@foxmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>Spark随笔</title>
+   <link href="http://www.turbofei.wang/spark/2019/12/04/Spark%E9%9A%8F%E7%AC%94"/>
+   <updated>2019-12-04T00:00:00+08:00</updated>
+   <id>http://www.turbofei.wang/spark/2019/12/04/Spark随笔</id>
+   <content type="html">
+&lt;p&gt;目录&lt;/p&gt;
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#前言&quot; id=&quot;markdown-toc-前言&quot;&gt;前言&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#关于bucket-table&quot; id=&quot;markdown-toc-关于bucket-table&quot;&gt;关于bucket table&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#关于解析和更改spark-sql语句&quot; id=&quot;markdown-toc-关于解析和更改spark-sql语句&quot;&gt;关于解析和更改Spark sql语句&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;写点Spark相关的随笔&lt;/p&gt;
+
+&lt;h3 id=&quot;前言&quot;&gt;前言&lt;/h3&gt;
+
+&lt;p&gt;最近可能比较忙，没有更新博客，写一点Spark相关的随笔。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;关于bucket table&lt;/li&gt;
+  &lt;li&gt;关于解析和更改Spark sql语句&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;关于bucket-table&quot;&gt;关于bucket table&lt;/h3&gt;
+
+&lt;p&gt;bucket table是一种Spark常见的优化查询的建表方式。&lt;/p&gt;
+
+&lt;p&gt;创建方式是使用&lt;code class=&quot;highlighter-rouge&quot;&gt;distributed by &lt;/code&gt;语法进行创建，会根据&lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.shuffle.partitions&lt;/code&gt;的值创建若干个bucket。&lt;/p&gt;
+
+&lt;p&gt;Spark中对于两个大表的join，采用的方式是SortMergeJoin.&lt;/p&gt;
+
+&lt;p&gt;而如果两个表都是bucket表，而且bucket数量相同(业界有公司针对这块的优化，如果两个bucket表bucket数量是倍数关系也可以进行bucket join)，那么可以跳过sort 和 shuffle，直接进行join, 会产生较好的性能，通常需要业务方会约定好bucket的数量。&lt;/p&gt;
+
+&lt;p&gt;Spark针对bucket表读取的时候，会对每一个bucket分配一个task来读取，因为如果进行bucket join就不能再对这个bucket的数据进行拆分。&lt;/p&gt;
+
+&lt;p&gt;但是问题来了，我们并不是每次读取bucket表都是为了进行bucket join，比如说有时候我们会对这个bucket进行更新操作。&lt;/p&gt;
+
+&lt;p&gt;如果只是单纯的对这个bucket表进行一些处理操作，例如就是一个单纯的shuffle操作。而这个bucket表的每个bucket都特别大，例如大于1个G，而在shuffle write阶段要生成3G的数据。那么这时候对每个bucket分配一个task来处理就会非常吃力。&lt;/p&gt;
+
+&lt;p&gt;其实spark sql中有一个参数 &lt;code class=&quot;highlighter-rouge&quot;&gt;spark.sql.sources.bucketing.enabled&lt;/code&gt;,默认是true。如果我们将这个参数设置为false，那么spark就会将一个bucket table看做一个普通的table。&lt;/p&gt;
+
+&lt;p&gt;这意味着什么呢？&lt;/p&gt;
+
+&lt;p&gt;Spark对于普通表，如果他的单个文件大于一个hdfs  block大小(通常是128M)，而且这个文件又是可拆分的(例如text文本，snappy 压缩格式的parquet文件等等)，那么spark会按照这个文件拆分，分配多个task来处理。&lt;/p&gt;
+
+&lt;p&gt;因此，针对我们上面的场景，设置这个参数为false，可以大大的加快map阶段的执行，起到优化的效果。&lt;/p&gt;
+
+&lt;h3 id=&quot;关于解析和更改spark-sql语句&quot;&gt;关于解析和更改Spark sql语句&lt;/h3&gt;
+
+&lt;p&gt;如果你有对一个Spark sql语句进行解析和更改部分语句的需求。&lt;/p&gt;
+
+&lt;p&gt;例如我需求对一条sql中的表名进行映射修改，或者对其中的UDF(其实在spark sql中function 和table 是很类似的东西)进行修改。&lt;/p&gt;
+
+&lt;p&gt;可能首先想到的就是使用正则进行字符串匹配，去寻找自己需要的字段，但是这种方法十分的不靠谱，因为sql的语法十分复杂，我们很难完全准确的抓取到自己需要的信息。&lt;/p&gt;
+
+&lt;p&gt;所以我们能不能根据抽象语法树去拿到我们想要的字段呢？&lt;/p&gt;
+
+&lt;p&gt;答案当然是Ok的，一条sql语句进行解析器之后都会成为一个抽象语法树，每个TreeNode都有自己的类型，我们可以根据这些类型拿到自己想要的信息，比如table name， function name, location等等信息(table 根据TableIdentifier类型节点获得，function根据FunctionIdentifier, location信息从LoadDataCommand或者CreateTableCommand中获取)。&lt;/p&gt;
+
+&lt;p&gt;如下图所以，一条SQL语句&lt;code class=&quot;highlighter-rouge&quot;&gt;INSERT INTO TRABLE tb SELECT ta.id FROM ta JOIN tb on ta.id=tb.id&lt;/code&gt;会被大概转化为下面一个AST.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/spark-sth/ast.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;但是，当我们拿到我们想要的信息，之后如何转换想要的SQL呢？&lt;/p&gt;
+
+&lt;p&gt;我第一想法是说，直接修改这个AST，然后将这个AST转化为一条SQL语句。但是AST转SQL很麻烦的事情，需要你自己精通sql语法，然后写一套 Plan转String的规则。这听起来就很麻烦。&lt;/p&gt;
+
+&lt;p&gt;好在经过一番探索:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Spark使用antlr v4进行sql解析&lt;/li&gt;
+  &lt;li&gt;每个sql最开始解析为一个原始的AST(parsedPlan，未经过analyze/optimize)&lt;/li&gt;
+  &lt;li&gt;这个sql也对应一个&lt;code class=&quot;highlighter-rouge&quot;&gt;ParserRuleContext&lt;/code&gt;(package &lt;code class=&quot;highlighter-rouge&quot;&gt;org.antlr.v4.runtime&lt;/code&gt;)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;ParserRuleContext其实也是一棵树，类似于AST，但是它的每个叶子节点会对应一段text,也就是说对应一部分原始的sql语句(table对应TableIdentifierContext，function对应QualifiedNameContext, location对应LocationSpecContext)。&lt;/p&gt;
+
+&lt;p&gt;感兴趣的话可以去看这个类的源码: https://github.com/antlr/antlr4/blob/master/runtime/Java/src/org/antlr/v4/runtime/ParserRuleContext.java。&lt;/p&gt;
+
+&lt;p&gt;前面我们提到的语句会被转化为下面的一棵树，我这里是将其转为String打印出来，在每个节点处进行了换行。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/spark-sth/parserRuleContext.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;有了这样的两棵树AST 和ParserRuleContext，我们就可以根据第一棵树，拿到我们想要的信息，然后再在第二棵树上面找到其对应的偏移量。&lt;/p&gt;
+
+&lt;p&gt;然后对对应部分进行替换，之后再把第二棵树的碎片对应的文本拼接起来就好了。&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>A Broadcastjoin Issue In Spark</title>

@@ -3,6 +3,14 @@
 	"data" : [
 	 
 	{
+		"title" : "Spark随笔 - spark",
+		"url" : "/spark/2019/12/04/Spark%E9%9A%8F%E7%AC%94"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "A Broadcastjoin Issue In Spark - spark_sql",
 		"url" : "/spark/2019/10/29/A-BroadCastJoin-Issue-in-spark"
 	}
