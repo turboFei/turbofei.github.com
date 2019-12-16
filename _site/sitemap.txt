@@ -2,6 +2,7 @@
 http://www.turbofei.wang/public/html/BigData
 http://www.turbofei.wang/public/html/Coding
 http://www.turbofei.wang/public/html/Essay
+http://www.turbofei.wang/public/html/Hadoop
 http://www.turbofei.wang/public/html/Papers
 http://www.turbofei.wang/public/html/Spark
 http://www.turbofei.wang/archive
