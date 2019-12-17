@@ -12,6 +12,7 @@ http://www.turbofei.wang/search/cb-search.json
 http://www.turbofei.wang/
 http://www.turbofei.wang/pages
 http://www.turbofei.wang/rss.xml
+http://www.turbofei.wang/public/html/rss.xml
 http://www.turbofei.wang/sitemap.txt
 http://www.turbofei.wang/tags
 
