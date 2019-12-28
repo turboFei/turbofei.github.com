@@ -201,7 +201,7 @@ LeaseManager中的做法是创建一个守护监控线程，定时的来监控�
 - 这个lock正在被另一个app持有
 - 另一个app异常退出，但是距其异常退出的间隔还未到达softLimitPeriod
 
-所以这个锁，就相当于app正常退出会释放， 如果app异常退出，超过softLimitPeriod/2 (30s)也会自动释放。
+所以这个锁，就相当于app正常退出会释放， 如果app异常退出，超过softLimitPeriod(60s)也会自动释放。
 
 ### 附录-Soft Limit 单元测试
 

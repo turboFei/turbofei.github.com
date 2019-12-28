@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-12-28T13:13:40+08:00</updated>
+ <updated>2019-12-28T13:20:51+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -232,7 +232,7 @@
   &lt;li&gt;另一个app异常退出，但是距其异常退出的间隔还未到达softLimitPeriod&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;所以这个锁，就相当于app正常退出会释放， 如果app异常退出，超过softLimitPeriod/2 (30s)也会自动释放。&lt;/p&gt;
+&lt;p&gt;所以这个锁，就相当于app正常退出会释放， 如果app异常退出，超过softLimitPeriod(60s)也会自动释放。&lt;/p&gt;
 
 &lt;h3 id=&quot;附录-soft-limit-单元测试&quot;&gt;附录-Soft Limit 单元测试&lt;/h3&gt;
 
