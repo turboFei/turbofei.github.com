@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2019-12-28T13:20:51+08:00</lastBuildDate>
-        <pubDate>2019-12-28T13:20:51+08:00</pubDate>
+        <lastBuildDate>2019-12-28T13:52:41+08:00</lastBuildDate>
+        <pubDate>2019-12-28T13:52:41+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -175,7 +175,7 @@
 
 &lt;p&gt;通过查看代码，我们看到有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;expiredSoftLimit&lt;/code&gt;方法， 其调用是发生在&lt;code class=&quot;highlighter-rouge&quot;&gt;FSNameSystem&lt;/code&gt;中，对应方法为&lt;code class=&quot;highlighter-rouge&quot;&gt;recoverLeaseInternal&lt;/code&gt;，调用部分如下，如果当前的持有者已经在上个softLimit周期没有刷新这个lease,&lt;/p&gt;
 
-&lt;p&gt;那么调用&lt;code class=&quot;highlighter-rouge&quot;&gt;internalReleaseLease&lt;/code&gt;， 顾名思义，释放internalLease, 其注释为 &lt;code class=&quot;highlighter-rouge&quot;&gt;Move a file that is being written to be immutable.&lt;/code&gt;, 也就是说把一个正在被写的文件变为可改变的状态。&lt;/p&gt;
+&lt;p&gt;那么调用&lt;code class=&quot;highlighter-rouge&quot;&gt;internalReleaseLease&lt;/code&gt;， 顾名思义，释放internalLease, 其注释为 &lt;code class=&quot;highlighter-rouge&quot;&gt;Move a file that is being written to be immutable.&lt;/code&gt;, 也就是说把一个正在被写的文件变为不可改变的状态.&lt;/p&gt;
 
 &lt;div class=&quot;language-java highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        &lt;span class=&quot;c1&quot;&gt;// If the original holder has not renewed in the last SOFTLIMIT &lt;/span&gt;
         &lt;span class=&quot;c1&quot;&gt;// period, then start lease recovery.&lt;/span&gt;
@@ -209,7 +209,7 @@
       &lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
-  &lt;li&gt;变为可被改变的状态意味着另外一个dfsClient可以对其进行append操作。&lt;/li&gt;
+  &lt;li&gt;将文件从正在被写变为不可变状态意味着另外一个dfsClient可以开始对其写入，例如进行append操作。&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h5 id=&quot;基于soft-limit的lock&quot;&gt;基于Soft Limit的Lock？&lt;/h5&gt;
