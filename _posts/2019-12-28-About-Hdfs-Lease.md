@@ -155,11 +155,9 @@ LeaseManager中的做法是创建一个守护监控线程，定时的来监控�
     }
 ```
 
-通过查看代码，我们看到有一个`expiredSoftLimit`方法， 其调用是发生在`FSNameSystem`中，对应方法为`recoverLeaseInternal`，调用部分如下，如果当前的持有者已经在上个softLimit周期没有刷新这个lease。
+通过查看代码，我们看到有一个`expiredSoftLimit`方法， 其调用是发生在`FSNameSystem`中，对应方法为`recoverLeaseInternal`，调用部分如下，如果当前的持有者已经在上个softLimit周期没有刷新这个lease,
 
-那么调用`internalReleaseLease`， 顾名思义，释放internalRelese.
-
-其注释为 `Move a file that is being written to be immutable.`, 也就是说把一个正在被写的文件变为可改变的状态。
+那么调用`internalReleaseLease`， 顾名思义，释放internalLease, 其注释为 `Move a file that is being written to be immutable.`, 也就是说把一个正在被写的文件变为可改变的状态。
 
 ```java
         // If the original holder has not renewed in the last SOFTLIMIT 
