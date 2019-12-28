@@ -1,8 +1,8 @@
 ---
 layout: post
 category: hadoop
-tagline: "Soft Limit and Hard Limit"
-summary: 关于hdfs的lease的周期
+tagline: ""
+summary: 关于Hdfs的租约机制
 tags: [hadoop, hdfs]
 ---
 {% include JB/setup %}

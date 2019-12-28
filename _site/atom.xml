@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-12-28T11:47:20+08:00</updated>
+ <updated>2019-12-28T11:50:04+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -13,10 +13,10 @@
 
  
  <entry>
-   <title>About Hdfs Lease Period</title>
-   <link href="http://www.turbofei.wang/hadoop/2019/12/28/About-Hdfs-Lease-Period"/>
+   <title>About Hdfs Lease</title>
+   <link href="http://www.turbofei.wang/hadoop/2019/12/28/About-Hdfs-Lease"/>
    <updated>2019-12-28T00:00:00+08:00</updated>
-   <id>http://www.turbofei.wang/hadoop/2019/12/28/About-Hdfs-Lease-Period</id>
+   <id>http://www.turbofei.wang/hadoop/2019/12/28/About-Hdfs-Lease</id>
    <content type="html">
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -31,7 +31,7 @@
   &lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#附录-soft-limit-单元测试&quot; id=&quot;markdown-toc-附录-soft-limit-单元测试&quot;&gt;附录-Soft Limit 单元测试&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;p&gt;关于hdfs的lease的周期&lt;/p&gt;
+&lt;p&gt;关于Hdfs的租约机制&lt;/p&gt;
 
 &lt;h3 id=&quot;背景&quot;&gt;背景&lt;/h3&gt;
 
