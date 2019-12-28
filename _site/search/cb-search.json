@@ -3,6 +3,14 @@
 	"data" : [
 	 
 	{
+		"title" : "About Hdfs Lease Period - hadoop_hdfs",
+		"url" : "/hadoop/2019/12/28/About-Hdfs-Lease-Period"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "Spark随笔 - spark",
 		"url" : "/spark/2019/12/04/Spark%E9%9A%8F%E7%AC%94"
 	}
