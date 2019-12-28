@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2019-12-28T11:50:04+08:00</updated>
+ <updated>2019-12-28T12:02:07+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -24,7 +24,7 @@
   &lt;li&gt;&lt;a href=&quot;#背景&quot; id=&quot;markdown-toc-背景&quot;&gt;背景&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#hdfs-lease机制&quot; id=&quot;markdown-toc-hdfs-lease机制&quot;&gt;Hdfs lease机制&lt;/a&gt;    &lt;ul&gt;
       &lt;li&gt;&lt;a href=&quot;#soft-limit&quot; id=&quot;markdown-toc-soft-limit&quot;&gt;Soft limit&lt;/a&gt;        &lt;ul&gt;
-          &lt;li&gt;&lt;a href=&quot;#基于soft-limit的lock&quot; id=&quot;markdown-toc-基于soft-limit的lock&quot;&gt;基于soft limit的lock？&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#基于soft-limit的lock&quot; id=&quot;markdown-toc-基于soft-limit的lock&quot;&gt;基于Soft Limit的Lock？&lt;/a&gt;&lt;/li&gt;
         &lt;/ul&gt;
       &lt;/li&gt;
     &lt;/ul&gt;
@@ -106,7 +106,7 @@
 &lt;ol&gt;
   &lt;li&gt;由于sortedLease是按照时间对租约排序，第一部分就是取出最老的lease 用于检查&lt;/li&gt;
   &lt;li&gt;第二部分是一个while循环检查这个lease&lt;/li&gt;
-  &lt;li&gt;第三部分是在检查完之后，看这个用于检查的lease是否和检查之后的sortedLease的第一个lease一样，返回检查结果，这个结果用于后续在monitor线程中对这个sortedLease进行同步。&lt;/li&gt;
+  &lt;li&gt;第三部分是在检查完之后，检查sortedLeases是否需要进行sync，返回检查结果，这个结果用于后续在monitor线程中对这个sortedLease进行同步。&lt;/li&gt;
 &lt;/ol&gt;
 
 &lt;p&gt;代码很清晰，核心逻辑是第二部分，我们看下第二部分的while循环代码。&lt;/p&gt;
@@ -180,9 +180,9 @@
 
 &lt;p&gt;通过查看代码，我们看到有一个&lt;code class=&quot;highlighter-rouge&quot;&gt;expiredSoftLimit&lt;/code&gt;方法， 其调用是发生在&lt;code class=&quot;highlighter-rouge&quot;&gt;FSNameSystem&lt;/code&gt;中，对应方法为&lt;code class=&quot;highlighter-rouge&quot;&gt;recoverLeaseInternal&lt;/code&gt;，调用部分如下，如果当前的持有者已经在上个softLimit周期没有刷新这个lease。&lt;/p&gt;
 
-&lt;p&gt;那么尝试调用internalReleaseLease， 顾名思义，释放internalRelese.&lt;/p&gt;
+&lt;p&gt;那么调用&lt;code class=&quot;highlighter-rouge&quot;&gt;internalReleaseLease&lt;/code&gt;， 顾名思义，释放internalRelese.&lt;/p&gt;
 
-&lt;p&gt;其注释为 &lt;code class=&quot;highlighter-rouge&quot;&gt;Move a file that is being written to be immutable.&lt;/code&gt;, 也就是说把这个文件变为一个可以被写，被改变的状态。&lt;/p&gt;
+&lt;p&gt;其注释为 &lt;code class=&quot;highlighter-rouge&quot;&gt;Move a file that is being written to be immutable.&lt;/code&gt;, 也就是说把一个正在被写的文件变为可改变的状态。&lt;/p&gt;
 
 &lt;div class=&quot;language-java highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;        &lt;span class=&quot;c1&quot;&gt;// If the original holder has not renewed in the last SOFTLIMIT &lt;/span&gt;
         &lt;span class=&quot;c1&quot;&gt;// period, then start lease recovery.&lt;/span&gt;
@@ -216,10 +216,10 @@
       &lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
-  &lt;li&gt;变为写改变意味着另外一个dfsClient可以对其进行append操作。&lt;/li&gt;
+  &lt;li&gt;变为可被改变的状态意味着另外一个dfsClient可以对其进行append操作。&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h5 id=&quot;基于soft-limit的lock&quot;&gt;基于soft limit的lock？&lt;/h5&gt;
+&lt;h5 id=&quot;基于soft-limit的lock&quot;&gt;基于Soft Limit的Lock？&lt;/h5&gt;
 
 &lt;p&gt;那么是否可以利用soft limit做一个简单的锁？&lt;/p&gt;
 

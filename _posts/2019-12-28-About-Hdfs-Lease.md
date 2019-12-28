@@ -84,7 +84,7 @@ LeaseManager中的做法是创建一个守护监控线程，定时的来监控�
 
 1. 由于sortedLease是按照时间对租约排序，第一部分就是取出最老的lease 用于检查
 2. 第二部分是一个while循环检查这个lease
-3. 第三部分是在检查完之后，看这个用于检查的lease是否和检查之后的sortedLease的第一个lease一样，返回检查结果，这个结果用于后续在monitor线程中对这个sortedLease进行同步。
+3. 第三部分是在检查完之后，检查sortedLeases是否需要进行sync，返回检查结果，这个结果用于后续在monitor线程中对这个sortedLease进行同步。
 
 代码很清晰，核心逻辑是第二部分，我们看下第二部分的while循环代码。
 
@@ -157,9 +157,9 @@ LeaseManager中的做法是创建一个守护监控线程，定时的来监控�
 
 通过查看代码，我们看到有一个`expiredSoftLimit`方法， 其调用是发生在`FSNameSystem`中，对应方法为`recoverLeaseInternal`，调用部分如下，如果当前的持有者已经在上个softLimit周期没有刷新这个lease。
 
-那么尝试调用internalReleaseLease， 顾名思义，释放internalRelese.
+那么调用`internalReleaseLease`， 顾名思义，释放internalRelese.
 
-其注释为 `Move a file that is being written to be immutable.`, 也就是说把这个文件变为一个可以被写，被改变的状态。
+其注释为 `Move a file that is being written to be immutable.`, 也就是说把一个正在被写的文件变为可改变的状态。
 
 ```java
         // If the original holder has not renewed in the last SOFTLIMIT 
@@ -188,11 +188,9 @@ LeaseManager中的做法是创建一个守护监控线程，定时的来监控�
   - LeaseRenewer发生严重的GC，无法renew //可能性极小
 
   - DFSClient异常退出，已经从LeaseRenewer中移出，但是租约还未超过HardLimit所以租约还未移除 
-- 变为写改变意味着另外一个dfsClient可以对其进行append操作。
+- 变为可被改变的状态意味着另外一个dfsClient可以对其进行append操作。
 
-
-
-##### 基于soft limit的lock？
+##### 基于Soft Limit的Lock？
 
 那么是否可以利用soft limit做一个简单的锁？
 
@@ -205,11 +203,7 @@ LeaseManager中的做法是创建一个守护监控线程，定时的来监控�
 - 这个lock正在被另一个app持有
 - 另一个app异常退出，但是距其异常退出的间隔还未到达softLimitPeriod
 
-
-
 所以这个锁，就相当于app正常退出会释放， 如果app异常退出，超过softLimitPeriod/2 (30s)也会自动释放。
-
-
 
 ### 附录-Soft Limit 单元测试
 
