@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2020-01-10T20:35:01+08:00</updated>
+ <updated>2020-01-10T21:05:08+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -164,7 +164,7 @@
 
 &lt;p&gt;浮点类型是模糊的表示一个小数，它可以表示更大的范围，但是也丢失了很多东西。在Spark中如果以两个浮点类型的列做join是件蛮危险的事情, 可能会得到意想不到的结果。&lt;/p&gt;
 
-&lt;p&gt;但是在Spark中，为了减少在Decimal操作时容易溢出的问题，有时候会将Decimal转换为double类型。&lt;/p&gt;
+&lt;p&gt;但是在Spark中，为了减少在Decimal操作时容易溢出的问题，有时候会将Decimal转换为double类型，可能这个世界不可能完美。&lt;/p&gt;
 
 </content>
  </entry>
