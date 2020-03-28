@@ -3,3 +3,4 @@ _site/
 _dragt/
 .DS_Store
 *.sh
+node_modules/
