@@ -1,0 +1,378 @@
+I"C
+<p>目录</p>
+
+<ul id="markdown-toc">
+  <li><a href="#前言" id="markdown-toc-前言">前言</a>    <ul>
+      <li><a href="#jps" id="markdown-toc-jps">Jps</a></li>
+      <li><a href="#jstack" id="markdown-toc-jstack">Jstack</a></li>
+      <li><a href="#jstat" id="markdown-toc-jstat">Jstat</a></li>
+      <li><a href="#jmap" id="markdown-toc-jmap">Jmap</a>        <ul>
+          <li><a href="#mat" id="markdown-toc-mat">mat</a></li>
+        </ul>
+      </li>
+      <li><a href="#jinfojava-configuration-info" id="markdown-toc-jinfojava-configuration-info">Jinfo(Java Configuration Info)</a></li>
+    </ul>
+  </li>
+  <li><a href="#references" id="markdown-toc-references">References</a></li>
+</ul>
+<p>简单介绍jvm的相关工具，例如 jps, jstack, jstat, jmap, jinfo.</p>
+
+<h3 id="前言">前言</h3>
+
+<p>jvm提供了一些工具用来用来查看运行java程序的一些状态。</p>
+
+<h4 id="jps">Jps</h4>
+
+<p>首先就是jps，用来查看运行的java线程。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hadoop</span><span class="nd">@spark6</span><span class="o">:~</span><span class="err">$</span> <span class="n">jps</span>
+<span class="mi">131649</span> <span class="nc">KyuubiSubmit</span>
+<span class="mi">39087</span> <span class="nc">KyuubiSubmit</span>
+<span class="mi">144342</span> <span class="nc">Jps</span>
+<span class="mi">136470</span> <span class="nc">KyuubiSubmit</span>
+</code></pre></div></div>
+
+<p>在知道java线程的信息之后，可以使用ps -ef查看一些详细的启动信息.</p>
+
+<p>其中 -e 代表所有线程同A, -f代表 full-format, 包括command-line.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hadoop</span><span class="nd">@spark6</span><span class="o">:~</span><span class="err">$</span> <span class="n">ps</span> <span class="o">-</span><span class="n">ef</span><span class="o">|</span><span class="n">grep</span> <span class="nc">KyuubiSubmit</span>
+<span class="n">hadoop</span>    <span class="mi">39087</span>      <span class="mi">1</span> <span class="mi">99</span> <span class="mo">05</span><span class="o">:</span><span class="mi">29</span> <span class="o">?</span>        <span class="mi">13</span><span class="o">:</span><span class="mi">15</span><span class="o">:</span><span class="mi">44</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">java</span><span class="o">-</span><span class="n">current</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">java</span> <span class="o">-</span><span class="n">cp</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">kyuubi_hz_cluster_10</span><span class="o">/</span><span class="n">kyuubi</span><span class="o">-</span><span class="mf">0.6</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="n">bin</span><span class="o">-</span><span class="n">spark</span><span class="o">-</span><span class="mf">2.1</span><span class="o">.</span><span class="mi">3</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">kyuubi</span><span class="o">-</span><span class="n">server</span><span class="o">-</span><span class="mf">0.6</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="na">jar</span><span class="o">:/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">kyuubi_hz_cluster_10</span><span class="o">/</span><span class="n">spark</span><span class="o">-</span><span class="mf">2.3</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="n">bin</span><span class="o">-</span><span class="n">ne</span><span class="o">-</span><span class="mf">0.1</span><span class="o">.</span><span class="mi">0</span><span class="o">/</span><span class="n">conf</span><span class="o">/:/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">kyuubi_hz_cluster_10</span><span class="o">/</span><span class="n">spark</span><span class="o">-</span><span class="mf">2.3</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="n">bin</span><span class="o">-</span><span class="n">ne</span><span class="o">-</span><span class="mf">0.1</span><span class="o">.</span><span class="mi">0</span><span class="o">/</span><span class="n">jars</span><span class="o">/*:/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">hadoop</span><span class="o">-</span><span class="n">client4cluster10</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span> <span class="o">-</span><span class="nc">Xmx164g</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">PrintFlagsFinal</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UnlockDiagnosticVMOptions</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">ParGCCardsPerStrideChunk</span><span class="o">=</span><span class="mi">4096</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UseParNewGC</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UseConcMarkSweepGC</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">CMSConcurrentMTEnabled</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">CMSInitiatingOccupancyFraction</span><span class="o">=</span><span class="mi">70</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UseCMSInitiatingOccupancyOnly</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">CMSClassUnloadingEnabled</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">CMSParallelRemarkEnabled</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UseCondCardMark</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">PermSize</span><span class="o">=</span><span class="mi">1024</span><span class="n">m</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">MaxPermSize</span><span class="o">=</span><span class="mi">1024</span><span class="n">m</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">MaxDirectMemorySize</span><span class="o">=</span><span class="mi">8192</span><span class="n">m</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">HeapDumpOnOutOfMemoryError</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">HeapDumpPath</span><span class="o">=./</span><span class="n">logs</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">OnOutOfMemoryError</span><span class="o">=</span><span class="n">kill</span> <span class="o">-</span><span class="mi">9</span> <span class="o">%</span><span class="n">p</span> <span class="o">-</span><span class="nl">verbose:</span><span class="n">gc</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">PrintGCDetails</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">PrintGCDateStamps</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">PrintTenuringDistribution</span> <span class="o">-</span><span class="nl">Xloggc:</span><span class="o">./</span><span class="n">logs</span><span class="o">/</span><span class="n">kyuubi</span><span class="o">-</span><span class="n">server</span><span class="o">-</span><span class="n">gc</span><span class="o">-%</span><span class="n">t</span><span class="o">.</span><span class="na">log</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UseGCLogFileRotation</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">NumberOfGCLogFiles</span><span class="o">=</span><span class="mi">50</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">GCLogFileSize</span><span class="o">=</span><span class="mi">5</span><span class="no">M</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">NewRatio</span><span class="o">=</span><span class="mi">3</span> <span class="o">-</span><span class="nc">Dio</span><span class="o">.</span><span class="na">netty</span><span class="o">.</span><span class="na">noPreferDirect</span><span class="o">=</span><span class="kc">true</span> <span class="o">-</span><span class="nc">Dio</span><span class="o">.</span><span class="na">netty</span><span class="o">.</span><span class="na">recycler</span><span class="o">.</span><span class="na">maxCapacity</span><span class="o">=</span><span class="mi">0</span> <span class="o">-</span><span class="nc">Dio</span><span class="o">.</span><span class="na">netty</span><span class="o">.</span><span class="na">noUnsafe</span><span class="o">=</span><span class="kc">true</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">spark</span><span class="o">.</span><span class="na">deploy</span><span class="o">.</span><span class="na">KyuubiSubmit</span> <span class="o">--</span><span class="kd">class</span> <span class="nc">yaooqinn</span><span class="o">.</span><span class="na">kyuubi</span><span class="o">.</span><span class="na">server</span><span class="o">.</span><span class="na">KyuubiServer</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">kyuubi_hz_cluster_10</span><span class="o">/</span><span class="n">kyuubi</span><span class="o">-</span><span class="mf">0.6</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="n">bin</span><span class="o">-</span><span class="n">spark</span><span class="o">-</span><span class="mf">2.1</span><span class="o">.</span><span class="mi">3</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">kyuubi</span><span class="o">-</span><span class="n">server</span><span class="o">-</span><span class="mf">0.6</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="na">jar</span>
+</code></pre></div></div>
+
+<p>如果我们使用 ps -aux 命令，可以看到更多的信息。</p>
+
+<p>USER PID %CPU %MEM VSZ RSS TTY STAT START TIME COMMAND</p>
+
+<p>VSZ 进程使用的虚拟內存量(KB)；</p>
+
+<p>RSS 该进程占用的固定內存量(KB)(驻留中页的数量)；</p>
+
+<p>TTY 该进程在哪个终端上进行(登陆者的终端位置)，若与终端无关，則显示(?)。</p>
+
+<p>START 该进程被启动时间；</p>
+
+<p>TIME 该进程实际使用CPU运行时间；</p>
+
+<p>COMMAND 命令的名称和参数；</p>
+
+<p>其他信息参考<a href="https://www.cnblogs.com/dion-90/articles/9048627.html">PS -aux 命令详解</a></p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hadoop</span><span class="nd">@spark6</span><span class="o">:~</span><span class="err">$</span> <span class="n">ps</span> <span class="o">-</span><span class="n">aux</span><span class="o">|</span><span class="n">grep</span> <span class="nc">KyuubiSubmit</span>
+<span class="n">hadoop</span>    <span class="mi">39087</span>  <span class="mi">179</span>  <span class="mf">3.2</span> <span class="mi">197330936</span> <span class="mi">8695348</span> <span class="o">?</span>   <span class="nc">Sl</span>   <span class="mo">05</span><span class="o">:</span><span class="mi">29</span> <span class="mi">828</span><span class="o">:</span><span class="mo">00</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">java</span><span class="o">-</span><span class="n">current</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">java</span> <span class="o">-</span><span class="n">cp</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">kyuubi_hz_cluster_10</span><span class="o">/</span><span class="n">kyuubi</span><span class="o">-</span><span class="mf">0.6</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="n">bin</span><span class="o">-</span><span class="n">spark</span><span class="o">-</span><span class="mf">2.1</span><span class="o">.</span><span class="mi">3</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">kyuubi</span><span class="o">-</span><span class="n">server</span><span class="o">-</span><span class="mf">0.6</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="na">jar</span><span class="o">:/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">kyuubi_hz_cluster_10</span><span class="o">/</span><span class="n">spark</span><span class="o">-</span><span class="mf">2.3</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="n">bin</span><span class="o">-</span><span class="n">ne</span><span class="o">-</span><span class="mf">0.1</span><span class="o">.</span><span class="mi">0</span><span class="o">/</span><span class="n">conf</span><span class="o">/:/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">kyuubi_hz_cluster_10</span><span class="o">/</span><span class="n">spark</span><span class="o">-</span><span class="mf">2.3</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="n">bin</span><span class="o">-</span><span class="n">ne</span><span class="o">-</span><span class="mf">0.1</span><span class="o">.</span><span class="mi">0</span><span class="o">/</span><span class="n">jars</span><span class="o">/*:/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">hadoop</span><span class="o">-</span><span class="n">client4cluster10</span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span> <span class="o">-</span><span class="nc">Xmx164g</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">PrintFlagsFinal</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UnlockDiagnosticVMOptions</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">ParGCCardsPerStrideChunk</span><span class="o">=</span><span class="mi">4096</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UseParNewGC</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UseConcMarkSweepGC</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">CMSConcurrentMTEnabled</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">CMSInitiatingOccupancyFraction</span><span class="o">=</span><span class="mi">70</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UseCMSInitiatingOccupancyOnly</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">CMSClassUnloadingEnabled</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">CMSParallelRemarkEnabled</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UseCondCardMark</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">PermSize</span><span class="o">=</span><span class="mi">1024</span><span class="n">m</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">MaxPermSize</span><span class="o">=</span><span class="mi">1024</span><span class="n">m</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">MaxDirectMemorySize</span><span class="o">=</span><span class="mi">8192</span><span class="n">m</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">HeapDumpOnOutOfMemoryError</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">HeapDumpPath</span><span class="o">=./</span><span class="n">logs</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">OnOutOfMemoryError</span><span class="o">=</span><span class="n">kill</span> <span class="o">-</span><span class="mi">9</span> <span class="o">%</span><span class="n">p</span> <span class="o">-</span><span class="nl">verbose:</span><span class="n">gc</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">PrintGCDetails</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">PrintGCDateStamps</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">PrintTenuringDistribution</span> <span class="o">-</span><span class="nl">Xloggc:</span><span class="o">./</span><span class="n">logs</span><span class="o">/</span><span class="n">kyuubi</span><span class="o">-</span><span class="n">server</span><span class="o">-</span><span class="n">gc</span><span class="o">-%</span><span class="n">t</span><span class="o">.</span><span class="na">log</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">UseGCLogFileRotation</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">NumberOfGCLogFiles</span><span class="o">=</span><span class="mi">50</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">GCLogFileSize</span><span class="o">=</span><span class="mi">5</span><span class="no">M</span> <span class="o">-</span><span class="nl">XX:</span><span class="nc">NewRatio</span><span class="o">=</span><span class="mi">3</span> <span class="o">-</span><span class="nc">Dio</span><span class="o">.</span><span class="na">netty</span><span class="o">.</span><span class="na">noPreferDirect</span><span class="o">=</span><span class="kc">true</span> <span class="o">-</span><span class="nc">Dio</span><span class="o">.</span><span class="na">netty</span><span class="o">.</span><span class="na">recycler</span><span class="o">.</span><span class="na">maxCapacity</span><span class="o">=</span><span class="mi">0</span> <span class="o">-</span><span class="nc">Dio</span><span class="o">.</span><span class="na">netty</span><span class="o">.</span><span class="na">noUnsafe</span><span class="o">=</span><span class="kc">true</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">spark</span><span class="o">.</span><span class="na">deploy</span><span class="o">.</span><span class="na">KyuubiSubmit</span> <span class="o">--</span><span class="kd">class</span> <span class="nc">yaooqinn</span><span class="o">.</span><span class="na">kyuubi</span><span class="o">.</span><span class="na">server</span><span class="o">.</span><span class="na">KyuubiServer</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">hadoop</span><span class="o">/</span><span class="n">kyuubi_hz_cluster_10</span><span class="o">/</span><span class="n">kyuubi</span><span class="o">-</span><span class="mf">0.6</span><span class="o">.</span><span class="mi">2</span><span class="o">-</span><span class="n">bin</span><span class="o">-</span><span class="n">spark</span><span class="o">-</span><span class="mf">2.1</span><span class="o">.</span><span class="mi">3</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">kyuubi</span><span class="o">-</span><span class="n">server</span><span class="o">-</span><span class="mf">0.6</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="na">jar</span>
+</code></pre></div></div>
+
+<h4 id="jstack">Jstack</h4>
+
+<p>Jstack命令可以用来打印当前java 线程的线程栈，比如如果java程序长时间无响应，可以使用Jstack命令查看当前线程是否卡在了哪里，看是否存在死锁等情况。</p>
+
+<p>jstack命令生成的thread dump信息包含了JVM中所有存活的线程.</p>
+
+<p>在dump中，线程一般存在如下几种状态：
+1、RUNNABLE，线程处于执行中
+2、BLOCKED，线程被阻塞
+3、WAITING，线程正在等待</p>
+
+<p>下面是一个示例.</p>
+
+<p>可以看到一个java程序里面有很多线程。一部分是JVM内部的功能线程，另一部分是用户自己的线程，可以参考<a href="http://ifeve.com/jvm-thread/">JVM内部线程</a>。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="err">$</span> <span class="n">jstack</span> <span class="mi">29047</span>
+<span class="mi">2019</span><span class="o">-</span><span class="mo">06</span><span class="o">-</span><span class="mi">29</span> <span class="mi">16</span><span class="o">:</span><span class="mi">51</span><span class="o">:</span><span class="mi">28</span>
+<span class="nc">Full</span> <span class="n">thread</span> <span class="n">dump</span> <span class="nc">Java</span> <span class="nf">HotSpot</span><span class="o">(</span><span class="no">TM</span><span class="o">)</span> <span class="mi">64</span><span class="o">-</span><span class="nc">Bit</span> <span class="nc">Server</span> <span class="nf">VM</span> <span class="o">(</span><span class="mf">25.111</span><span class="o">-</span><span class="n">b14</span> <span class="n">mixed</span> <span class="n">mode</span><span class="o">):</span>
+
+<span class="s">"Attach Listener"</span> <span class="err">#</span><span class="mi">13</span> <span class="n">daemon</span> <span class="n">prio</span><span class="o">=</span><span class="mi">9</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc168804800</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0xe13</span> <span class="n">waiting</span> <span class="n">on</span> <span class="n">condition</span> <span class="o">[</span><span class="mh">0x0000000000000000</span><span class="o">]</span>
+   <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">State</span><span class="o">:</span> <span class="no">RUNNABLE</span>
+
+<span class="s">"NGSession 1: (idle)"</span> <span class="err">#</span><span class="mi">12</span> <span class="n">prio</span><span class="o">=</span><span class="mi">5</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc168146000</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x4603</span> <span class="n">in</span> <span class="nc">Object</span><span class="o">.</span><span class="na">wait</span><span class="o">()</span> <span class="o">[</span><span class="mh">0x000070000ec8b000</span><span class="o">]</span>
+   <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">State</span><span class="o">:</span> <span class="no">WAITING</span> <span class="o">(</span><span class="n">on</span> <span class="n">object</span> <span class="n">monitor</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Object</span><span class="o">.</span><span class="na">wait</span><span class="o">(</span><span class="nc">Native</span> <span class="nc">Method</span><span class="o">)</span>
+	<span class="o">-</span> <span class="n">waiting</span> <span class="n">on</span> <span class="o">&lt;</span><span class="mh">0x00000007aae55e68</span><span class="o">&gt;</span> <span class="o">(</span><span class="n">a</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Object</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Object</span><span class="o">.</span><span class="na">wait</span><span class="o">(</span><span class="nc">Object</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">502</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">com</span><span class="o">.</span><span class="na">martiansoftware</span><span class="o">.</span><span class="na">nailgun</span><span class="o">.</span><span class="na">NGSession</span><span class="o">.</span><span class="na">nextSocket</span><span class="o">(</span><span class="nc">NGSession</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">167</span><span class="o">)</span>
+	<span class="o">-</span> <span class="n">locked</span> <span class="o">&lt;</span><span class="mh">0x00000007aae55e68</span><span class="o">&gt;</span> <span class="o">(</span><span class="n">a</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Object</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">com</span><span class="o">.</span><span class="na">martiansoftware</span><span class="o">.</span><span class="na">nailgun</span><span class="o">.</span><span class="na">NGSession</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="nc">NGSession</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">186</span><span class="o">)</span>
+
+<span class="s">"DestroyJavaVM"</span> <span class="err">#</span><span class="mi">11</span> <span class="n">prio</span><span class="o">=</span><span class="mi">5</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc168112800</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x2803</span> <span class="n">waiting</span> <span class="n">on</span> <span class="n">condition</span> <span class="o">[</span><span class="mh">0x0000000000000000</span><span class="o">]</span>
+   <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">State</span><span class="o">:</span> <span class="no">RUNNABLE</span>
+
+<span class="s">"NGServer(localhost/127.0.0.1, 65319,27633241-7c9d-4458-9831-527f37863f1d)"</span> <span class="err">#</span><span class="mi">9</span> <span class="n">prio</span><span class="o">=</span><span class="mi">5</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc169095800</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x4703</span> <span class="n">runnable</span> <span class="o">[</span><span class="mh">0x000070000eb88000</span><span class="o">]</span>
+   <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">State</span><span class="o">:</span> <span class="no">RUNNABLE</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">net</span><span class="o">.</span><span class="na">PlainSocketImpl</span><span class="o">.</span><span class="na">socketAccept</span><span class="o">(</span><span class="nc">Native</span> <span class="nc">Method</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">net</span><span class="o">.</span><span class="na">AbstractPlainSocketImpl</span><span class="o">.</span><span class="na">accept</span><span class="o">(</span><span class="nc">AbstractPlainSocketImpl</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">409</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">net</span><span class="o">.</span><span class="na">ServerSocket</span><span class="o">.</span><span class="na">implAccept</span><span class="o">(</span><span class="nc">ServerSocket</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">545</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">net</span><span class="o">.</span><span class="na">ServerSocket</span><span class="o">.</span><span class="na">accept</span><span class="o">(</span><span class="nc">ServerSocket</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">513</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">com</span><span class="o">.</span><span class="na">martiansoftware</span><span class="o">.</span><span class="na">nailgun</span><span class="o">.</span><span class="na">NGServer</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="nc">NGServer</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">418</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="nc">Thread</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">745</span><span class="o">)</span>
+
+<span class="s">"Service Thread"</span> <span class="err">#</span><span class="mi">8</span> <span class="n">daemon</span> <span class="n">prio</span><span class="o">=</span><span class="mi">9</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc168002000</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x3a03</span> <span class="n">runnable</span> <span class="o">[</span><span class="mh">0x0000000000000000</span><span class="o">]</span>
+   <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">State</span><span class="o">:</span> <span class="no">RUNNABLE</span>
+
+<span class="s">"C1 CompilerThread2"</span> <span class="err">#</span><span class="mi">7</span> <span class="n">daemon</span> <span class="n">prio</span><span class="o">=</span><span class="mi">9</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc16883f000</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x3803</span> <span class="n">waiting</span> <span class="n">on</span> <span class="n">condition</span> <span class="o">[</span><span class="mh">0x0000000000000000</span><span class="o">]</span>
+   <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">State</span><span class="o">:</span> <span class="no">RUNNABLE</span>
+
+<span class="s">"C2 CompilerThread1"</span> <span class="err">#</span><span class="mi">6</span> <span class="n">daemon</span> <span class="n">prio</span><span class="o">=</span><span class="mi">9</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc169816800</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x3603</span> <span class="n">waiting</span> <span class="n">on</span> <span class="n">condition</span> <span class="o">[</span><span class="mh">0x0000000000000000</span><span class="o">]</span>
+   <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">State</span><span class="o">:</span> <span class="no">RUNNABLE</span>
+
+<span class="s">"C2 CompilerThread0"</span> <span class="err">#</span><span class="mi">5</span> <span class="n">daemon</span> <span class="n">prio</span><span class="o">=</span><span class="mi">9</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc16900f000</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x3503</span> <span class="n">waiting</span> <span class="n">on</span> <span class="n">condition</span> <span class="o">[</span><span class="mh">0x0000000000000000</span><span class="o">]</span>
+   <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">State</span><span class="o">:</span> <span class="no">RUNNABLE</span>
+
+<span class="s">"Signal Dispatcher"</span> <span class="err">#</span><span class="mi">4</span> <span class="n">daemon</span> <span class="n">prio</span><span class="o">=</span><span class="mi">9</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc16803b800</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x3403</span> <span class="n">runnable</span> <span class="o">[</span><span class="mh">0x0000000000000000</span><span class="o">]</span>
+   <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">State</span><span class="o">:</span> <span class="no">RUNNABLE</span>
+
+<span class="s">"Finalizer"</span> <span class="err">#</span><span class="mi">3</span> <span class="n">daemon</span> <span class="n">prio</span><span class="o">=</span><span class="mi">8</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc168026800</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x2f03</span> <span class="n">in</span> <span class="nc">Object</span><span class="o">.</span><span class="na">wait</span><span class="o">()</span> <span class="o">[</span><span class="mh">0x000070000e473000</span><span class="o">]</span>
+   <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">State</span><span class="o">:</span> <span class="no">WAITING</span> <span class="o">(</span><span class="n">on</span> <span class="n">object</span> <span class="n">monitor</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Object</span><span class="o">.</span><span class="na">wait</span><span class="o">(</span><span class="nc">Native</span> <span class="nc">Method</span><span class="o">)</span>
+	<span class="o">-</span> <span class="n">waiting</span> <span class="n">on</span> <span class="o">&lt;</span><span class="mh">0x00000007aab08e98</span><span class="o">&gt;</span> <span class="o">(</span><span class="n">a</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">ref</span><span class="o">.</span><span class="na">ReferenceQueue</span><span class="n">$Lock</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">ref</span><span class="o">.</span><span class="na">ReferenceQueue</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="nc">ReferenceQueue</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">143</span><span class="o">)</span>
+	<span class="o">-</span> <span class="n">locked</span> <span class="o">&lt;</span><span class="mh">0x00000007aab08e98</span><span class="o">&gt;</span> <span class="o">(</span><span class="n">a</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">ref</span><span class="o">.</span><span class="na">ReferenceQueue</span><span class="n">$Lock</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">ref</span><span class="o">.</span><span class="na">ReferenceQueue</span><span class="o">.</span><span class="na">remove</span><span class="o">(</span><span class="nc">ReferenceQueue</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">164</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">ref</span><span class="o">.</span><span class="na">Finalizer</span><span class="n">$FinalizerThread</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="nc">Finalizer</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">209</span><span class="o">)</span>
+
+<span class="s">"Reference Handler"</span> <span class="err">#</span><span class="mi">2</span> <span class="n">daemon</span> <span class="n">prio</span><span class="o">=</span><span class="mi">10</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc169020000</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x2e03</span> <span class="n">in</span> <span class="nc">Object</span><span class="o">.</span><span class="na">wait</span><span class="o">()</span> <span class="o">[</span><span class="mh">0x000070000e370000</span><span class="o">]</span>
+   <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Thread</span><span class="o">.</span><span class="na">State</span><span class="o">:</span> <span class="no">WAITING</span> <span class="o">(</span><span class="n">on</span> <span class="n">object</span> <span class="n">monitor</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Object</span><span class="o">.</span><span class="na">wait</span><span class="o">(</span><span class="nc">Native</span> <span class="nc">Method</span><span class="o">)</span>
+	<span class="o">-</span> <span class="n">waiting</span> <span class="n">on</span> <span class="o">&lt;</span><span class="mh">0x00000007aab06b40</span><span class="o">&gt;</span> <span class="o">(</span><span class="n">a</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">ref</span><span class="o">.</span><span class="na">Reference</span><span class="n">$Lock</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">Object</span><span class="o">.</span><span class="na">wait</span><span class="o">(</span><span class="nc">Object</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">502</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">ref</span><span class="o">.</span><span class="na">Reference</span><span class="o">.</span><span class="na">tryHandlePending</span><span class="o">(</span><span class="nc">Reference</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">191</span><span class="o">)</span>
+	<span class="o">-</span> <span class="n">locked</span> <span class="o">&lt;</span><span class="mh">0x00000007aab06b40</span><span class="o">&gt;</span> <span class="o">(</span><span class="n">a</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">ref</span><span class="o">.</span><span class="na">Reference</span><span class="n">$Lock</span><span class="o">)</span>
+	<span class="n">at</span> <span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">ref</span><span class="o">.</span><span class="na">Reference</span><span class="n">$ReferenceHandler</span><span class="o">.</span><span class="na">run</span><span class="o">(</span><span class="nc">Reference</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">153</span><span class="o">)</span>
+
+<span class="s">"VM Thread"</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc169001000</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x2c03</span> <span class="n">runnable</span>
+
+<span class="s">"GC task thread#0 (ParallelGC)"</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc168004800</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x1d07</span> <span class="n">runnable</span>
+
+<span class="s">"GC task thread#1 (ParallelGC)"</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc168005800</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x1e03</span> <span class="n">runnable</span>
+
+<span class="s">"GC task thread#2 (ParallelGC)"</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc169002000</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x5403</span> <span class="n">runnable</span>
+
+<span class="s">"GC task thread#3 (ParallelGC)"</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc169003000</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x5303</span> <span class="n">runnable</span>
+
+<span class="s">"VM Periodic Task Thread"</span> <span class="n">os_prio</span><span class="o">=</span><span class="mi">31</span> <span class="n">tid</span><span class="o">=</span><span class="mh">0x00007fc16804d000</span> <span class="n">nid</span><span class="o">=</span><span class="mh">0x3c03</span> <span class="n">waiting</span> <span class="n">on</span> <span class="n">condition</span>
+
+<span class="no">JNI</span> <span class="n">global</span> <span class="nl">references:</span> <span class="mi">47</span>
+</code></pre></div></div>
+
+<h4 id="jstat">Jstat</h4>
+
+<p>jstat用法如下:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jstat -&lt;option&gt; [-t] [-h&lt;lines&gt;] &lt;vmid&gt; [&lt;interval&gt; [&lt;count&gt;]]
+</code></pre></div></div>
+
+<ul>
+  <li>-option 是可选选项
+    <ul>
+      <li>
+        <p>-class</p>
+
+        <p>跟class 加载，占用消耗有关的状态.</p>
+
+        <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hadoop</span><span class="nd">@spark6</span><span class="o">:~</span><span class="err">$</span> <span class="n">jstat</span> <span class="o">-</span><span class="kd">class</span> <span class="err">131649</span>
+<span class="nc">Loaded</span>  <span class="nc">Bytes</span>  <span class="nc">Unloaded</span>  <span class="nc">Bytes</span>     <span class="nc">Time</span>
+ <span class="mi">21038</span> <span class="mf">42844.6</span>      <span class="mi">904</span>  <span class="mf">1394.4</span>      <span class="mf">28.32</span>
+</code></pre></div>        </div>
+      </li>
+      <li>
+        <p>-compiler</p>
+
+        <p>应该是 即时编译有关吧.</p>
+
+        <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hadoop</span><span class="nd">@spark6</span><span class="o">:~</span><span class="err">$</span> <span class="n">jstat</span> <span class="o">-</span><span class="n">compiler</span> <span class="mi">131649</span>
+<span class="nc">Compiled</span> <span class="nc">Failed</span> <span class="nc">Invalid</span>   <span class="nc">Time</span>   <span class="nc">FailedType</span> <span class="nc">FailedMethod</span>
+   <span class="mi">39298</span>      <span class="mi">3</span>       <span class="mi">0</span>   <span class="mf">216.39</span>          <span class="mi">1</span> <span class="n">org</span><span class="o">/</span><span class="n">apache</span><span class="o">/</span><span class="n">spark</span><span class="o">/</span><span class="nc">ContextCleaner</span><span class="err">$</span><span class="n">$anonfun$org$apache$spark$ContextCleaner</span><span class="err">$</span><span class="n">$keepCleaning</span><span class="err">$</span><span class="mi">1</span> <span class="n">apply$mcV$sp</span>
+</code></pre></div>        </div>
+      </li>
+      <li>
+        <p>-gc 垃圾回收统计</p>
+
+        <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hadoop</span><span class="nd">@spark6</span><span class="o">:~</span><span class="err">$</span> <span class="n">jstat</span> <span class="o">-</span><span class="n">gc</span> <span class="mi">131649</span>
+<span class="nl">Warning:</span> <span class="nc">Unresolved</span> <span class="nl">Symbol:</span> <span class="n">sun</span><span class="o">.</span><span class="na">gc</span><span class="o">.</span><span class="na">generation</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="na">space</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="na">capacity</span> <span class="n">substituted</span> <span class="nc">NaN</span>
+<span class="nl">Warning:</span> <span class="nc">Unresolved</span> <span class="nl">Symbol:</span> <span class="n">sun</span><span class="o">.</span><span class="na">gc</span><span class="o">.</span><span class="na">generation</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="na">space</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="na">used</span> <span class="n">substituted</span> <span class="nc">NaN</span>
+ <span class="no">S0C</span>    <span class="no">S1C</span>    <span class="no">S0U</span>    <span class="no">S1U</span>      <span class="no">EC</span>       <span class="no">EU</span>        <span class="no">OC</span>         <span class="no">OU</span>       <span class="no">PC</span>     <span class="no">PU</span>    <span class="no">YGC</span>     <span class="no">YGCT</span>    <span class="no">FGC</span>    <span class="no">FGCT</span>     <span class="no">GCT</span>
+<span class="mf">186240.0</span> <span class="mf">186240.0</span> <span class="mf">186240.0</span>  <span class="mf">0.0</span>   <span class="mf">1490240.0</span> <span class="mf">326860.8</span> <span class="mf">5587220.0</span>  <span class="mf">3700631.8</span>    <span class="err">�</span>      <span class="err">�</span>     <span class="mi">32818</span> <span class="mf">2921.766</span> <span class="mi">11684</span> <span class="mf">4006.977</span> <span class="mf">6928.743</span>
+</code></pre></div>        </div>
+      </li>
+      <li>
+        <p>-gccapacity 堆内存统计</p>
+      </li>
+      <li>
+        <p>-gccause</p>
+      </li>
+      <li>
+        <p>-gcnew</p>
+      </li>
+      <li>
+        <p>-gcnewcapacity</p>
+      </li>
+      <li>
+        <p>-gcold</p>
+      </li>
+      <li>
+        <p>-gcoldcapacity</p>
+      </li>
+      <li>
+        <p>-gcpermcapacity</p>
+      </li>
+      <li>
+        <p>-gcutil 总结垃圾回收统计</p>
+      </li>
+      <li>
+        <p>-printcompilation</p>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>-t 是用于显示timeStamp，示例如下。</p>
+
+    <ul>
+      <li>
+        <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hadoop@spark6:~$ jstat -gc 131649
+Warning: Unresolved Symbol: sun.gc.generation.2.space.0.capacity substituted NaN
+Warning: Unresolved Symbol: sun.gc.generation.2.space.0.used substituted NaN
+ S0C    S1C    S0U    S1U      EC       EU        OC         OU       PC     PU    YGC     YGCT    FGC    FGCT     GCT
+186240.0 186240.0 186240.0  0.0   1490240.0 1341107.0 5587220.0  3388251.2    �      �     32748 2914.187 11656 3990.174 6904.362
+hadoop@spark6:~$ jstat -gc -t 131649
+Warning: Unresolved Symbol: sun.gc.generation.2.space.0.capacity substituted NaN
+Warning: Unresolved Symbol: sun.gc.generation.2.space.0.used substituted NaN
+Timestamp        S0C    S1C    S0U    S1U      EC       EU        OC         OU       PC     PU    YGC     YGCT    FGC    FGCT     GCT
+       247190.2 186240.0 186240.0 186240.0  0.0   1490240.0 1341242.8 5587220.0  3102583.1    �      �     32748 2914.187 11657 3990.174 6904.362
+</code></pre></div>        </div>
+      </li>
+    </ul>
+  </li>
+  <li>
+    <p>-h 是每行之间的样本数，用于求平均值吧</p>
+  </li>
+  <li>
+    <p>vmid 是java进程Id</p>
+  </li>
+  <li>
+    <p>interval 采样间距，单位为毫秒</p>
+  </li>
+  <li>采样次数</li>
+</ul>
+
+<h4 id="jmap">Jmap</h4>
+
+<p>用法如下:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hadoop</span><span class="nd">@spark6</span><span class="o">:~</span><span class="err">$</span> <span class="n">jmap</span>
+<span class="nl">Usage:</span>
+    <span class="n">jmap</span> <span class="o">[</span><span class="n">option</span><span class="o">]</span> <span class="o">&lt;</span><span class="n">pid</span><span class="o">&gt;</span>
+        <span class="o">(</span><span class="n">to</span> <span class="n">connect</span> <span class="n">to</span> <span class="n">running</span> <span class="n">process</span><span class="o">)</span>
+    <span class="n">jmap</span> <span class="o">[</span><span class="n">option</span><span class="o">]</span> <span class="o">&lt;</span><span class="n">executable</span> <span class="o">&lt;</span><span class="n">core</span><span class="o">&gt;</span>
+        <span class="o">(</span><span class="n">to</span> <span class="n">connect</span> <span class="n">to</span> <span class="n">a</span> <span class="n">core</span> <span class="n">file</span><span class="o">)</span>
+    <span class="n">jmap</span> <span class="o">[</span><span class="n">option</span><span class="o">]</span> <span class="o">[</span><span class="n">server_id</span><span class="err">@</span><span class="o">]&lt;</span><span class="n">remote</span> <span class="n">server</span> <span class="no">IP</span> <span class="n">or</span> <span class="n">hostname</span><span class="o">&gt;</span>
+        <span class="o">(</span><span class="n">to</span> <span class="n">connect</span> <span class="n">to</span> <span class="n">remote</span> <span class="n">debug</span> <span class="n">server</span><span class="o">)</span>
+
+<span class="n">where</span> <span class="o">&lt;</span><span class="n">option</span><span class="o">&gt;</span> <span class="n">is</span> <span class="n">one</span> <span class="nl">of:</span>
+    <span class="o">&lt;</span><span class="n">none</span><span class="o">&gt;</span>               <span class="n">to</span> <span class="n">print</span> <span class="n">same</span> <span class="n">info</span> <span class="n">as</span> <span class="nc">Solaris</span> <span class="n">pmap</span>
+    <span class="o">-</span><span class="n">heap</span>                <span class="n">to</span> <span class="n">print</span> <span class="n">java</span> <span class="n">heap</span> <span class="n">summary</span>
+    <span class="o">-</span><span class="n">histo</span><span class="o">[:</span><span class="n">live</span><span class="o">]</span>        <span class="n">to</span> <span class="n">print</span> <span class="n">histogram</span> <span class="n">of</span> <span class="n">java</span> <span class="n">object</span> <span class="n">heap</span><span class="o">;</span> <span class="k">if</span> <span class="n">the</span> <span class="s">"live"</span>
+                         <span class="n">suboption</span> <span class="n">is</span> <span class="n">specified</span><span class="o">,</span> <span class="n">only</span> <span class="n">count</span> <span class="n">live</span> <span class="n">objects</span>
+    <span class="o">-</span><span class="n">permstat</span>            <span class="n">to</span> <span class="n">print</span> <span class="n">permanent</span> <span class="n">generation</span> <span class="n">statistics</span>
+    <span class="o">-</span><span class="n">finalizerinfo</span>       <span class="n">to</span> <span class="n">print</span> <span class="n">information</span> <span class="n">on</span> <span class="n">objects</span> <span class="n">awaiting</span> <span class="n">finalization</span>
+    <span class="o">-</span><span class="nl">dump:</span><span class="o">&lt;</span><span class="n">dump</span><span class="o">-</span><span class="n">options</span><span class="o">&gt;</span> <span class="n">to</span> <span class="n">dump</span> <span class="n">java</span> <span class="n">heap</span> <span class="n">in</span> <span class="n">hprof</span> <span class="n">binary</span> <span class="n">format</span>
+                         <span class="n">dump</span><span class="o">-</span><span class="nl">options:</span>
+                           <span class="n">live</span>         <span class="n">dump</span> <span class="n">only</span> <span class="n">live</span> <span class="n">objects</span><span class="o">;</span> <span class="k">if</span> <span class="n">not</span> <span class="n">specified</span><span class="o">,</span>
+                                        <span class="n">all</span> <span class="n">objects</span> <span class="n">in</span> <span class="n">the</span> <span class="n">heap</span> <span class="n">are</span> <span class="n">dumped</span><span class="o">.</span>
+                           <span class="n">format</span><span class="o">=</span><span class="n">b</span>     <span class="n">binary</span> <span class="n">format</span>
+                           <span class="n">file</span><span class="o">=&lt;</span><span class="n">file</span><span class="o">&gt;</span>  <span class="n">dump</span> <span class="n">heap</span> <span class="n">to</span> <span class="o">&lt;</span><span class="n">file</span><span class="o">&gt;</span>
+                         <span class="nl">Example:</span> <span class="n">jmap</span> <span class="o">-</span><span class="nl">dump:</span><span class="n">live</span><span class="o">,</span><span class="n">format</span><span class="o">=</span><span class="n">b</span><span class="o">,</span><span class="n">file</span><span class="o">=</span><span class="n">heap</span><span class="o">.</span><span class="na">bin</span> <span class="o">&lt;</span><span class="n">pid</span><span class="o">&gt;</span>
+    <span class="o">-</span><span class="no">F</span>                   <span class="n">force</span><span class="o">.</span> <span class="nc">Use</span> <span class="n">with</span> <span class="o">-</span><span class="nl">dump:</span><span class="o">&lt;</span><span class="n">dump</span><span class="o">-</span><span class="n">options</span><span class="o">&gt;</span> <span class="o">&lt;</span><span class="n">pid</span><span class="o">&gt;</span> <span class="n">or</span> <span class="o">-</span><span class="n">histo</span>
+                         <span class="n">to</span> <span class="n">force</span> <span class="n">a</span> <span class="n">heap</span> <span class="n">dump</span> <span class="n">or</span> <span class="n">histogram</span> <span class="n">when</span> <span class="o">&lt;</span><span class="n">pid</span><span class="o">&gt;</span> <span class="n">does</span> <span class="n">not</span>
+                         <span class="n">respond</span><span class="o">.</span> <span class="nc">The</span> <span class="s">"live"</span> <span class="n">suboption</span> <span class="n">is</span> <span class="n">not</span> <span class="n">supported</span>
+                         <span class="n">in</span> <span class="k">this</span> <span class="n">mode</span><span class="o">.</span>
+    <span class="o">-</span><span class="n">h</span> <span class="o">|</span> <span class="o">-</span><span class="n">help</span>           <span class="n">to</span> <span class="n">print</span> <span class="k">this</span> <span class="n">help</span> <span class="n">message</span>
+    <span class="o">-</span><span class="no">J</span><span class="o">&lt;</span><span class="n">flag</span><span class="o">&gt;</span>             <span class="n">to</span> <span class="n">pass</span> <span class="o">&lt;</span><span class="n">flag</span><span class="o">&gt;</span> <span class="n">directly</span> <span class="n">to</span> <span class="n">the</span> <span class="n">runtime</span> <span class="n">system</span>
+</code></pre></div></div>
+
+<p>​	首先介绍一下core dump。当程序运行的过程中异常终止或崩溃，操作系统会将程序当时的内存状态记录下来，保存在一个文件中，这种行为就叫做Core Dump。我们可以认为 core dump 是“内存快照”，但实际上，除了内存信息之外，还有些关键的程序运行状态也会同时 dump 下来，例如寄存器信息（包括程序指针、栈指针等）、内存管理信息、其他处理器和操作系统状态和信息。core dump 对于编程人员诊断和调试程序是非常有帮助的，因为对于有些程序错误是很难重现的，例如指针异常，而 core dump 文件可以再现程序出错时的情景。在linux中可以使用 <code class="highlighter-rouge">ulimit -c</code>查看目前是否打开core dump 功能，如果显示为0则代表未打开，可以使用<code class="highlighter-rouge">ulimit -c unlimited</code>打开core dump功能，当core dump是打开时，才会在程序崩溃时保存内存快照。</p>
+
+<h5 id="mat">mat</h5>
+
+<p>在实际生产中，我们通常使用 <code class="highlighter-rouge">jmap -dump:live,format=b,file=heap.bin &lt;pid&gt;</code>命令来将core  dump到文件中，然后使用 mat(eclipse memory analyzer)来分析这个dump文件，会生成一些html文件，然后将这些文件下载下来，点击其index.html来查看分析结果。</p>
+
+<p>mat的下载地址为:https://www.eclipse.org/mat/downloads.php。</p>
+
+<p>解压之后是一个<code class="highlighter-rouge">mat</code>文件夹，进入这个文件夹.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="o">./</span><span class="nc">ParseHeapDump</span><span class="o">.</span><span class="na">sh</span> <span class="n">jmap</span><span class="o">.</span><span class="na">info</span>  <span class="n">org</span><span class="o">.</span><span class="na">eclipse</span><span class="o">.</span><span class="na">mat</span><span class="o">.</span><span class="na">api</span><span class="o">:</span><span class="n">suspects</span> <span class="n">org</span><span class="o">.</span><span class="na">eclipse</span><span class="o">.</span><span class="na">mat</span><span class="o">.</span><span class="na">api</span><span class="o">:</span><span class="n">overview</span> <span class="n">org</span><span class="o">.</span><span class="na">eclipse</span><span class="o">.</span><span class="na">mat</span><span class="o">.</span><span class="na">api</span><span class="o">:</span><span class="n">top_components</span>
+
+</code></pre></div></div>
+
+<p>结果会生产如下三个zip文件，很小可以直接拷贝到本机.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jmap_Leak_Suspects.zip
+jmap_System_Overview.zip
+jmap_Top_Components.zip
+</code></pre></div></div>
+
+<p>之后就可以解压查看其对应的index.html.</p>
+
+<h4 id="jinfojava-configuration-info">Jinfo(Java Configuration Info)</h4>
+
+<p>使用方法如下:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hadoop</span><span class="nd">@spark6</span><span class="o">:~</span><span class="err">$</span> <span class="n">jinfo</span>
+<span class="nl">Usage:</span>
+    <span class="n">jinfo</span> <span class="o">[</span><span class="n">option</span><span class="o">]</span> <span class="o">&lt;</span><span class="n">pid</span><span class="o">&gt;</span>
+        <span class="o">(</span><span class="n">to</span> <span class="n">connect</span> <span class="n">to</span> <span class="n">running</span> <span class="n">process</span><span class="o">)</span>
+    <span class="n">jinfo</span> <span class="o">[</span><span class="n">option</span><span class="o">]</span> <span class="o">&lt;</span><span class="n">executable</span> <span class="o">&lt;</span><span class="n">core</span><span class="o">&gt;</span>
+        <span class="o">(</span><span class="n">to</span> <span class="n">connect</span> <span class="n">to</span> <span class="n">a</span> <span class="n">core</span> <span class="n">file</span><span class="o">)</span>
+    <span class="n">jinfo</span> <span class="o">[</span><span class="n">option</span><span class="o">]</span> <span class="o">[</span><span class="n">server_id</span><span class="err">@</span><span class="o">]&lt;</span><span class="n">remote</span> <span class="n">server</span> <span class="no">IP</span> <span class="n">or</span> <span class="n">hostname</span><span class="o">&gt;</span>
+        <span class="o">(</span><span class="n">to</span> <span class="n">connect</span> <span class="n">to</span> <span class="n">remote</span> <span class="n">debug</span> <span class="n">server</span><span class="o">)</span>
+
+<span class="n">where</span> <span class="o">&lt;</span><span class="n">option</span><span class="o">&gt;</span> <span class="n">is</span> <span class="n">one</span> <span class="nl">of:</span>
+    <span class="o">-</span><span class="n">flag</span> <span class="o">&lt;</span><span class="n">name</span><span class="o">&gt;</span>         <span class="n">to</span> <span class="n">print</span> <span class="n">the</span> <span class="n">value</span> <span class="n">of</span> <span class="n">the</span> <span class="n">named</span> <span class="no">VM</span> <span class="n">flag</span>
+    <span class="o">-</span><span class="n">flag</span> <span class="o">[+|-]&lt;</span><span class="n">name</span><span class="o">&gt;</span>    <span class="n">to</span> <span class="n">enable</span> <span class="n">or</span> <span class="n">disable</span> <span class="n">the</span> <span class="n">named</span> <span class="no">VM</span> <span class="n">flag</span>
+    <span class="o">-</span><span class="n">flag</span> <span class="o">&lt;</span><span class="n">name</span><span class="o">&gt;=&lt;</span><span class="n">value</span><span class="o">&gt;</span> <span class="n">to</span> <span class="n">set</span> <span class="n">the</span> <span class="n">named</span> <span class="no">VM</span> <span class="n">flag</span> <span class="n">to</span> <span class="n">the</span> <span class="n">given</span> <span class="n">value</span>
+    <span class="o">-</span><span class="n">flags</span>               <span class="n">to</span> <span class="n">print</span> <span class="no">VM</span> <span class="n">flags</span>
+    <span class="o">-</span><span class="n">sysprops</span>            <span class="n">to</span> <span class="n">print</span> <span class="nc">Java</span> <span class="n">system</span> <span class="n">properties</span>
+    <span class="o">&lt;</span><span class="n">no</span> <span class="n">option</span><span class="o">&gt;</span>          <span class="n">to</span> <span class="n">print</span> <span class="n">both</span> <span class="n">of</span> <span class="n">the</span> <span class="n">above</span>
+    <span class="o">-</span><span class="n">h</span> <span class="o">|</span> <span class="o">-</span><span class="n">help</span>           <span class="n">to</span> <span class="n">print</span> <span class="k">this</span> <span class="n">help</span> <span class="n">message</span>
+</code></pre></div></div>
+
+<p>看到上面可以更改一些参数，那么哪些参数是可以动态更改?</p>
+
+<p>JVM官方文档说明如下，也就是说，标记为manageable的参数或者通过<code class="highlighter-rouge">com.sun.management.HotSpotDiagnosticMXBean</code>这个类的接口得到；</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Flags marked as manageable are dynamically writeable through the JDK management interface (com.sun.management.HotSpotDiagnosticMXBean API) and also through JConsole.
+</code></pre></div></div>
+
+<p>通过manageable方法更加方便，命令如下:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">hadoop</span><span class="nd">@spark6</span><span class="o">:~</span><span class="err">$</span> <span class="n">java</span> <span class="o">-</span><span class="nl">XX:</span><span class="o">+</span><span class="nc">PrintFlagsInitial</span> <span class="o">|</span> <span class="n">grep</span> <span class="n">manageable</span>
+     <span class="n">intx</span> <span class="nc">CMSAbortablePrecleanWaitMillis</span>            <span class="o">=</span> <span class="mi">100</span>             <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">intx</span> <span class="nc">CMSWaitDuration</span>                           <span class="o">=</span> <span class="mi">2000</span>            <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">bool</span> <span class="nc">HeapDumpAfterFullGC</span>                       <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">bool</span> <span class="nc">HeapDumpBeforeFullGC</span>                      <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">bool</span> <span class="nc">HeapDumpOnOutOfMemoryError</span>                <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+    <span class="n">ccstr</span> <span class="nc">HeapDumpPath</span>                              <span class="o">=</span>                 <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+    <span class="n">uintx</span> <span class="nc">MaxHeapFreeRatio</span>                          <span class="o">=</span> <span class="mi">70</span>              <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+    <span class="n">uintx</span> <span class="nc">MinHeapFreeRatio</span>                          <span class="o">=</span> <span class="mi">40</span>              <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">bool</span> <span class="nc">PrintClassHistogram</span>                       <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">bool</span> <span class="nc">PrintClassHistogramAfterFullGC</span>            <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">bool</span> <span class="nc">PrintClassHistogramBeforeFullGC</span>           <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">bool</span> <span class="nc">PrintConcurrentLocks</span>                      <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">bool</span> <span class="nc">PrintGC</span>                                   <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">bool</span> <span class="nc">PrintGCDateStamps</span>                         <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">bool</span> <span class="nc">PrintGCDetails</span>                            <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+     <span class="n">bool</span> <span class="nc">PrintGCTimeStamps</span>                         <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
+</code></pre></div></div>
+
+<p>所以只有这几个参数是可以通过 <code class="highlighter-rouge">jinfo -flag  [+|-]&lt;name&gt;  pid</code>或者<code class="highlighter-rouge">jinfo -flag &lt;name&gt;=&lt;value&gt; pid</code>动态更改的.</p>
+
+<h3 id="references">References</h3>
+
+<p><a href="http://ifeve.com/jvm-thread/">JVM内部运行线程介绍</a></p>
+
+<p><a href="https://www.cnblogs.com/dion-90/articles/9048627.html">PS -aux 命令详解</a></p>
+
+<p><a href="https://www.jianshu.com/p/a4ad53179df3">Jmap使用</a></p>
+
+<p><a href="[http://moheqionglin.com/site/blogs/84/detail.html](http://moheqionglin.com/site/blogs/84/detail.html)">mat使用方法</a></p>
+
+<p><a href="https://www.jianshu.com/p/c321d0808a1b">jinfo</a></p>
+:ET

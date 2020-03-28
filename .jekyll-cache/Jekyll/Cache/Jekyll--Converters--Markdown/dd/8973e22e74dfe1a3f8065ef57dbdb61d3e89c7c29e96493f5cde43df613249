@@ -1,0 +1,178 @@
+I"�>
+<p>目录</p>
+<ul id="markdown-toc">
+  <li><a href="#background" id="markdown-toc-background">Background</a>    <ul>
+      <li><a href="#linkedblockingqueue" id="markdown-toc-linkedblockingqueue">LinkedBlockingQueue</a>        <ul>
+          <li><a href="#use-case" id="markdown-toc-use-case">Use Case</a></li>
+        </ul>
+      </li>
+      <li><a href="#priorityblockingqueue" id="markdown-toc-priorityblockingqueue">PriorityBlockingQueue</a>        <ul>
+          <li><a href="#use-case-1" id="markdown-toc-use-case-1">Use Case</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+</ul>
+<h3 id="background">Background</h3>
+
+<p>java.util.concurrent 包是java中多线程使用的包。里面的内容包括</p>
+
+<ul>
+  <li>atomic包  提供了一些原子操作的类型，比如atomicLong, atomicReference</li>
+  <li>
+    <p>lock包</p>
+
+    <ul>
+      <li>AbstractQueuedSynchronizer, AQS</li>
+      <li>Condition 用于准确通知解锁</li>
+      <li>LockSupport 提供 park 和 unpark方法</li>
+      <li>ReentrantLock可重入锁</li>
+      <li>ReadWriteLock 读写锁</li>
+    </ul>
+  </li>
+  <li>线程池类以及线程相关类</li>
+  <li>并发集合</li>
+</ul>
+
+<p>本文讲几个并发集合. <code class="highlighter-rouge">LinkedBlockingQueue</code> 和<code class="highlighter-rouge">PriorityBlockingQueue</code>.</p>
+
+<h4 id="linkedblockingqueue">LinkedBlockingQueue</h4>
+
+<p>首先看一下抽象类BlockingQueue有哪些操作。</p>
+
+<ul>
+  <li>add(e)  成功返回true，空间已满抛异常。</li>
+  <li>offer(e) 插入成功返回true，当前无空间可用返回false。如果是一个空间限制队列，建议用offer方法。</li>
+  <li>put(e)  阻塞一直等待直到插入成功</li>
+  <li>offer(e,timeout,timeunit) 有timeout的offer</li>
+  <li>take 尝试获得队列头部的元素，阻塞直到获得</li>
+  <li>poll(timeout, timeunit) 尝试获得队列头部元素，直到超时</li>
+  <li>remove(object) 移除队列中equal的元素，有多个就移除多个，如果队列中包含这个元素，返回true，否则 false</li>
+</ul>
+
+<h5 id="use-case">Use Case</h5>
+
+<p>通常用于生产者消费者模型，线程间通信。</p>
+
+<p>生产者生产任务，然后消费者去取任务。</p>
+
+<p>如spark中，在shuffleFetchIterator中就使用了LinkedBlockingQueue来保存fetch到的数据，将结果保存到阻塞队列，然后取数据的队列调用take方法来取result。</p>
+
+<p>在线程池中，就需要一个阻塞队列作为工作队列。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kd">public</span> <span class="nf">ThreadPoolExecutor</span><span class="o">(</span><span class="kt">int</span> <span class="n">corePoolSize</span><span class="o">,</span>
+                              <span class="kt">int</span> <span class="n">maximumPoolSize</span><span class="o">,</span>
+                              <span class="kt">long</span> <span class="n">keepAliveTime</span><span class="o">,</span>
+                              <span class="nc">TimeUnit</span> <span class="n">unit</span><span class="o">,</span>
+                              <span class="nc">BlockingQueue</span><span class="o">&lt;</span><span class="nc">Runnable</span><span class="o">&gt;</span> <span class="n">workQueue</span><span class="o">,</span>
+                              <span class="nc">ThreadFactory</span> <span class="n">threadFactory</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">(</span><span class="n">corePoolSize</span><span class="o">,</span> <span class="n">maximumPoolSize</span><span class="o">,</span> <span class="n">keepAliveTime</span><span class="o">,</span> <span class="n">unit</span><span class="o">,</span> <span class="n">workQueue</span><span class="o">,</span>
+             <span class="n">threadFactory</span><span class="o">,</span> <span class="n">defaultHandler</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>这里面的阻塞队列用于让用于来提交task到这个工作队列中，然后线程池中的线程来取这个task进行执行。</p>
+
+<h4 id="priorityblockingqueue">PriorityBlockingQueue</h4>
+
+<p>优先级阻塞队列,是PriorityQueue的线程安全模式。</p>
+
+<p>所以只需要了解一下PriorityQueue,优先级队列，底层实现为堆,是一个无界队列。</p>
+
+<p>优先级队列给每个元素提供了一个优先级，然后对这些元素按照优先级进行排序。如果指定了comparator则按照指定的比较规则进行排序，如果没有指定，那么按照自然序进行排序，如数字就比较大小，小的在前，如果是字符串，则按照字典序。</p>
+
+<p>由于底层为堆，可以用于堆排序，比如获得n个数中前k大的值，属于最优实现。</p>
+
+<p>因为是最小的值放在堆顶，那么只要新的值大于目前已有k个值的最小值，就可以成为前k大，下面是topK的实现。由于优先级队列是无界的，所以需要我们自己来控制是否插入。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">java.util.PriorityQueue</span>
+<span class="k">import</span> <span class="nn">scala.collection.JavaConverters._</span>
+
+<span class="k">object</span> <span class="nc">HeapSortTopK</span> <span class="o">{</span>
+  <span class="k">def</span> <span class="nf">topK</span><span class="o">(</span><span class="n">arr</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">Int</span><span class="o">],</span> <span class="n">k</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+    <span class="nf">if</span> <span class="o">(</span><span class="nv">arr</span><span class="o">.</span><span class="py">size</span> <span class="o">&lt;=</span> <span class="n">k</span><span class="o">)</span> <span class="o">{</span>
+      <span class="n">arr</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+      <span class="k">val</span> <span class="nv">maxHeap</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">PriorityQueue</span><span class="o">[</span><span class="kt">Int</span><span class="o">](</span><span class="n">k</span><span class="o">)</span>
+      <span class="nf">for</span> <span class="o">(</span><span class="n">i</span> <span class="k">&lt;-</span> <span class="o">(</span><span class="mi">0</span> <span class="n">until</span> <span class="nv">arr</span><span class="o">.</span><span class="py">length</span><span class="o">))</span> <span class="o">{</span>
+        <span class="nf">if</span> <span class="o">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">k</span><span class="o">)</span> <span class="o">{</span>
+          <span class="nv">maxHeap</span><span class="o">.</span><span class="py">offer</span><span class="o">(</span><span class="nf">arr</span><span class="o">(</span><span class="n">i</span><span class="o">))</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+          <span class="nv">maxHeap</span><span class="o">.</span><span class="py">offer</span><span class="o">(</span><span class="nv">math</span><span class="o">.</span><span class="py">max</span><span class="o">(</span><span class="nv">maxHeap</span><span class="o">.</span><span class="py">poll</span><span class="o">(),</span> <span class="nf">arr</span><span class="o">(</span><span class="n">i</span><span class="o">)))</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+      <span class="nv">maxHeap</span><span class="o">.</span><span class="py">asScala</span><span class="o">.</span><span class="py">toArray</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>其他操作，比如offer 和 Poll 操作和以上的LinkedBlockingQueue是一样的。</p>
+
+<h5 id="use-case-1">Use Case</h5>
+
+<p>使用场景是一些需要安排优先级的场景。</p>
+
+<p>在spark中，在<code class="highlighter-rouge">ShutdownHookManager</code>中使用了优先级队列。因为有些Hook需要先执行，所以需要安排优先级。</p>
+
+<p>或者是基于无界的PriorityQueue实现有界的优先级队列，只需要在插入元素的时候判断一下目前的size即可，如果已经到达界限，则进行替换。</p>
+
+<p>下面是spark中有界优先级队列的实现。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">java.io.Serializable</span>
+<span class="k">import</span> <span class="nn">java.util.</span><span class="o">{</span><span class="nc">PriorityQueue</span> <span class="k">=&gt;</span> <span class="nc">JPriorityQueue</span><span class="o">}</span>
+
+<span class="k">import</span> <span class="nn">scala.collection.JavaConverters._</span>
+<span class="k">import</span> <span class="nn">scala.collection.generic.Growable</span>
+
+<span class="cm">/**
+ * Bounded priority queue. This class wraps the original PriorityQueue
+ * class and modifies it such that only the top K elements are retained.
+ * The top K elements are defined by an implicit Ordering[A].
+ */</span>
+<span class="k">private</span><span class="o">[</span><span class="kt">spark</span><span class="o">]</span> <span class="k">class</span> <span class="nc">BoundedPriorityQueue</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">maxSize</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)(</span><span class="k">implicit</span> <span class="n">ord</span><span class="k">:</span> <span class="kt">Ordering</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span>
+  <span class="k">extends</span> <span class="nc">Iterable</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">with</span> <span class="nc">Growable</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">with</span> <span class="nc">Serializable</span> <span class="o">{</span>
+
+  <span class="k">private</span> <span class="k">val</span> <span class="nv">underlying</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">JPriorityQueue</span><span class="o">[</span><span class="kt">A</span><span class="o">](</span><span class="n">maxSize</span><span class="o">,</span> <span class="n">ord</span><span class="o">)</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">iterator</span><span class="k">:</span> <span class="kt">Iterator</span><span class="o">[</span><span class="kt">A</span><span class="o">]</span> <span class="k">=</span> <span class="nv">underlying</span><span class="o">.</span><span class="py">iterator</span><span class="o">.</span><span class="py">asScala</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">size</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="nv">underlying</span><span class="o">.</span><span class="py">size</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">++=</span><span class="o">(</span><span class="n">xs</span><span class="k">:</span> <span class="kt">TraversableOnce</span><span class="o">[</span><span class="kt">A</span><span class="o">])</span><span class="k">:</span> <span class="kt">this.</span><span class="k">type</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="nv">xs</span><span class="o">.</span><span class="py">foreach</span> <span class="o">{</span> <span class="k">this</span> <span class="o">+=</span> <span class="k">_</span> <span class="o">}</span>
+    <span class="k">this</span>
+  <span class="o">}</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">+=</span><span class="o">(</span><span class="n">elem</span><span class="k">:</span> <span class="kt">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">this.</span><span class="k">type</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="nf">if</span> <span class="o">(</span><span class="n">size</span> <span class="o">&lt;</span> <span class="n">maxSize</span><span class="o">)</span> <span class="o">{</span>
+      <span class="nv">underlying</span><span class="o">.</span><span class="py">offer</span><span class="o">(</span><span class="n">elem</span><span class="o">)</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+      <span class="nf">maybeReplaceLowest</span><span class="o">(</span><span class="n">elem</span><span class="o">)</span>
+    <span class="o">}</span>
+    <span class="k">this</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="nf">poll</span><span class="o">()</span><span class="k">:</span> <span class="kt">A</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="nv">underlying</span><span class="o">.</span><span class="py">poll</span><span class="o">()</span>
+  <span class="o">}</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">+=</span><span class="o">(</span><span class="n">elem1</span><span class="k">:</span> <span class="kt">A</span><span class="o">,</span> <span class="n">elem2</span><span class="k">:</span> <span class="kt">A</span><span class="o">,</span> <span class="n">elems</span><span class="k">:</span> <span class="kt">A*</span><span class="o">)</span><span class="k">:</span> <span class="kt">this.</span><span class="k">type</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="k">this</span> <span class="o">+=</span> <span class="n">elem1</span> <span class="o">+=</span> <span class="n">elem2</span> <span class="o">++=</span> <span class="n">elems</span>
+  <span class="o">}</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">clear</span><span class="o">()</span> <span class="o">{</span> <span class="nv">underlying</span><span class="o">.</span><span class="py">clear</span><span class="o">()</span> <span class="o">}</span>
+
+  <span class="k">private</span> <span class="k">def</span> <span class="nf">maybeReplaceLowest</span><span class="o">(</span><span class="n">a</span><span class="k">:</span> <span class="kt">A</span><span class="o">)</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="nv">head</span> <span class="k">=</span> <span class="nv">underlying</span><span class="o">.</span><span class="py">peek</span><span class="o">()</span>
+    <span class="nf">if</span> <span class="o">(</span><span class="n">head</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">&amp;&amp;</span> <span class="nv">ord</span><span class="o">.</span><span class="py">gt</span><span class="o">(</span><span class="n">a</span><span class="o">,</span> <span class="n">head</span><span class="o">))</span> <span class="o">{</span>
+      <span class="nv">underlying</span><span class="o">.</span><span class="py">poll</span><span class="o">()</span>
+      <span class="nv">underlying</span><span class="o">.</span><span class="py">offer</span><span class="o">(</span><span class="n">a</span><span class="o">)</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+      <span class="kc">false</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+:ET

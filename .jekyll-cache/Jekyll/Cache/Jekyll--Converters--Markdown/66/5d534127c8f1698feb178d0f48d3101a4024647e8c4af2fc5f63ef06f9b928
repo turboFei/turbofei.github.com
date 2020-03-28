@@ -1,0 +1,138 @@
+I""$
+<p>目录</p>
+<ul id="markdown-toc">
+  <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
+  <li><a href="#基本数字类型" id="markdown-toc-基本数字类型">基本数字类型</a>    <ul>
+      <li><a href="#浮点数" id="markdown-toc-浮点数">浮点数</a></li>
+      <li><a href="#类型转换" id="markdown-toc-类型转换">类型转换</a></li>
+      <li><a href="#关于decimal" id="markdown-toc-关于decimal">关于Decimal</a></li>
+    </ul>
+  </li>
+  <li><a href="#结尾" id="markdown-toc-结尾">结尾</a></li>
+</ul>
+<p>最近遇到了一些数字类型有关的问题，重新了解一下数字类型</p>
+
+<h3 id="前言">前言</h3>
+
+<p>计算机中由二进制表示数据，所以一切数字都是表示为:<code class="highlighter-rouge">p10 * 2^0 + p11* 2^1 + p12 * 2^2 + ... + p1n * 2^n + p01 * 2^(-1) + p02 * 2^(-2) + ... + p0n * 2^(-n)， 其中p0k p1k 都是0或者1 。</code></p>
+
+<p>因此，对于1.5 来说，其可以拆分为: 1*2^0 + 1 * 2^(-1)是可以准确表示的。</p>
+
+<p>但是对于1.6来说，其实拆分为 1* 2^0 + 1*2^(-1) + 0 * 2 ^(-2) + 0 *2^(-3) + 1 * 2 ^(-4) + … 是不能精确表示的。</p>
+
+<p>因此，在计算机中，1.6 -1.5并不是0.1, 如下。这跟自然中我们的理解是不同的。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">scala</span><span class="o">&gt;</span> <span class="mf">1.6</span> <span class="o">-</span><span class="mf">1.5</span>
+<span class="n">res2</span><span class="k">:</span> <span class="kt">Double</span> <span class="o">=</span> <span class="mf">0.10000000000000009</span>
+</code></pre></div></div>
+
+<h3 id="基本数字类型">基本数字类型</h3>
+
+<p>在Spark中，基本数字类型可以分为IntegerType 和Float/DoubleType 以及Decimal类型。</p>
+
+<p>其中IntegerType又分为Byte, Short, Int, Long.  而Float/DoubleType 是浮点类型。</p>
+
+<p>IntegerType是一种可以精准表示一个数字的类型。Byte是8位，Short 16位，Int 32位，Long 64位，其最大值是2^n -1, n为位数。其中Int的最大值小于10^11次方，而Long的最大值小于10^20次方。</p>
+
+<p>浮点与定点是指小数点的位置会不会发生浮动，显然整数中小数点位置是不会浮动的，Decimal也是一种定点数。</p>
+
+<h4 id="浮点数">浮点数</h4>
+
+<p>回到浮点数，浮点数利用指数使小数点的位置可以根据需要进行上下浮动，从而灵活表达更大范围的实数。</p>
+
+<p>摘自百度百科，</p>
+
+<blockquote>
+  <p>浮点数从逻辑上用三元组{S, E, M}表示一个数v <code class="highlighter-rouge">|S|       E   |   M      |</code></p>
+
+  <ul>
+    <li>其中S表示符号位，是正数还是负数</li>
+    <li>E 表示指数位，其可以为正数或者负数</li>
+    <li>M位于尾部。</li>
+  </ul>
+
+  <p>表达式为:<code class="highlighter-rouge">v=(-1)^s  * 2 ^e *m</code></p>
+
+  <p>现在大部分平台的浮点数遵循IEEE 754标准，float通常是32位，double 通常是64位。</p>
+</blockquote>
+
+<p>浮点数采用科学计数法，32位的float的小数部分有效位是8位,精确表示应该是7位， 而64位的double的小数部分有效位是16位, 精确表示位数应该是15位。</p>
+
+<p>例如: 112345678901234567d 被表示为 <code class="highlighter-rouge">1.1234567890123456E17</code>.</p>
+
+<p>所以，当两个大于10^15的double/大于10^7次方的float进行比较是一件很危险的事情。</p>
+
+<p>例如下面两个完全不同的数字比较出来的结果却是相等。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">scala</span><span class="o">&gt;</span> <span class="mf">112345678901234568d</span> <span class="o">==</span> <span class="mf">112345678901234560d</span>
+<span class="n">res13</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="kc">true</span>
+
+<span class="n">scala</span><span class="o">&gt;</span> <span class="mf">112345678f</span> <span class="o">==</span> <span class="mf">112345679f</span>
+<span class="n">res14</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="kc">true</span>
+
+<span class="n">scala</span><span class="o">&gt;</span> <span class="mf">112345678f</span>
+<span class="n">res15</span><span class="k">:</span> <span class="kt">Float</span> <span class="o">=</span> <span class="mf">1.1234568E8</span>
+</code></pre></div></div>
+
+<h4 id="类型转换">类型转换</h4>
+
+<p>在编程中，如果两个不同类型的操作数做计算，就会将低级别的类型向高级别的类型进行类型转换。</p>
+
+<p>通常的规则是Byte向Short转换，Short向Int转，然后向Long，向Float，Float向Double转换。</p>
+
+<p>比较一个整型和一个浮点类型是有风险的.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">scala</span><span class="o">&gt;</span> <span class="mi">1234567890</span> <span class="o">==</span> <span class="mf">1234567880f</span>
+<span class="n">res1</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="kc">true</span>
+
+<span class="n">scala</span><span class="o">&gt;</span> <span class="mi">123456789012345675</span><span class="n">l</span> <span class="o">==</span> <span class="mf">123456789012345679d</span>
+<span class="n">res2</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="kc">true</span>
+</code></pre></div></div>
+
+<p>比较两个浮点型也是有风险的:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">scala</span><span class="o">&gt;</span> <span class="mf">123456789012345679d</span> <span class="o">==</span> <span class="mf">123456789012345679f</span>
+<span class="n">res1</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="kc">false</span>
+
+<span class="n">scala</span><span class="o">&gt;</span> <span class="mf">112345678901234568d</span> <span class="o">==</span> <span class="mf">112345678901234560d</span>
+<span class="n">res2</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="kc">true</span>
+</code></pre></div></div>
+
+<p>将一个Int值先转为float，再转为double 和直接转为double是不一样的。</p>
+
+<p>举个例子，如下:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">scala</span><span class="o">&gt;</span> <span class="nv">Int</span><span class="o">.</span><span class="py">MaxValue</span><span class="o">.</span><span class="py">toFloat</span><span class="o">.</span><span class="py">toDouble</span>
+<span class="n">res23</span><span class="k">:</span> <span class="kt">Double</span> <span class="o">=</span> <span class="mf">2.147483648E9</span>
+
+<span class="n">scala</span><span class="o">&gt;</span> <span class="nv">Int</span><span class="o">.</span><span class="py">MaxValue</span><span class="o">.</span><span class="py">toDouble</span>
+<span class="n">res24</span><span class="k">:</span> <span class="kt">Double</span> <span class="o">=</span> <span class="mf">2.147483647E9</span>
+</code></pre></div></div>
+
+<h4 id="关于decimal">关于Decimal</h4>
+
+<p>用于表示小数，在Spark中，除了使用double/float,还有一个选择就是使用Decimal。</p>
+
+<p>关于Decimal，我曾经写过一篇文章<a href="https://mp.weixin.qq.com/s/yKFzO41l-2n617xICN2ObQ">案例分析| 由Decimal操作计算引发的Spark数据丢失问题</a>, 里面介绍到Decimal，如下:</p>
+
+<blockquote>
+  <p><strong>Decimal是数据库中的一种数据类型，不属于浮点数类型，可以在定义时划定整数部分以及小数部分的位数。</strong>对于一个Decimal类型，scale表示其小数部分的位数，precision表示整数部分位数和小数部分位数之和。</p>
+
+  <p>一个Decimal类型表示为Decimal(precision, scale)，在Spark中，precision和scale的上限都是<strong>38</strong>。</p>
+
+  <p>一个double类型可以精确地表示小数点后<strong>15位</strong>，有效位数为<strong>16位</strong>。</p>
+
+  <p>可见，Decimal类型则可以更加精确地表示，保证数据计算的精度。</p>
+
+  <p>例如一个<strong>Decimal(38, 24)类型</strong>可以精确表示小数点后23位，小数点后有效位数为24位。而其整数部分还剩下14位可以用来表示数据，所以整数部分可以表示的范围是-10^14+1~10^14-1。</p>
+</blockquote>
+
+<p>所以关于金钱有关的数据，在Spark中通常是使用Decimal进行存储。</p>
+
+<h3 id="结尾">结尾</h3>
+
+<p>浮点类型是模糊的表示一个小数，它可以表示更大的范围，但是也丢失了很多东西。在Spark中如果以两个浮点类型的列做join是件蛮危险的事情, 可能会得到意想不到的结果。</p>
+
+<p>但是在Spark中，为了减少在Decimal操作时容易溢出的问题，有时候会将Decimal转换为double类型。</p>
+
+:ET

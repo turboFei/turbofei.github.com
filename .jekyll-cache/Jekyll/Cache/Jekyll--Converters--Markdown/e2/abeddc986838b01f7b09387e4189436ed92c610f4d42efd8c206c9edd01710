@@ -1,0 +1,276 @@
+I"�|
+<p>目录</p>
+<ul id="markdown-toc">
+  <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
+  <li><a href="#一条sql的处理过程" id="markdown-toc-一条sql的处理过程">一条sql的处理过程</a>    <ul>
+      <li><a href="#rule" id="markdown-toc-rule">Rule</a></li>
+      <li><a href="#strategy" id="markdown-toc-strategy">Strategy</a></li>
+    </ul>
+  </li>
+  <li><a href="#sparksessionextensions" id="markdown-toc-sparksessionextensions">SparkSessionExtensions</a>    <ul>
+      <li><a href="#在analysis阶段的resolution子阶段添加rule" id="markdown-toc-在analysis阶段的resolution子阶段添加rule">在Analysis阶段的Resolution子阶段添加Rule</a></li>
+      <li><a href="#在analysis阶段的post-hoc-resolution子阶段添加rule" id="markdown-toc-在analysis阶段的post-hoc-resolution子阶段添加rule">在Analysis阶段的<code class="highlighter-rouge">Post-Hoc Resolution</code>子阶段添加Rule</a></li>
+      <li><a href="#在analysis阶段之后对logicalplan进行check" id="markdown-toc-在analysis阶段之后对logicalplan进行check">在Analysis阶段之后对LogicalPlan进行check</a></li>
+      <li><a href="#注入自己的optimizer-rule" id="markdown-toc-注入自己的optimizer-rule">注入自己的Optimizer Rule</a></li>
+      <li><a href="#注入自己的strategy" id="markdown-toc-注入自己的strategy">注入自己的Strategy</a></li>
+      <li><a href="#注入自己的解析器" id="markdown-toc-注入自己的解析器">注入自己的解析器</a></li>
+      <li><a href="#如何使用" id="markdown-toc-如何使用">如何使用</a></li>
+    </ul>
+  </li>
+  <li><a href="#in-action" id="markdown-toc-in-action">In Action</a></li>
+</ul>
+<p>本文讲如何在Spark sql Catalyst里面添加自己的Rule，来进行一些优化或者check操作。</p>
+
+<h3 id="前言">前言</h3>
+
+<p>前面写过文章介绍<a href="/spark/2018/08/01/spark-sql-catalyst">Spark Catalyst</a>. 此处再简单介绍下。</p>
+
+<p>在大数据的一些具有SQL功能的框架中，比如Hive，Flink使用Apache Calcite 来做sql的query优化。而Catalyst是spark官方为spark sql设计的query优化框架， 基于函数式编程语言Scala实现。Catalyst有一个优化规则库，可以针对spark sql语句进行自动分析优化。而且Catalyst利用Scala的强大语言特性，例如模式匹配和运行时元程序设计(<a href="https://docs.scala-lang.org/overviews/quasiquotes/intro.html">基于scala quasiquotes</a>)，使得开发者可以简单方便的定制优化规则。</p>
+
+<h3 id="一条sql的处理过程">一条sql的处理过程</h3>
+
+<p>一条sql语句在spark 中会经过以下过程。</p>
+
+<p><img src="/imgs/spark-catalyst/catalyst.png" alt="" /></p>
+
+<ul>
+  <li>首先会通过解析器，将其解析为一个抽象语法树(AST)，这叫做unresolvedRelation LogicalPlan。</li>
+  <li>之后进入analysis阶段，可以将其分为几个子阶段
+    <ul>
+      <li><code class="highlighter-rouge">Hints</code>  比如BroadcastJoinHints处理</li>
+      <li><code class="highlighter-rouge">Simple Sanity Check</code> 简单check，比如检查sql 中的Function是否存在</li>
+      <li><code class="highlighter-rouge">Substitution</code> 对sql中的一些进行替换，比如如果union 只有一个child，则取消union</li>
+      <li><code class="highlighter-rouge">Resolution</code> 对sql中的一些信息进行绑定，这样就是Resolved LogicalPlan</li>
+      <li><code class="highlighter-rouge">Post-Hoc Resolution</code> resolution之后的操作，默认是空，用户可以自己注入</li>
+      <li>之后还有其他阶段，所以analysis阶段，不止resolution.</li>
+    </ul>
+  </li>
+  <li>接下来进行optimization阶段，使用<code class="highlighter-rouge">Rule</code>对LogicalPlan 进行优化，得到Optimized LogicalPlan</li>
+  <li>之后是通过使用<code class="highlighter-rouge">SparkStrategy</code>和<code class="highlighter-rouge">Rule</code>来将<code class="highlighter-rouge">LogicalPlan</code>转换为可执行的物理计划<code class="highlighter-rouge">SparkPlan</code>。</li>
+  <li>之后进行codeGen</li>
+</ul>
+
+<p>LogicalPlan是逻辑计划，SparkPlan是物理计划。</p>
+
+<h4 id="rule">Rule</h4>
+
+<p>首先，每个阶段都有一个执行计划，可以看成是一个树，树的每个节点是一个LogicalPlan 或者 SparkPlan.</p>
+
+<p>而Rule 就是对树上的每个节点进行transform操作。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">abstract</span> <span class="k">class</span> <span class="nc">Rule</span><span class="o">[</span><span class="kt">TreeType</span> <span class="k">&lt;:</span> <span class="kt">TreeNode</span><span class="o">[</span><span class="k">_</span><span class="o">]]</span> <span class="nc">extends</span> <span class="nc">Logging</span> <span class="o">{</span>
+
+  <span class="cm">/** Name for this rule, automatically inferred based on class name. */</span>
+  <span class="k">val</span> <span class="nv">ruleName</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="nv">className</span> <span class="k">=</span> <span class="nv">getClass</span><span class="o">.</span><span class="py">getName</span>
+    <span class="nf">if</span> <span class="o">(</span><span class="n">className</span> <span class="n">endsWith</span> <span class="s">"$"</span><span class="o">)</span> <span class="nv">className</span><span class="o">.</span><span class="py">dropRight</span><span class="o">(</span><span class="mi">1</span><span class="o">)</span> <span class="k">else</span> <span class="n">className</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">plan</span><span class="k">:</span> <span class="kt">TreeType</span><span class="o">)</span><span class="k">:</span> <span class="kt">TreeType</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>而我们看Rule的apply方法，是将一个TreeType转换为TreeType。</p>
+
+<p>也就是说，它可以将一个LogicalPlan转化为另一个LogicalPlan，或者将一个SparkPlan转化为另外一个SparkPlan。</p>
+
+<p>也就是说Rule不会涉及到质变。</p>
+
+<h4 id="strategy">Strategy</h4>
+
+<p>Strategy和Rule类似，同样是对树上的节点进行转化操作，但是Strategy是质的改变，它会将一个LogicalPlan转化为一系列SparkPlan。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">abstract</span> <span class="k">class</span> <span class="nc">GenericStrategy</span><span class="o">[</span><span class="kt">PhysicalPlan</span> <span class="k">&lt;:</span> <span class="kt">TreeNode</span><span class="o">[</span><span class="kt">PhysicalPlan</span><span class="o">]]</span> <span class="nc">extends</span> <span class="nc">Logging</span> <span class="o">{</span>
+
+  <span class="cm">/**
+   * Returns a placeholder for a physical plan that executes `plan`. This placeholder will be
+   * filled in automatically by the QueryPlanner using the other execution strategies that are
+   * available.
+   */</span>
+  <span class="k">protected</span> <span class="k">def</span> <span class="nf">planLater</span><span class="o">(</span><span class="n">plan</span><span class="k">:</span> <span class="kt">LogicalPlan</span><span class="o">)</span><span class="k">:</span> <span class="kt">PhysicalPlan</span>
+
+  <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">plan</span><span class="k">:</span> <span class="kt">LogicalPlan</span><span class="o">)</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">PhysicalPlan</span><span class="o">]</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h3 id="sparksessionextensions">SparkSessionExtensions</h3>
+
+<p><code class="highlighter-rouge">SparkSessionExtensions</code>是用来让用户自己扩展Catalyst 中的Rule, Strategy，甚至自己定义解析规则等等。用户只需要实现自己的Extensions，例如<code class="highlighter-rouge">class MyExtensions extends (SparkSessionExtensions =&gt; Unit)</code>,然后配置<code class="highlighter-rouge">spark.sql.extensions=MyExtensions</code>.</p>
+
+<p>首先介绍里面定义的几种type.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="c1">// 注入一个Rule</span>
+	<span class="k">type</span> <span class="kt">RuleBuilder</span> <span class="o">=</span> <span class="nc">SparkSession</span> <span class="k">=&gt;</span> <span class="nc">Rule</span><span class="o">[</span><span class="kt">LogicalPlan</span><span class="o">]</span>
+	<span class="c1">// 用于check而已，只是check LogicalPlan，如果不通过，会抛异常，通过则不做任何操作，所以返回类型为Unit</span>
+  <span class="k">type</span> <span class="kt">CheckRuleBuilder</span> <span class="o">=</span> <span class="nc">SparkSession</span> <span class="k">=&gt;</span> <span class="nc">LogicalPlan</span> <span class="k">=&gt;</span> <span class="nc">Unit</span>
+	<span class="c1">// 注入一个Strategy</span>
+  <span class="k">type</span> <span class="kt">StrategyBuilder</span> <span class="o">=</span> <span class="nc">SparkSession</span> <span class="k">=&gt;</span> <span class="nc">Strategy</span>
+	<span class="c1">// 注入一个Parser, 用于语法解析</span>
+  <span class="k">type</span> <span class="kt">ParserBuilder</span> <span class="o">=</span> <span class="o">(</span><span class="nc">SparkSession</span><span class="o">,</span> <span class="nc">ParserInterface</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nc">ParserInterface</span>
+</code></pre></div></div>
+
+<p>这几种类型，是几种方法类型，是用于后面所说的几种方法使用。</p>
+
+<p>我们讲一下里面的几个public方法。</p>
+
+<h4 id="在analysis阶段的resolution子阶段添加rule">在Analysis阶段的Resolution子阶段添加Rule</h4>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">def</span> <span class="nf">injectResolutionRule</span><span class="o">(</span><span class="n">builder</span><span class="k">:</span> <span class="kt">RuleBuilder</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> 
+</code></pre></div></div>
+
+<p>这个方法是添加一个Rule用于resolve unResolvedLogicalPlan。 只需要自己实现一个Rule，然后使用这个方法进行Rule注入。</p>
+
+<h4 id="在analysis阶段的post-hoc-resolution子阶段添加rule">在Analysis阶段的<code class="highlighter-rouge">Post-Hoc Resolution</code>子阶段添加Rule</h4>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">def</span> <span class="nf">injectPostHocResolutionRule</span><span class="o">(</span><span class="n">builder</span><span class="k">:</span> <span class="kt">RuleBuilder</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> 
+</code></pre></div></div>
+
+<p>只需要自己实现一个Rule，会在ResolvedLogicalPlan之后,OptimizedLogicalPlan之前执行.</p>
+
+<h4 id="在analysis阶段之后对logicalplan进行check">在Analysis阶段之后对LogicalPlan进行check</h4>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">injectCheckRule</span><span class="o">(</span><span class="n">builder</span><span class="k">:</span> <span class="kt">CheckRuleBuilder</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span>
+</code></pre></div></div>
+
+<p>在Analysis阶段之后对LogicalPlan进行check，如果有问题，则抛异常。没问题则检查通过。</p>
+
+<p>需要自己实现CheckRuleBuilder.</p>
+
+<h4 id="注入自己的optimizer-rule">注入自己的Optimizer Rule</h4>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">injectOptimizerRule</span><span class="o">(</span><span class="n">builder</span><span class="k">:</span> <span class="kt">RuleBuilder</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> 
+</code></pre></div></div>
+
+<h4 id="注入自己的strategy">注入自己的Strategy</h4>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">injectPlannerStrategy</span><span class="o">(</span><span class="n">builder</span><span class="k">:</span> <span class="kt">StrategyBuilder</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span>
+</code></pre></div></div>
+
+<h4 id="注入自己的解析器">注入自己的解析器</h4>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">injectParser</span><span class="o">(</span><span class="n">builder</span><span class="k">:</span> <span class="kt">ParserBuilder</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span>
+</code></pre></div></div>
+
+<h4 id="如何使用">如何使用</h4>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">MyResolutionRule</span><span class="o">(</span><span class="n">spark</span><span class="k">:</span> <span class="kt">SparkSession</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">Rule</span><span class="o">[</span><span class="kt">LogicalPlan</span><span class="o">]</span> <span class="o">{</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">plan</span><span class="k">:</span> <span class="kt">LogicalPlan</span><span class="o">)</span><span class="k">:</span> <span class="kt">LogicalPlan</span> <span class="o">=</span> <span class="n">plan</span>
+<span class="o">}</span>
+<span class="k">case</span> <span class="k">class</span> <span class="nc">MyPostHocResolutionRule</span><span class="o">(</span><span class="n">spark</span><span class="k">:</span> <span class="kt">SparkSession</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">Rule</span><span class="o">[</span><span class="kt">LogicalPlan</span><span class="o">]</span> <span class="o">{</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">plan</span><span class="k">:</span> <span class="kt">LogicalPlan</span><span class="o">)</span><span class="k">:</span> <span class="kt">LogicalPlan</span> <span class="o">=</span> <span class="n">plan</span>
+<span class="o">}</span>
+
+<span class="k">case</span> <span class="k">class</span> <span class="nc">MyOptimizerRule</span><span class="o">(</span><span class="n">spark</span><span class="k">:</span> <span class="kt">SparkSession</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">Rule</span><span class="o">[</span><span class="kt">LogicalPlan</span><span class="o">]</span> <span class="o">{</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">plan</span><span class="k">:</span> <span class="kt">LogicalPlan</span><span class="o">)</span><span class="k">:</span> <span class="kt">LogicalPlan</span> <span class="o">=</span> <span class="n">plan</span>
+<span class="o">}</span>
+
+<span class="k">case</span> <span class="k">class</span> <span class="nc">MyCheckRule</span><span class="o">(</span><span class="n">spark</span><span class="k">:</span> <span class="kt">SparkSession</span><span class="o">)</span> <span class="nf">extends</span> <span class="o">(</span><span class="nc">LogicalPlan</span> <span class="k">=&gt;</span> <span class="nc">Unit</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">plan</span><span class="k">:</span> <span class="kt">LogicalPlan</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span> <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="k">case</span> <span class="k">class</span> <span class="nc">MySparkStrategy</span><span class="o">(</span><span class="n">spark</span><span class="k">:</span> <span class="kt">SparkSession</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">SparkStrategy</span> <span class="o">{</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">plan</span><span class="k">:</span> <span class="kt">LogicalPlan</span><span class="o">)</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">SparkPlan</span><span class="o">]</span> <span class="k">=</span> <span class="nv">Seq</span><span class="o">.</span><span class="py">empty</span>
+<span class="o">}</span>
+
+<span class="k">case</span> <span class="k">class</span> <span class="nc">MyParser</span><span class="o">(</span><span class="n">spark</span><span class="k">:</span> <span class="kt">SparkSession</span><span class="o">,</span> <span class="n">delegate</span><span class="k">:</span> <span class="kt">ParserInterface</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">ParserInterface</span> <span class="o">{</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">parsePlan</span><span class="o">(</span><span class="n">sqlText</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">LogicalPlan</span> <span class="o">=</span>
+    <span class="nv">delegate</span><span class="o">.</span><span class="py">parsePlan</span><span class="o">(</span><span class="n">sqlText</span><span class="o">)</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">parseExpression</span><span class="o">(</span><span class="n">sqlText</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Expression</span> <span class="o">=</span>
+    <span class="nv">delegate</span><span class="o">.</span><span class="py">parseExpression</span><span class="o">(</span><span class="n">sqlText</span><span class="o">)</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">parseTableIdentifier</span><span class="o">(</span><span class="n">sqlText</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">TableIdentifier</span> <span class="o">=</span>
+    <span class="nv">delegate</span><span class="o">.</span><span class="py">parseTableIdentifier</span><span class="o">(</span><span class="n">sqlText</span><span class="o">)</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">parseFunctionIdentifier</span><span class="o">(</span><span class="n">sqlText</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">FunctionIdentifier</span> <span class="o">=</span>
+    <span class="nv">delegate</span><span class="o">.</span><span class="py">parseFunctionIdentifier</span><span class="o">(</span><span class="n">sqlText</span><span class="o">)</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">parseTableSchema</span><span class="o">(</span><span class="n">sqlText</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">StructType</span> <span class="o">=</span>
+    <span class="nv">delegate</span><span class="o">.</span><span class="py">parseTableSchema</span><span class="o">(</span><span class="n">sqlText</span><span class="o">)</span>
+
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">parseDataType</span><span class="o">(</span><span class="n">sqlText</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">DataType</span> <span class="o">=</span>
+    <span class="nv">delegate</span><span class="o">.</span><span class="py">parseDataType</span><span class="o">(</span><span class="n">sqlText</span><span class="o">)</span>
+<span class="o">}</span>
+
+<span class="k">class</span> <span class="nc">MyExtensions</span> <span class="nf">extends</span> <span class="o">(</span><span class="nc">SparkSessionExtensions</span> <span class="k">=&gt;</span> <span class="nc">Unit</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">e</span><span class="k">:</span> <span class="kt">SparkSessionExtensions</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="nv">e</span><span class="o">.</span><span class="py">injectResolutionRule</span><span class="o">(</span><span class="nc">MyResolutionRule</span><span class="o">)</span>
+    <span class="nv">e</span><span class="o">.</span><span class="py">injectPostHocResolutionRule</span><span class="o">(</span><span class="nc">MyPostHocResolutionRule</span><span class="o">)</span>
+    <span class="nv">e</span><span class="o">.</span><span class="py">injectCheckRule</span><span class="o">(</span><span class="nc">MyCheckRule</span><span class="o">)</span>
+    <span class="nv">e</span><span class="o">.</span><span class="py">injectOptimizerRule</span><span class="o">(</span><span class="nc">MyOptimizerRule</span><span class="o">)</span>
+    <span class="nv">e</span><span class="o">.</span><span class="py">injectPlannerStrategy</span><span class="o">(</span><span class="nc">MySparkStrategy</span><span class="o">)</span>
+    <span class="nv">e</span><span class="o">.</span><span class="py">injectParser</span><span class="o">(</span><span class="nc">MyParser</span><span class="o">)</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h3 id="in-action">In Action</h3>
+
+<p>首先介绍下<a href="https://github.com/yaooqinn/spark-greenplum">Spark-greenplum</a>项目，这是一个针对于greenplum(一种数据库)的一个DataSource实现。</p>
+
+<p>其使用PostgreSql的COPY命令进行数据写入，相对于JDBC DataSource(通用的操作数据库的DataSource)的分批insert数据性能提升可观。</p>
+
+<p>而在spark-greenplum中，如果我们 使用先建立<code class="highlighter-rouge">TEMPORARY TABLE</code>然后<code class="highlighter-rouge">Insert</code>数据的方法操作gp.</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TEMPORARY</span> <span class="k">TABLE</span> <span class="n">tbl</span>
+<span class="k">USING</span> <span class="n">greenplum</span>
+<span class="k">options</span> <span class="p">(</span> 
+  <span class="n">url</span> <span class="nv">"jdbc:postgresql://greenplum:5432/"</span><span class="p">,</span>
+  <span class="k">delimiter</span> <span class="nv">"</span><span class="se">\t</span><span class="nv">"</span><span class="p">,</span>
+  <span class="n">dbschema</span> <span class="nv">"gptest"</span><span class="p">,</span>
+  <span class="n">dbtable</span> <span class="nv">"store_sales"</span><span class="p">,</span>
+  <span class="k">user</span> <span class="s1">'gptest'</span><span class="p">,</span>
+  <span class="n">password</span> <span class="s1">'test'</span><span class="p">)</span>
+  
+<span class="k">INSERT</span> <span class="k">INTO</span> <span class="k">TABLE</span> <span class="n">tbl</span> <span class="k">SELECT</span> <span class="o">*</span> <span class="k">FROM</span> <span class="n">tpcds_100g</span><span class="p">.</span><span class="n">store_sales</span> <span class="k">WHERE</span> <span class="n">ss_sold_date_sk</span><span class="o">&lt;=</span><span class="mi">2451537</span> <span class="k">AND</span> <span class="n">ss_sold_date_sk</span><span class="o">&gt;</span> <span class="mi">2451520</span><span class="p">;</span>
+
+</code></pre></div></div>
+
+<p>首先，我们需要建立一个gp 表，然后在spark sql中创建 TEMPORARY TABLE， 这个临时表的schema是和gp表中的schema一样的。</p>
+
+<p>之后，我们使用Insert语句将子查询中的列插入到这个临时表，也就是写入到对应的gp表中。</p>
+
+<p>这时候我们通常需要判断<code class="highlighter-rouge">SELECT SUB Query</code>中拿到的列是否和临时表中的列对应一致。</p>
+
+<p>所以我们选择添加一条CheckRule来实现，也就是调用<code class="highlighter-rouge">injectCheckRule</code>方法。</p>
+
+<p>实现如下:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">org.apache.spark.internal.Logging</span>
+<span class="k">import</span> <span class="nn">org.apache.spark.sql.</span><span class="o">{</span><span class="nc">AnalysisException</span><span class="o">,</span> <span class="nc">SparkSession</span><span class="o">,</span> <span class="nc">SparkSessionExtensions</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">org.apache.spark.sql.catalyst.plans.logical.</span><span class="o">{</span><span class="nc">LogicalPlan</span><span class="o">,</span> <span class="nc">Project</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">org.apache.spark.sql.execution.datasources.</span><span class="o">{</span><span class="nc">InsertIntoDataSourceCommand</span><span class="o">,</span> <span class="nc">LogicalRelation</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">org.apache.spark.sql.execution.datasources.greenplum.GreenplumRelation</span>
+
+<span class="k">case</span> <span class="k">class</span> <span class="nc">GreenPlumColumnChecker</span><span class="o">(</span><span class="n">spark</span><span class="k">:</span> <span class="kt">SparkSession</span><span class="o">)</span> <span class="nf">extends</span> <span class="o">(</span><span class="nc">LogicalPlan</span> <span class="k">=&gt;</span> <span class="nc">Unit</span><span class="o">)</span> <span class="k">with</span> <span class="nc">Logging</span> <span class="o">{</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">plan</span><span class="k">:</span> <span class="kt">LogicalPlan</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="n">plan</span> <span class="k">match</span> <span class="o">{</span>
+    <span class="k">case</span> <span class="nc">InsertIntoDataSourceCommand</span><span class="o">(</span><span class="nc">LogicalRelation</span><span class="o">(</span><span class="k">_:</span> <span class="kt">GreenplumRelation</span><span class="o">,</span> <span class="n">output</span><span class="o">,</span> <span class="k">_</span><span class="o">,</span> <span class="k">_</span><span class="o">),</span>
+    <span class="nc">Project</span><span class="o">(</span><span class="k">_</span><span class="o">,</span> <span class="n">c</span><span class="o">),</span> <span class="k">_</span><span class="o">)</span> <span class="k">=&gt;</span>
+      <span class="c1">// The real output of sub query, which is not be casted.</span>
+      <span class="k">val</span> <span class="nv">realOutput</span> <span class="k">=</span> <span class="nv">c</span><span class="o">.</span><span class="py">output</span>
+      <span class="nf">if</span> <span class="o">(</span><span class="nv">realOutput</span><span class="o">.</span><span class="py">size</span> <span class="o">!=</span> <span class="nv">output</span><span class="o">.</span><span class="py">size</span> <span class="o">||</span> <span class="nv">realOutput</span><span class="o">.</span><span class="py">zip</span><span class="o">(</span><span class="n">output</span><span class="o">).</span><span class="py">exists</span><span class="o">(</span>
+        <span class="n">ats</span> <span class="k">=&gt;</span> <span class="nv">ats</span><span class="o">.</span><span class="py">_1</span><span class="o">.</span><span class="py">name</span> <span class="o">!=</span> <span class="nv">ats</span><span class="o">.</span><span class="py">_2</span><span class="o">.</span><span class="py">name</span><span class="o">))</span> <span class="o">{</span>
+        <span class="k">throw</span> <span class="k">new</span> <span class="nc">AnalysisException</span><span class="o">(</span>
+          <span class="n">s</span><span class="s">"""
+             | The column names of GreenPlum table are not consistent with the
+             | projects output names of subQuery.
+           """</span><span class="o">.</span><span class="py">stripMargin</span><span class="o">)</span>
+      <span class="o">}</span>
+    <span class="k">case</span> <span class="nc">InsertIntoDataSourceCommand</span><span class="o">(</span><span class="nc">LogicalRelation</span><span class="o">(</span><span class="k">_:</span> <span class="kt">GreenplumRelation</span><span class="o">,</span> <span class="k">_</span><span class="o">,</span> <span class="k">_</span><span class="o">,</span> <span class="k">_</span><span class="o">),</span> <span class="n">query</span><span class="o">,</span> <span class="k">_</span><span class="o">)</span> <span class="k">=&gt;</span>
+      <span class="n">query</span><span class="o">.</span>
+      <span class="nf">logWarning</span><span class="o">(</span><span class="n">s</span><span class="s">"GreenPlumColumnChecker: The query of this GreenPlumRelation "</span> <span class="o">+</span>
+        <span class="n">s</span><span class="s">"is a ${query.getClass.getName}."</span><span class="o">)</span>
+    <span class="k">case</span> <span class="k">_</span> <span class="k">=&gt;</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="k">class</span> <span class="nc">GreenPlumColumnCheckerExtension</span> <span class="nf">extends</span> <span class="o">(</span><span class="nc">SparkSessionExtensions</span> <span class="k">=&gt;</span> <span class="nc">Unit</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">override</span> <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">e</span><span class="k">:</span> <span class="kt">SparkSessionExtensions</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="nv">e</span><span class="o">.</span><span class="py">injectCheckRule</span><span class="o">(</span><span class="nc">GreenPlumColumnChecker</span><span class="o">)</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>PS:  Spark-2.3.2只能指定一个spark.sql.extensions，可以合入<a href="https://github.com/apache/spark/pull/23398">PR-26493</a>来支持多个extensions.</p>
+:ET

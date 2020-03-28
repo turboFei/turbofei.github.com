@@ -1,0 +1,554 @@
+I"6�
+<p>目录</p>
+
+<ul id="markdown-toc">
+  <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
+  <li><a href="#异常调优" id="markdown-toc-异常调优">异常调优</a>    <ul>
+      <li><a href="#sparksqlhiveconvertmetastoreparquet" id="markdown-toc-sparksqlhiveconvertmetastoreparquet">spark.sql.hive.convertMetastoreParquet</a></li>
+      <li><a href="#sparksqlfilesignoremissingfiles--sparksqlfilesignorecorruptfiles" id="markdown-toc-sparksqlfilesignoremissingfiles--sparksqlfilesignorecorruptfiles">spark.sql.files.ignoreMissingFiles &amp;&amp; spark.sql.files.ignoreCorruptFiles</a></li>
+      <li><a href="#sparksqlhiveverifypartitionpath" id="markdown-toc-sparksqlhiveverifypartitionpath">spark.sql.hive.verifyPartitionPath</a></li>
+      <li><a href="#sparkfilesignorecorruptfiles--sparkfilesignoremissingfiles" id="markdown-toc-sparkfilesignorecorruptfiles--sparkfilesignoremissingfiles">spark.files.ignoreCorruptFiles &amp;&amp; spark.files.ignoreMissingFiles</a></li>
+    </ul>
+  </li>
+  <li><a href="#性能调优" id="markdown-toc-性能调优">性能调优</a>    <ul>
+      <li><a href="#sparkhadooprddignoreemptysplits" id="markdown-toc-sparkhadooprddignoreemptysplits">spark.hadoopRDD.ignoreEmptySplits</a></li>
+      <li><a href="#sparkhadoopmapreduceinputfileinputformatsplitminsize" id="markdown-toc-sparkhadoopmapreduceinputfileinputformatsplitminsize">spark.hadoop.mapreduce.input.fileinputformat.split.minsize</a></li>
+      <li><a href="#sparksqlautobroadcastjointhreshold---sparksqlbroadcasttimeout" id="markdown-toc-sparksqlautobroadcastjointhreshold---sparksqlbroadcasttimeout">spark.sql.autoBroadcastJoinThreshold &amp;&amp;  spark.sql.broadcastTimeout</a></li>
+      <li><a href="#sparksqladaptiveenabled--sparksqladaptiveshuffletargetpostshuffleinputsize" id="markdown-toc-sparksqladaptiveenabled--sparksqladaptiveshuffletargetpostshuffleinputsize">spark.sql.adaptive.enabled &amp;&amp; spark.sql.adaptive.shuffle.targetPostShuffleInputSize</a></li>
+      <li><a href="#sparksqlparquetmergeschema" id="markdown-toc-sparksqlparquetmergeschema">spark.sql.parquet.mergeSchema</a></li>
+      <li><a href="#sparkhadoopmapreducefileoutputcommitteralgorithmversion" id="markdown-toc-sparkhadoopmapreducefileoutputcommitteralgorithmversion">spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version</a></li>
+    </ul>
+  </li>
+  <li><a href="#spark-sql-参数表spark-232" id="markdown-toc-spark-sql-参数表spark-232">Spark Sql 参数表(spark-2.3.2)</a></li>
+</ul>
+<p>关于spark sql的一些参数的用法和调优.</p>
+
+<h3 id="前言">前言</h3>
+
+<p>Spark Sql里面有很多的参数，而且这些参数在Spark官网中没有明确的解释，可能是太多了吧，可以通过在spark-sql中使用<code class="highlighter-rouge">set -v</code> 命令显示当前spark-sql版本支持的参数。</p>
+
+<p>本文讲解最近关于在参与hive往spark迁移过程中遇到的一些参数相关问题的调优。</p>
+
+<p>内容分为两部分，第一部分讲遇到异常，从而需要通过设置参数来解决的调优；第二部分讲用于提升性能而进行的调优。</p>
+
+<h3 id="异常调优">异常调优</h3>
+
+<h4 id="sparksqlhiveconvertmetastoreparquet">spark.sql.hive.convertMetastoreParquet</h4>
+
+<p>parquet是一种列式存储格式，可以用于spark-sql 和hive 的存储格式。在spark中，如果使用<code class="highlighter-rouge">using parqeut</code>的形式创建表，则创建的是spark 的DataSource表；而如果使用<code class="highlighter-rouge">stored as parquet</code>则创建的是hive表。</p>
+
+<p><code class="highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>默认设置是true, 它代表使用spark-sql内置的parquet的reader和writer(即进行反序列化和序列化),它具有更好地性能，如果设置为false，则代表使用 Hive的序列化方式。</p>
+
+<p>但是有时候当其设置为true时，会出现使用hive查询表有数据，而使用spark查询为空的情况.</p>
+
+<p>但是，有些情况下在将<code class="highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>设为false，可能发生以下异常(spark-2.3.2)。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">ClassCastException</span><span class="o">:</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">LongWritable</span> <span class="n">cannot</span> <span class="n">be</span> <span class="n">cast</span> <span class="n">to</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">IntWritable</span>
+	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">hive</span><span class="o">.</span><span class="na">serde2</span><span class="o">.</span><span class="na">objectinspector</span><span class="o">.</span><span class="na">primitive</span><span class="o">.</span><span class="na">WritableIntObjectInspector</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="nc">WritableIntObjectInspector</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">36</span><span class="o">)</span>
+
+</code></pre></div></div>
+
+<p>这是因为在其为false时候，是使用hive-metastore使用的元数据进行读取数据，而如果此表是使用spark sql DataSource创建的parquet表，其数据类型可能出现不一致的情况，例如通过metaStore读取到的是IntWritable类型，其创建了一个<code class="highlighter-rouge">WritableIntObjectInspector</code>用来解析数据，而实际上value是LongWritable类型，因此出现了类型转换异常。</p>
+
+<p>与该参数相关的一个参数是<code class="highlighter-rouge">spark.sql.hive.convertMetastoreParquet.mergeSchema</code>, 如果也是true，那么将会尝试合并各个parquet 文件的schema，以使得产生一个兼容所有parquet文件的schema.</p>
+
+<h4 id="sparksqlfilesignoremissingfiles--sparksqlfilesignorecorruptfiles">spark.sql.files.ignoreMissingFiles &amp;&amp; spark.sql.files.ignoreCorruptFiles</h4>
+
+<p><strong>这两个参数是只有在进行spark DataSource 表查询的时候才有效，如果是对hive表进行操作是无效的。</strong></p>
+
+<p>在进行spark DataSource 表查询时候，可能会遇到非分区表中的文件缺失/corrupt 或者分区表分区路径下的文件缺失/corrupt 异常，这时候加这两个参数会忽略这两个异常，这两个参数默认都是false，建议在线上可以都设为true.</p>
+
+<p>其源码逻辑如下，简单描述就是如果遇到<code class="highlighter-rouge">FileNotFoundException</code>, 如果设置了<code class="highlighter-rouge">ignoreMissingFiles=true</code>则忽略异常，否则抛出异常;如果不是FileNotFoundException 而是IOException(FileNotFoundException的父类)或者RuntimeException,则认为文件损坏,如果设置了<code class="highlighter-rouge">ignoreCorruptFiles=true</code>则忽略异常。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">catch</span> <span class="o">{</span>
+<span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">FileNotFoundException</span> <span class="kt">if</span> <span class="kt">ignoreMissingFiles</span> <span class="o">=&gt;</span>
+  <span class="nf">logWarning</span><span class="o">(</span><span class="n">s</span><span class="s">"Skipped missing file: $currentFile"</span><span class="o">,</span> <span class="n">e</span><span class="o">)</span>
+  <span class="n">finished</span> <span class="k">=</span> <span class="kc">true</span>
+  <span class="kc">null</span>
+<span class="c1">// Throw FileNotFoundException even if `ignoreCorruptFiles` is true</span>
+<span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">FileNotFoundException</span> <span class="kt">if</span> <span class="kt">!ignoreMissingFiles</span> <span class="o">=&gt;</span> <span class="k">throw</span> <span class="n">e</span>
+<span class="k">case</span> <span class="n">e</span> <span class="k">@</span> <span class="o">(</span><span class="k">_:</span> <span class="kt">RuntimeException</span> <span class="kt">|</span> <span class="k">_</span><span class="kt">:</span> <span class="kt">IOException</span><span class="o">)</span> <span class="k">if</span> <span class="n">ignoreCorruptFiles</span> <span class="k">=&gt;</span>
+  <span class="nf">logWarning</span><span class="o">(</span>
+  <span class="n">s</span><span class="s">"Skipped the rest of the content in the corrupted file: $currentFile"</span><span class="o">,</span> <span class="n">e</span><span class="o">)</span>
+  <span class="n">finished</span> <span class="k">=</span> <span class="kc">true</span>
+  <span class="kc">null</span>
+  <span class="o">}</span>
+</code></pre></div></div>
+
+<h4 id="sparksqlhiveverifypartitionpath">spark.sql.hive.verifyPartitionPath</h4>
+
+<p>上面的两个参数在分区表情况下是针对分区路径存在的情况下，分区路径下面的文件不存在或者损坏的处理。而有另一种情况就是这个分区路径都不存在了。这时候异常信息如下:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">java</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">FileNotFoundException</span><span class="o">:</span> <span class="nc">File</span> <span class="n">does</span> <span class="n">not</span> <span class="nl">exist:</span> <span class="nl">hdfs:</span><span class="c1">//hz-cluster10/user/da_haitao/da_hivesrc/haitao_dev_log/integ_browse_app_dt/day=2019-06-25/os=Android/000067_0</span>
+ 
+</code></pre></div></div>
+
+<p>而<code class="highlighter-rouge">spark.sql.hive.verifyPartitionPath</code>参数默认是false，当设置为true的时候会在获得分区路径时对分区路径是否存在做一个校验，过滤掉不存在的分区路径，这样就会避免上面的错误。</p>
+
+<h4 id="sparkfilesignorecorruptfiles--sparkfilesignoremissingfiles">spark.files.ignoreCorruptFiles &amp;&amp; spark.files.ignoreMissingFiles</h4>
+
+<p>这两个参数和上面的<code class="highlighter-rouge">spark.sql.files.ignoreCorruptFiles</code>很像，但是区别是很大的。在spark进行DataSource表查询时候<code class="highlighter-rouge">spark.sq.files.*</code>才会生效，而spark如果查询的是一张hive表，其会走HadoopRDD这条执行路线。</p>
+
+<p>所以就会出现，即使你设置了<code class="highlighter-rouge">spark.sql.files.ignoreMissingFiles</code>的情况下，仍然报FileNotFoundException的情况，异常栈如下, 可以看到这里面走到了HadoopRDD，而且后面是<code class="highlighter-rouge">org.apache.hadoop.hive.ql.io.parquet.read.ParquetRecordReaderWrappe</code>可见是查询一张hive表。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">Caused</span> <span class="nl">by:</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">spark</span><span class="o">.</span><span class="na">SparkException</span><span class="o">:</span> <span class="nc">Job</span> <span class="n">aborted</span> <span class="n">due</span> <span class="n">to</span> <span class="n">stage</span> <span class="nl">failure:</span> <span class="nc">Task</span> <span class="mi">107052</span> <span class="n">in</span> <span class="n">stage</span> <span class="mf">914.0</span> <span class="n">failed</span> <span class="mi">4</span> <span class="n">times</span><span class="o">,</span> <span class="n">most</span> <span class="n">recent</span> <span class="nl">failure:</span> <span class="nc">Lost</span> <span class="n">task</span> <span class="mf">107052.3</span> <span class="n">in</span> <span class="n">stage</span> <span class="mf">914.0</span> <span class="o">(</span><span class="no">TID</span> <span class="mi">387381</span><span class="o">,</span> <span class="n">hadoop2698</span><span class="o">.</span><span class="na">jd</span><span class="o">.</span><span class="mi">163</span><span class="o">.</span><span class="na">org</span><span class="o">,</span> <span class="n">executor</span> <span class="mi">266</span><span class="o">):</span> <span class="n">java</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">FileNotFoundException</span><span class="o">:</span> <span class="nc">File</span> <span class="n">does</span> <span class="n">not</span> <span class="nl">exist:</span> <span class="nl">hdfs:</span><span class="c1">//hz-cluster10/user/da_haitao/da_hivesrc/haitao_dev_log/integ_browse_app_dt/day=2019-06-25/os=Android/000067_0</span>
+        <span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">hdfs</span><span class="o">.</span><span class="na">DistributedFileSystem</span><span class="err">$</span><span class="mi">22</span><span class="o">.</span><span class="na">doCall</span><span class="o">(</span><span class="nc">DistributedFileSystem</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">1309</span><span class="o">)</span>
+        <span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">hdfs</span><span class="o">.</span><span class="na">DistributedFileSystem</span><span class="err">$</span><span class="mi">22</span><span class="o">.</span><span class="na">doCall</span><span class="o">(</span><span class="nc">DistributedFileSystem</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">1301</span><span class="o">)</span>
+        <span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">fs</span><span class="o">.</span><span class="na">FileSystemLinkResolver</span><span class="o">.</span><span class="na">resolve</span><span class="o">(</span><span class="nc">FileSystemLinkResolver</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">81</span><span class="o">)</span>
+        <span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">hdfs</span><span class="o">.</span><span class="na">DistributedFileSystem</span><span class="o">.</span><span class="na">getFileStatus</span><span class="o">(</span><span class="nc">DistributedFileSystem</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">1317</span><span class="o">)</span>
+        <span class="n">at</span> <span class="n">parquet</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">ParquetFileReader</span><span class="o">.</span><span class="na">readFooter</span><span class="o">(</span><span class="nc">ParquetFileReader</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">385</span><span class="o">)</span>
+        <span class="n">at</span> <span class="n">parquet</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">ParquetFileReader</span><span class="o">.</span><span class="na">readFooter</span><span class="o">(</span><span class="nc">ParquetFileReader</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">371</span><span class="o">)</span>
+        <span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">hive</span><span class="o">.</span><span class="na">ql</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">parquet</span><span class="o">.</span><span class="na">read</span><span class="o">.</span><span class="na">ParquetRecordReaderWrapper</span><span class="o">.</span><span class="na">getSplit</span><span class="o">(</span><span class="nc">ParquetRecordReaderWrapper</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">252</span><span class="o">)</span>
+        <span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">hive</span><span class="o">.</span><span class="na">ql</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">parquet</span><span class="o">.</span><span class="na">read</span><span class="o">.</span><span class="na">ParquetRecordReaderWrapper</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;(</span><span class="nc">ParquetRecordReaderWrapper</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">99</span><span class="o">)</span>
+        <span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">hive</span><span class="o">.</span><span class="na">ql</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">parquet</span><span class="o">.</span><span class="na">read</span><span class="o">.</span><span class="na">ParquetRecordReaderWrapper</span><span class="o">.&lt;</span><span class="n">init</span><span class="o">&gt;(</span><span class="nc">ParquetRecordReaderWrapper</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">85</span><span class="o">)</span>
+        <span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">hive</span><span class="o">.</span><span class="na">ql</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">parquet</span><span class="o">.</span><span class="na">MapredParquetInputFormat</span><span class="o">.</span><span class="na">getRecordReader</span><span class="o">(</span><span class="nc">MapredParquetInputFormat</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">72</span><span class="o">)</span>
+        <span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">spark</span><span class="o">.</span><span class="na">rdd</span><span class="o">.</span><span class="na">HadoopRDD</span><span class="err">$</span><span class="n">$anon</span><span class="err">$</span><span class="mi">1</span><span class="o">.</span><span class="na">liftedTree1</span><span class="err">$</span><span class="mi">1</span><span class="o">(</span><span class="nc">HadoopRDD</span><span class="o">.</span><span class="na">scala</span><span class="o">:</span><span class="mi">257</span><span class="o">)</span>
+</code></pre></div></div>
+
+<p>此时可以将<code class="highlighter-rouge">spark.files.ignoreCorruptFiles &amp;&amp; spark.files.ignoreMissingFiles</code>设为true，其代码逻辑和上面的<code class="highlighter-rouge">spark.sql.file.*</code>逻辑没明显区别，此处不再赘述.</p>
+
+<h3 id="性能调优">性能调优</h3>
+
+<p>除了遇到异常需要被动调整参数之外，我们还可以主动调整参数从而对性能进行调优。</p>
+
+<h4 id="sparkhadooprddignoreemptysplits">spark.hadoopRDD.ignoreEmptySplits</h4>
+
+<p>默认是false，如果是true，则会忽略那些空的splits，减小task的数量。</p>
+
+<h4 id="sparkhadoopmapreduceinputfileinputformatsplitminsize">spark.hadoop.mapreduce.input.fileinputformat.split.minsize</h4>
+
+<p>是用于聚合input的小文件，用于控制每个mapTask的输入文件，防止小文件过多时候，产生太多的task.</p>
+
+<h4 id="sparksqlautobroadcastjointhreshold---sparksqlbroadcasttimeout">spark.sql.autoBroadcastJoinThreshold &amp;&amp;  spark.sql.broadcastTimeout</h4>
+
+<p>用于控制在spark sql中使用BroadcastJoin时候表的大小阈值，适当增大可以让一些表走BroadcastJoin，提升性能，但是如果设置太大又会造成driver内存压力，而broadcastTimeout是用于控制Broadcast的Future的超时时间，默认是300s，可根据需求进行调整。</p>
+
+<h4 id="sparksqladaptiveenabled--sparksqladaptiveshuffletargetpostshuffleinputsize">spark.sql.adaptive.enabled &amp;&amp; spark.sql.adaptive.shuffle.targetPostShuffleInputSize</h4>
+
+<p>该参数是用于开启spark的自适应执行，这是spark比较老版本的自适应执行，后面的targetPostShuffleInputSize是用于控制之后的shuffle 阶段的平均输入数据大小，防止产生过多的task。</p>
+
+<p>intel大数据团队开发的adaptive-execution相较于目前spark的ae更加实用，该特性也已经加入到社区3.0之后的roadMap中，令人期待。</p>
+
+<h4 id="sparksqlparquetmergeschema">spark.sql.parquet.mergeSchema</h4>
+
+<p>默认false。当设为true，parquet会聚合所有parquet文件的schema，否则是直接读取parquet summary文件，或者在没有parquet summary文件时候随机选择一个文件的schema作为最终的schema。</p>
+
+<h4 id="sparkhadoopmapreducefileoutputcommitteralgorithmversion">spark.hadoop.mapreduce.fileoutputcommitter.algorithm.version</h4>
+
+<p>1或者2，默认是1. <a href="https://issues.apache.org/jira/browse/MAPREDUCE-4815">MapReduce-4815</a> 详细介绍了 fileoutputcommitter 的原理，实践中设置了 version=2 的比默认 version=1 的减少了70%以上的 commit 时间，但是1更健壮，能处理一些情况下的异常。</p>
+
+<h3 id="spark-sql-参数表spark-232">Spark Sql 参数表(spark-2.3.2)</h3>
+
+<table border="1" cellspacing="0">
+  <thead>
+    <tr>
+      <th style="text-align: left">key</th>
+      <th>value</th>
+      <th>meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">spark.sql.adaptive.enabled</td>
+      <td>TRUE</td>
+      <td>When true, enable adaptive query execution.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.adaptive.shuffle.targetPostShuffleInputSize</td>
+      <td>67108864b</td>
+      <td>The target post-shuffle input size in bytes of a task.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.autoBroadcastJoinThreshold</td>
+      <td>209715200</td>
+      <td>Configures the maximum size in bytes for a table that will be broadcast   to all worker nodes when performing a join.    By setting this value to -1 broadcasting can be disabled. Note that   currently statistics are only supported for Hive Metastore tables where the   command <code>ANALYZE TABLE &lt;tableName&gt; COMPUTE   STATISTICS noscan</code> has been run, and file-based data source   tables where the statistics are computed directly on the files of data.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.broadcastTimeout</td>
+      <td>300000ms</td>
+      <td>Timeout in seconds for the broadcast wait time in broadcast joins.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.cbo.enabled</td>
+      <td>FALSE</td>
+      <td>Enables CBO for estimation of plan statistics when set true.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.cbo.joinReorder.dp.star.filter</td>
+      <td>FALSE</td>
+      <td>Applies star-join filter heuristics to cost based join enumeration.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.cbo.joinReorder.dp.threshold</td>
+      <td>12</td>
+      <td>The maximum number of joined nodes allowed in the dynamic programming   algorithm.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.cbo.joinReorder.enabled</td>
+      <td>FALSE</td>
+      <td>Enables join reorder in CBO.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.cbo.starSchemaDetection</td>
+      <td>FALSE</td>
+      <td>When true, it enables join reordering based on star schema   detection.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.columnNameOfCorruptRecord</td>
+      <td>_corrupt_record</td>
+      <td>The name of internal column for storing raw/un-parsed JSON and CSV   records that fail to parse.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.crossJoin.enabled</td>
+      <td>TRUE</td>
+      <td>When false, we will throw an error if a query contains a cartesian   product without explicit CROSS JOIN syntax.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.execution.arrow.enabled</td>
+      <td>FALSE</td>
+      <td>When true, make use of Apache Arrow for columnar data transfers.   Currently available for use with pyspark.sql.DataFrame.toPandas, and   pyspark.sql.SparkSession.createDataFrame when its input is a Pandas   DataFrame. The following data types are unsupported: BinaryType, MapType,   ArrayType of TimestampType, and nested StructType.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.execution.arrow.maxRecordsPerBatch</td>
+      <td>10000</td>
+      <td>When using Apache Arrow, limit the maximum number of records that can be   written to a single ArrowRecordBatch in memory. If set to zero or negative   there is no limit.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.extensions</td>
+      <td><undefined></undefined></td>
+      <td>Name of the class used to configure Spark Session extensions. The class   should implement Function1[SparkSessionExtension, Unit], and must have a   no-args constructor.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.files.ignoreCorruptFiles</td>
+      <td>FALSE</td>
+      <td>Whether to ignore corrupt files. If true, the Spark jobs will continue to   run when encountering corrupted files and the contents that have been read   will still be returned.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.files.ignoreMissingFiles</td>
+      <td>FALSE</td>
+      <td>Whether to ignore missing files. If true, the Spark jobs will continue to   run when encountering missing files and the contents that have been read will   still be returned.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.files.maxPartitionBytes</td>
+      <td>134217728</td>
+      <td>The maximum number of bytes to pack into a single partition when reading   files.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.files.maxRecordsPerFile</td>
+      <td>0</td>
+      <td>Maximum number of records to write out to a single file. If this value is   zero or negative, there is no limit.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.function.concatBinaryAsString</td>
+      <td>FALSE</td>
+      <td>When this option is set to false and all inputs are binary,   <code class="highlighter-rouge">functions.concat</code> returns an output as binary. Otherwise, it returns as a   string.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.function.eltOutputAsString</td>
+      <td>FALSE</td>
+      <td>When this option is set to false and all inputs are binary, <code class="highlighter-rouge">elt</code> returns   an output as binary. Otherwise, it returns as a string.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.groupByAliases</td>
+      <td>TRUE</td>
+      <td>When true, aliases in a select list can be used in group by clauses. When   false, an analysis exception is thrown in the case.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.groupByOrdinal</td>
+      <td>TRUE</td>
+      <td>When true, the ordinal numbers in group by clauses are treated as the   position in the select list. When false, the ordinal numbers are ignored.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.caseSensitiveInferenceMode</td>
+      <td>INFER_AND_SAVE</td>
+      <td>Sets the action to take when a case-sensitive schema cannot be read from   a Hive table’s properties. Although Spark SQL itself is not case-sensitive,   Hive compatible file formats such as Parquet are. Spark SQL must use a   case-preserving schema when querying any table backed by files containing   case-sensitive field names or queries may not return accurate results. Valid   options include INFER_AND_SAVE (the default mode– infer the case-sensitive   schema from the underlying data files and write it back to the table   properties), INFER_ONLY (infer the schema but don’t attempt to write it to   the table properties) and NEVER_INFER (fallback to using the case-insensitive   metastore schema instead of inferring).</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.convertMetastoreParquet</td>
+      <td>TRUE</td>
+      <td>When set to true, the built-in Parquet reader and writer are used to   process parquet tables created by using the HiveQL syntax, instead of Hive   serde.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.convertMetastoreParquet.mergeSchema</td>
+      <td>FALSE</td>
+      <td>When true, also tries to merge possibly different but compatible Parquet   schemas in different Parquet data files. This configuration is only effective   when “spark.sql.hive.convertMetastoreParquet” is true.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.filesourcePartitionFileCacheSize</td>
+      <td>262144000</td>
+      <td>When nonzero, enable caching of partition file metadata in memory. All   tables share a cache that can use up to specified num bytes for file   metadata. This conf only has an effect when hive filesource partition   management is enabled.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.manageFilesourcePartitions</td>
+      <td>TRUE</td>
+      <td>When true, enable metastore partition management for file source tables   as well. This includes both datasource and converted Hive tables. When   partition management is enabled, datasource tables store partition in the   Hive metastore, and use the metastore to prune partitions during query   planning.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.metastore.barrierPrefixes</td>
+      <td>&nbsp;</td>
+      <td>A comma separated list of class prefixes that should explicitly be   reloaded for each version of Hive that Spark SQL is communicating with. For   example, Hive UDFs that are declared in a prefix that typically would be   shared (i.e. <code>org.apache.spark.*</code>).</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.metastore.jars</td>
+      <td>builtin</td>
+      <td>Location of the jars that should be   used to instantiate the HiveMetastoreClient.     This property can be one of three   options: “     1.   “builtin”       Use Hive 1.2.1, which is bundled   with the Spark assembly when       <code>-Phive</code> is   enabled. When this option is chosen,         <code>spark.sql.hive.metastore.version</code> must be   either       <code>1.2.1</code> or   not defined.     2. “maven”       Use Hive jars of specified version   downloaded from Maven repositories.     3. A classpath in the   standard format for both Hive and Hadoop.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.metastore.sharedPrefixes</td>
+      <td>com.mysql.jdbc,<br />org.postgresql,<br />com.microsoft.sqlserver,<br />oracle.jdbc</td>
+      <td>A comma separated list of class prefixes that should be loaded using the   classloader that is shared between Spark SQL and a specific version of Hive.   An example of classes that should be shared is JDBC drivers that are needed   to talk to the metastore. Other classes that need to be shared are those that   interact with classes that are already shared. For example, custom appenders   that are used by log4j.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.metastore.version</td>
+      <td>1.2.1</td>
+      <td>Version of the Hive metastore. Available options are   <code>0.12.0</code> through <code>2.1.1</code>.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.metastorePartitionPruning</td>
+      <td>TRUE</td>
+      <td>When true, some predicates will be pushed down into the Hive metastore so   that unmatching partitions can be eliminated earlier. This only affects Hive   tables not converted to filesource relations (see   HiveUtils.CONVERT_METASTORE_PARQUET and HiveUtils.CONVERT_METASTORE_ORC for   more information).</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.thriftServer.async</td>
+      <td>TRUE</td>
+      <td>When set to true, Hive Thrift server executes SQL queries in an   asynchronous way.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.thriftServer.singleSession</td>
+      <td>FALSE</td>
+      <td>When set to true, Hive Thrift server is running in a single session mode.   All the JDBC/ODBC connections share the temporary views, function registries,   SQL configuration and the current database.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.verifyPartitionPath</td>
+      <td>FALSE</td>
+      <td>When true, check all the partition paths under the table’s root directory   when reading data stored in HDFS.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.hive.version</td>
+      <td>1.2.1</td>
+      <td>deprecated, please use spark.sql.hive.metastore.version to get the Hive   version in Spark.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.inMemoryColumnarStorage.batchSize</td>
+      <td>10000</td>
+      <td>Controls the size of batches for columnar caching.  Larger batch sizes can improve memory   utilization and compression, but risk OOMs when caching data.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.inMemoryColumnarStorage.compressed</td>
+      <td>TRUE</td>
+      <td>When set to true Spark SQL will automatically select a compression codec   for each column based on statistics of the data.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.inMemoryColumnarStorage.enableVectorizedReader</td>
+      <td>TRUE</td>
+      <td>Enables vectorized reader for columnar caching.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.optimizer.metadataOnly</td>
+      <td>TRUE</td>
+      <td>When true, enable the metadata-only query optimization that use the   table’s metadata to produce the partition columns instead of table scans. It   applies when all the columns scanned are partition columns and the query has   an aggregate operator that satisfies distinct semantics.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.orc.compression.codec</td>
+      <td>snappy</td>
+      <td>Sets the compression codec used when writing ORC files. If either   <code class="highlighter-rouge">compression</code> or <code class="highlighter-rouge">orc.compress</code> is specified in the table-specific   options/properties, the precedence would be <code class="highlighter-rouge">compression</code>, <code class="highlighter-rouge">orc.compress</code>,   <code class="highlighter-rouge">spark.sql.orc.compression.codec</code>.Acceptable values include: none,   uncompressed, snappy, zlib, lzo.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.orc.enableVectorizedReader</td>
+      <td>TRUE</td>
+      <td>Enables vectorized orc decoding.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.orc.filterPushdown</td>
+      <td>FALSE</td>
+      <td>When true, enable filter pushdown for ORC files.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.orderByOrdinal</td>
+      <td>TRUE</td>
+      <td>When true, the ordinal numbers are treated as the position in the select   list. When false, the ordinal numbers in order/sort by clause are ignored.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.binaryAsString</td>
+      <td>FALSE</td>
+      <td>Some other Parquet-producing systems, in particular Impala and older   versions of Spark SQL, do not differentiate between binary data and strings   when writing out the Parquet schema. This flag tells Spark SQL to interpret   binary data as a string to provide compatibility with these systems.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.compression.codec</td>
+      <td>snappy</td>
+      <td>Sets the compression codec used when writing Parquet files. If either   <code class="highlighter-rouge">compression</code> or <code class="highlighter-rouge">parquet.compression</code> is specified in the table-specific   options/properties, the precedence would be <code class="highlighter-rouge">compression</code>,   <code class="highlighter-rouge">parquet.compression</code>, <code class="highlighter-rouge">spark.sql.parquet.compression.codec</code>. Acceptable   values include: none, uncompressed, snappy, gzip, lzo.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.enableVectorizedReader</td>
+      <td>TRUE</td>
+      <td>Enables vectorized parquet decoding.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.filterPushdown</td>
+      <td>TRUE</td>
+      <td>Enables Parquet filter push-down optimization when set to true.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.int64AsTimestampMillis</td>
+      <td>FALSE</td>
+      <td>(Deprecated since Spark 2.3, please set   spark.sql.parquet.outputTimestampType.) When true, timestamp values will be   stored as INT64 with TIMESTAMP_MILLIS as the extended type. In this mode, the   microsecond portion of the timestamp value will betruncated.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.int96AsTimestamp</td>
+      <td>TRUE</td>
+      <td>Some Parquet-producing systems, in particular Impala, store Timestamp   into INT96. Spark would also store Timestamp as INT96 because we need to   avoid precision lost of the nanoseconds field. This flag tells Spark SQL to   interpret INT96 data as a timestamp to provide compatibility with these   systems.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.int96TimestampConversion</td>
+      <td>FALSE</td>
+      <td>This controls whether timestamp adjustments should be applied to INT96   data when converting to timestamps, for data written by Impala.  This is necessary because Impala stores   INT96 data with a different timezone offset than Hive &amp; Spark.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.mergeSchema</td>
+      <td>FALSE</td>
+      <td>When true, the Parquet data source merges schemas collected from all data   files, otherwise the schema is picked from the summary file or a random data   file if no summary file is available.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.outputTimestampType</td>
+      <td>INT96</td>
+      <td>Sets which Parquet timestamp type to use when Spark writes data to   Parquet files. INT96 is a non-standard but commonly used timestamp type in   Parquet. TIMESTAMP_MICROS is a standard timestamp type in Parquet, which   stores number of microseconds from the Unix epoch. TIMESTAMP_MILLIS is also   standard, but with millisecond precision, which means Spark has to truncate   the microsecond portion of its timestamp value.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.recordLevelFilter.enabled</td>
+      <td>FALSE</td>
+      <td>If true, enables Parquet’s native record-level filtering using the pushed   down filters. This configuration only has an effect when   ‘spark.sql.parquet.filterPushdown’ is enabled.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.respectSummaryFiles</td>
+      <td>FALSE</td>
+      <td>When true, we make assumption that all part-files of Parquet are   consistent with summary files and we will ignore them when merging schema.   Otherwise, if this is false, which is the default, we will merge all   part-files. This should be considered as expert-only option, and shouldn’t be   enabled before knowing what it means exactly.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parquet.writeLegacyFormat</td>
+      <td>FALSE</td>
+      <td>Whether to be compatible with the legacy Parquet format adopted by Spark   1.4 and prior versions, when converting Parquet schema to Spark SQL schema   and vice versa.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.parser.quotedRegexColumnNames</td>
+      <td>FALSE</td>
+      <td>When true, quoted Identifiers (using backticks) in SELECT statement are   interpreted as regular expressions.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.pivotMaxValues</td>
+      <td>10000</td>
+      <td>When doing a pivot without specifying values for the pivot column this is   the maximum number of (distinct) values that will be collected without error.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.queryExecutionListeners</td>
+      <td><undefined></undefined></td>
+      <td>List of class names implementing QueryExecutionListener that will be   automatically added to newly created sessions. The classes should have either   a no-arg constructor, or a constructor that expects a SparkConf argument.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.redaction.options.regex</td>
+      <td>(?i)url</td>
+      <td>Regex to decide which keys in a Spark SQL command’s options map contain   sensitive information. The values of options whose names that match this   regex will be redacted in the explain output. This redaction is applied on   top of the global redaction configuration defined by spark.redaction.regex.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.redaction.string.regex</td>
+      <td><value of="" spark.redaction.string.regex=""></value></td>
+      <td>Regex to decide which parts of strings produced by Spark contain   sensitive information. When this regex matches a string part, that string   part is replaced by a dummy value. This is currently used to redact the   output of SQL explain commands. When this conf is not set, the value from   <code class="highlighter-rouge">spark.redaction.string.regex</code> is used.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.session.timeZone</td>
+      <td>Asia/Shanghai</td>
+      <td>The ID of session local timezone, e.g. “GMT”,   “America/Los_Angeles”, etc.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.shuffle.partitions</td>
+      <td>4096</td>
+      <td>The default number of partitions to use when shuffling data for joins or   aggregations.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.sources.bucketing.enabled</td>
+      <td>TRUE</td>
+      <td>When false, we will treat bucketed table as normal table</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.sources.default</td>
+      <td>parquet</td>
+      <td>The default data source to use in input/output.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.sources.parallelPartitionDiscovery.threshold</td>
+      <td>32</td>
+      <td>The maximum number of paths allowed for listing files at driver side. If   the number of detected paths exceeds this value during partition discovery,   it tries to list the files with another Spark distributed job. This applies   to Parquet, ORC, CSV, JSON and LibSVM data sources.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.sources.partitionColumnTypeInference.enabled</td>
+      <td>TRUE</td>
+      <td>When true, automatically infer the data types for partitioned columns.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.sources.partitionOverwriteMode</td>
+      <td>STATIC</td>
+      <td>When INSERT OVERWRITE a partitioned data source table, we currently   support 2 modes: static and dynamic. In static mode, Spark deletes all the   partitions that match the partition specification(e.g. PARTITION(a=1,b)) in   the INSERT statement, before overwriting. In dynamic mode, Spark doesn’t   delete partitions ahead, and only overwrite those partitions that have data   written into it at runtime. By default we use static mode to keep the same   behavior of Spark prior to 2.3. Note that this config doesn’t affect Hive   serde tables, as they are always overwritten with dynamic mode.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.statistics.fallBackToHdfs</td>
+      <td>TRUE</td>
+      <td>If the table statistics are not available from table metadata enable fall   back to hdfs. This is useful in determining if a table is small enough to use   auto broadcast joins.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.statistics.histogram.enabled</td>
+      <td>FALSE</td>
+      <td>Generates histograms when computing column statistics if enabled.   Histograms can provide better estimation accuracy. Currently, Spark only   supports equi-height histogram. Note that collecting histograms takes extra   cost. For example, collecting column statistics usually takes only one table   scan, but generating equi-height histogram will cause an extra table scan.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.statistics.size.autoUpdate.enabled</td>
+      <td>FALSE</td>
+      <td>Enables automatic update for table size once table’s data is changed.   Note that if the total number of files of the table is very large, this can   be expensive and slow down data change commands.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.streaming.checkpointLocation</td>
+      <td><undefined></undefined></td>
+      <td>The default location for storing checkpoint data for streaming queries.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.streaming.metricsEnabled</td>
+      <td>FALSE</td>
+      <td>Whether Dropwizard/Codahale metrics will be reported for active streaming   queries.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.streaming.numRecentProgressUpdates</td>
+      <td>100</td>
+      <td>The number of progress updates to retain for a streaming query</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.thriftserver.scheduler.pool</td>
+      <td><undefined></undefined></td>
+      <td>Set a Fair Scheduler pool for a JDBC client session.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.thriftserver.ui.retainedSessions</td>
+      <td>200</td>
+      <td>The number of SQL client sessions kept in the JDBC/ODBC web UI history.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.thriftserver.ui.retainedStatements</td>
+      <td>200</td>
+      <td>The number of SQL statements kept in the JDBC/ODBC web UI history.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.ui.retainedExecutions</td>
+      <td>1000</td>
+      <td>Number of executions to retain in the Spark UI.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.variable.substitute</td>
+      <td>TRUE</td>
+      <td>This enables substitution using syntax like ${var} ${system:var} and   ${env:var}.</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">spark.sql.warehouse.dir</td>
+      <td>/user/warehouse</td>
+      <td>The default location for managed databases and tables.</td>
+    </tr>
+  </tbody>
+</table>
+
+:ET

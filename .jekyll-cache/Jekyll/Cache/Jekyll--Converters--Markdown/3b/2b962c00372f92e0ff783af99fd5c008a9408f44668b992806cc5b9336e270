@@ -1,0 +1,177 @@
+I""L
+<p>目录</p>
+
+<ul id="markdown-toc">
+  <li><a href="#background" id="markdown-toc-background">Background</a></li>
+  <li><a href="#match" id="markdown-toc-match">match</a>    <ul>
+      <li><a href="#提取器" id="markdown-toc-提取器">提取器</a></li>
+    </ul>
+  </li>
+  <li><a href="#正则匹配" id="markdown-toc-正则匹配">正则匹配</a>    <ul>
+      <li><a href="#-与-" id="markdown-toc--与-">”” 与 ““””““</a></li>
+      <li><a href="#regex" id="markdown-toc-regex">Regex</a></li>
+    </ul>
+  </li>
+</ul>
+<h3 id="background">Background</h3>
+
+<p>scala的编程非常灵活，里面有很多的语法糖，在scala中模式匹配非常常用，往往用于取代if else，使得代码看起来更加优雅，本文讲一下自己在日常编程中用到模式匹配和正则相关的使用经验总结。</p>
+
+<h3 id="match">match</h3>
+
+<p>match是和case一起使用。其实有些时候有一些隐式的match。比如下面这两段代码的功能都是一样的，都是过滤掉字符串中的<code class="highlighter-rouge">'_'</code>字符,其实这段代码可以简单的使用<code class="highlighter-rouge">str.filterNot(_ != '_')</code>，本例子只是讲解match case。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="nv">str</span><span class="o">.</span><span class="py">flatMap</span> <span class="o">{</span>
+      <span class="k">case</span> <span class="ss">'_'</span> <span class="k">=&gt;</span> <span class="s">""</span>
+      <span class="k">case</span> <span class="n">c</span> <span class="k">=&gt;</span> <span class="n">s</span><span class="s">"$c"</span>
+    <span class="o">}</span>
+    
+    <span class="nv">str</span><span class="o">.</span><span class="py">flatMap</span> <span class="o">{</span> <span class="n">char</span> <span class="k">=&gt;</span>
+      <span class="n">char</span> <span class="k">match</span> <span class="o">{</span>
+        <span class="k">case</span> <span class="ss">'_'</span> <span class="k">=&gt;</span> <span class="s">""</span>
+        <span class="k">case</span> <span class="n">c</span> <span class="k">=&gt;</span> <span class="n">s</span><span class="s">"c"</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>其实这个flatMap函数的输入是一个函数，输入是String类型，输出是一个字符集合。因此，这里省去的match实际上是对输入参数的match。</p>
+
+<p>对于case来说，匹配到的可以是一个具体的value, 比如<code class="highlighter-rouge">'_'</code>是一个字符，而<code class="highlighter-rouge">_</code>代表任何value。也可以是匹配到一个类型的实例。例如:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">def</span> <span class="nf">testMatch</span><span class="o">(</span><span class="n">obj</span><span class="k">:</span> <span class="kt">Any</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="n">obj</span> <span class="k">match</span> <span class="o">{</span>
+      <span class="k">case</span> <span class="n">i</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=&gt;</span> <span class="nf">println</span><span class="o">(</span><span class="s">"Int"</span><span class="o">)</span>
+      <span class="k">case</span> <span class="n">b</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=&gt;</span> <span class="nf">println</span><span class="o">(</span><span class="s">"Boolean"</span><span class="o">)</span>
+      <span class="k">case</span> <span class="n">str</span><span class="k">:</span> <span class="kt">String</span> <span class="o">=&gt;</span> <span class="nf">println</span><span class="o">(</span><span class="s">"String"</span><span class="o">)</span>
+      <span class="k">case</span> <span class="k">_</span> <span class="k">=&gt;</span> <span class="nf">println</span><span class="o">(</span><span class="s">"Other type"</span><span class="o">)</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+</code></pre></div></div>
+
+<h4 id="提取器">提取器</h4>
+
+<p>提取器是也是一个很常见的场景，对于一个object， 如果在 match的时候进行case操作，则会调用这个对象的<code class="highlighter-rouge">unapply</code>方法进行提取操作，因为是提取，所以这个unapply方法也对应的是一个match操作，而且可能会有提出不出来的场景，所以返回参数一定是Option类型的，因为有时提取可能为None。</p>
+
+<p>下面是一个例子，这个例子中使用了一些样例类。</p>
+
+<p>我们看<code class="highlighter-rouge">testClassMatch</code>方法，前两个case都是匹配到一个样例类的value比较好理解，重点看第三和第四个case。</p>
+
+<p>我们看到有 <code class="highlighter-rouge">case dl @ SpecialTypeThree(ExtractLiteral(l1), ExtractLiteral(l2))</code>的操作，而SpecialTypeThree是一个object，作为抽取器，输入参数是<code class="highlighter-rouge">AbstractType</code>实例，它的unapply方法用于抽取出两个String. 而此处的<code class="highlighter-rouge">dl</code>代表的是匹配到的值，也就是一个<code class="highlighter-rouge">DoubleLiterals</code>实例。</p>
+
+<p>而SpecialTypeThree抽取器返回值是两个string，而后面跟着的<code class="highlighter-rouge">ExtractLiteral(l1), ExtractLiteral(l2)</code>代表，两个抽取器对返回的两个String再做操作，如果依然能提取出非None的值，那么就代表匹配成功。否则，如果后面的两个ExtractLiteral 有一个返回None，都会代表此次匹配失败。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">abstract</span> <span class="k">class</span> <span class="nc">AbstractType</span>
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">TypeOne</span><span class="o">(</span><span class="n">int</span><span class="k">:</span> <span class="kt">Int</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AbstractType</span>
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">TypeTwo</span><span class="o">(</span><span class="n">bool</span><span class="k">:</span> <span class="kt">Boolean</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AbstractType</span>
+
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">DoubleLiterals</span><span class="o">(</span><span class="n">lit1</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">lit2</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AbstractType</span>
+  <span class="k">case</span> <span class="k">class</span> <span class="nc">DoubleString</span><span class="o">(</span><span class="n">str1</span><span class="k">:</span> <span class="kt">String</span><span class="o">,</span> <span class="n">str2</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">AbstractType</span>
+
+	<span class="k">def</span> <span class="nf">testClassMatch</span><span class="o">(</span><span class="n">instance</span><span class="k">:</span> <span class="kt">AbstractType</span><span class="o">)</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="n">instance</span> <span class="k">match</span> <span class="o">{</span>
+   	<span class="k">case</span> <span class="nc">TypeOne</span><span class="o">(</span><span class="n">i</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nc">Some</span><span class="o">(</span><span class="s">"int"</span><span class="o">)</span>
+    <span class="k">case</span> <span class="nc">TypeTwo</span><span class="o">(</span><span class="n">bool</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nc">Some</span><span class="o">(</span><span class="s">"bool"</span><span class="o">)</span>
+    <span class="k">case</span> <span class="n">dl</span> <span class="k">@</span> <span class="nc">SpecialTypeThree</span><span class="o">(</span><span class="nc">ExtractLiteral</span><span class="o">(</span><span class="n">l1</span><span class="o">),</span> <span class="nc">ExtractLiteral</span><span class="o">(</span><span class="n">l2</span><span class="o">))</span> <span class="k">=&gt;</span>
+      <span class="nf">assert</span><span class="o">(</span><span class="nv">ss</span><span class="o">.</span><span class="py">isInstanceOf</span><span class="o">[</span><span class="kt">DoubleLiterals</span><span class="o">])</span>
+      <span class="nc">Some</span><span class="o">(</span><span class="n">s</span><span class="s">"$l1\t$l2"</span><span class="o">)</span>
+
+    <span class="k">case</span> <span class="n">ds</span> <span class="k">@</span> <span class="nc">SpecialTypeThree</span><span class="o">(</span><span class="nc">ExtractString</span><span class="o">(</span><span class="n">s1</span><span class="o">),</span> <span class="nc">ExtractString</span><span class="o">(</span><span class="n">s2</span><span class="o">))</span> <span class="k">=&gt;</span>
+      <span class="nf">assert</span><span class="o">(</span><span class="nv">ds</span><span class="o">.</span><span class="py">isInstanceOf</span><span class="o">[</span><span class="kt">DoubleString</span><span class="o">])</span>
+      <span class="nc">Some</span><span class="o">(</span><span class="n">s</span><span class="s">"$s1\t$s2"</span><span class="o">)</span>
+    <span class="k">case</span> <span class="k">_</span> <span class="k">=&gt;</span> <span class="nc">None</span>
+  <span class="o">}</span>
+
+  <span class="k">private</span> <span class="k">object</span> <span class="nc">SpecialTypeThree</span> <span class="o">{</span>
+    <span class="k">def</span> <span class="nf">unapply</span><span class="o">(</span><span class="n">instance</span><span class="k">:</span> <span class="kt">AbstractType</span><span class="o">)</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[(</span><span class="kt">String</span>, <span class="kt">String</span><span class="o">)]</span> <span class="k">=</span> <span class="n">instance</span> <span class="k">match</span> <span class="o">{</span>
+      <span class="k">case</span> <span class="n">dl</span><span class="k">:</span> <span class="kt">DoubleLiterals</span> <span class="o">=&gt;</span>
+        <span class="nc">Some</span><span class="o">(</span><span class="nv">dl</span><span class="o">.</span><span class="py">lit1</span><span class="o">,</span> <span class="nv">dl</span><span class="o">.</span><span class="py">lit2</span><span class="o">)</span>
+      <span class="k">case</span> <span class="n">ds</span><span class="k">:</span> <span class="kt">DoubleString</span> <span class="o">=&gt;</span>
+        <span class="nc">Some</span><span class="o">(</span><span class="nv">ds</span><span class="o">.</span><span class="py">str1</span><span class="o">,</span> <span class="nv">ds</span><span class="o">.</span><span class="py">str2</span><span class="o">)</span>
+      <span class="k">case</span> <span class="k">_</span> <span class="k">=&gt;</span> <span class="nc">None</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="k">private</span> <span class="k">object</span> <span class="nc">ExtractLiteral</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="nv">reg</span> <span class="k">=</span> <span class="s">"""([0-9]+)"""</span><span class="o">.</span><span class="py">r</span>
+    <span class="k">def</span> <span class="nf">unapply</span><span class="o">(</span><span class="n">arg</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+      <span class="n">arg</span> <span class="k">match</span> <span class="o">{</span>
+        <span class="k">case</span> <span class="nf">reg</span><span class="o">(</span><span class="n">str</span><span class="o">)</span> <span class="k">=&gt;</span>
+          <span class="nf">println</span><span class="o">(</span><span class="s">"extract literal ing!"</span><span class="o">)</span>
+          <span class="nc">Some</span><span class="o">(</span><span class="n">str</span><span class="o">)</span>
+        <span class="k">case</span> <span class="k">_</span> <span class="k">=&gt;</span> <span class="nc">None</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+  <span class="k">private</span> <span class="k">object</span> <span class="nc">ExtractString</span>  <span class="o">{</span>
+    <span class="k">val</span> <span class="nv">reg</span> <span class="k">=</span> <span class="s">"""([a-zA-Z]+)"""</span><span class="o">.</span><span class="py">r</span>
+    <span class="k">def</span> <span class="nf">unapply</span><span class="o">(</span><span class="n">arg</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[</span><span class="kt">String</span><span class="o">]</span> <span class="k">=</span> <span class="o">{</span>
+      <span class="n">arg</span> <span class="k">match</span> <span class="o">{</span>
+        <span class="k">case</span> <span class="nf">reg</span><span class="o">(</span><span class="n">str</span><span class="o">)</span> <span class="k">=&gt;</span>
+          <span class="nf">println</span><span class="o">(</span><span class="s">"extract string ing!"</span><span class="o">)</span>
+          <span class="nc">Some</span><span class="o">(</span><span class="n">str</span><span class="o">)</span>
+        <span class="k">case</span> <span class="k">_</span> <span class="k">=&gt;</span> <span class="nc">None</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+</code></pre></div></div>
+
+<h3 id="正则匹配">正则匹配</h3>
+
+<p>scala中的正则表达式写起来非常的简单。</p>
+
+<p>例如<code class="highlighter-rouge">"""([0-9]+)""".r</code>就代表一个正则表达式，用于匹配一个数字。</p>
+
+<h4 id="-与-">”” 与 ““””““</h4>
+
+<p>此处讲一下<code class="highlighter-rouge">""</code>和<code class="highlighter-rouge">""""""</code>的区别，在scala中经常看到三引号。其实三引号最大的作用就是可以在里面使用一些需要转义的字符，并且支持换行。</p>
+
+<p>例如</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="s">"""\t"""</span> <span class="c1">// 打印出来是\t而非制表符</span>
+<span class="s">"""turbo"fei"""</span> <span class="c1">//可在里面加引号</span>
+<span class="s">"""turbo
+fei"""</span> <span class="c1">//可直接换行，不用使用\n表示换行符</span>
+</code></pre></div></div>
+
+<p>当然常用的还是下面的方式:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="s">"""turbo
+      |fei
+    """</span><span class="o">.</span><span class="py">stripMargin</span>
+</code></pre></div></div>
+
+<p>这通常是我们打印多行信息的方式，它可以优雅的打印出信息，而这里的stripMargin方法是指定每行开始的字符，默认是<code class="highlighter-rouge">|</code>。</p>
+
+<h4 id="regex">Regex</h4>
+
+<p>scala中的正则类是<code class="highlighter-rouge">scala.util.matching.Regex</code>.</p>
+
+<p>创建Regex有两种方式:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">val</span> <span class="nv">reg1</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Regex</span><span class="o">(</span><span class="s">"\\."</span><span class="o">)</span>
+
+<span class="c1">// 后面是用于注释?</span>
+<span class="k">val</span> <span class="nv">reg2</span> <span class="k">=</span> <span class="o">(\</span><span class="n">d</span><span class="o">\</span><span class="n">d</span><span class="o">\</span><span class="n">d</span><span class="o">\</span><span class="n">d</span><span class="o">)-(\</span><span class="n">d</span><span class="o">\</span><span class="n">d</span><span class="o">)-(\</span><span class="n">d</span><span class="o">\</span><span class="n">d</span><span class="o">)</span><span class="s">""".r("year", "month", "date")"""</span>
+</code></pre></div></div>
+
+<p>正则表达式中的特殊字符在此就不详细列了，请参考官方标准。例如<code class="highlighter-rouge">\d</code>表示数字，<code class="highlighter-rouge">.</code>表示任意一个字符， 所以如果需要匹配<code class="highlighter-rouge">.</code>需要进行转义使用<code class="highlighter-rouge">\.</code>。</p>
+
+<p>而String里面split方式使用的参数其实是一个正则表达式的字符串形式。</p>
+
+<p>例如，如果我们需要按照<code class="highlighter-rouge">.</code>进行分割，那么就要需要使用<code class="highlighter-rouge">\\.</code> 当做正则传入。如下：</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nv">str</span><span class="o">.</span><span class="py">split</span><span class="o">(</span><span class="s">"\\."</span><span class="o">)</span>
+</code></pre></div></div>
+
+<p>所以在使用split方法时不要以为这是一个普通的字符串，其实这是一个toString的正则表达式。</p>
+
+<p>在scala中，常常将要匹配的部分使用小括号包住，则，就可以配合match，匹配出对应的部分。</p>
+
+<p>下面是一个例子:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">val</span> <span class="nv">reg</span> <span class="k">=</span> <span class="s">"""(\d+) \+ (\d+)"""</span><span class="o">.</span><span class="py">r</span><span class="o">(</span><span class="s">"n1"</span><span class="o">,</span> <span class="s">"n2"</span><span class="o">)</span>
+    <span class="s">"12 + 23"</span> <span class="k">match</span> <span class="o">{</span>
+      <span class="k">case</span> <span class="nf">reg</span><span class="o">(</span><span class="n">a</span><span class="o">,</span> <span class="n">b</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="nf">println</span><span class="o">(</span><span class="nv">a</span><span class="o">.</span><span class="py">toInt</span> <span class="o">+</span> <span class="nv">b</span><span class="o">.</span><span class="py">toInt</span><span class="o">)</span> <span class="c1">// 35</span>
+      <span class="k">case</span> <span class="k">_</span> <span class="k">=&gt;</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+:ET

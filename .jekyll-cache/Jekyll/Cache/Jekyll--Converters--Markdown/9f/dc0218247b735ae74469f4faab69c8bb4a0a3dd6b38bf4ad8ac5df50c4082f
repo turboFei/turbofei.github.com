@@ -1,0 +1,412 @@
+I"x
+<p>目录</p>
+
+<ul id="markdown-toc">
+  <li><a href="#background" id="markdown-toc-background">Background</a></li>
+  <li><a href="#spark-sql-catalyst" id="markdown-toc-spark-sql-catalyst">Spark Sql Catalyst</a>    <ul>
+      <li><a href="#treenode-and-rule" id="markdown-toc-treenode-and-rule">TreeNode And Rule</a>        <ul>
+          <li><a href="#treenode" id="markdown-toc-treenode">TreeNode</a></li>
+          <li><a href="#rule" id="markdown-toc-rule">Rule</a></li>
+        </ul>
+      </li>
+      <li><a href="#catalyst-in-spark-sql" id="markdown-toc-catalyst-in-spark-sql">Catalyst In Spark Sql</a>        <ul>
+          <li><a href="#analysis" id="markdown-toc-analysis">Analysis</a></li>
+          <li><a href="#logical-optimizations" id="markdown-toc-logical-optimizations">Logical Optimizations</a></li>
+          <li><a href="#物理计划" id="markdown-toc-物理计划">物理计划</a></li>
+          <li><a href="#code-generation" id="markdown-toc-code-generation">Code Generation</a></li>
+        </ul>
+      </li>
+      <li><a href="#添加自己的rule" id="markdown-toc-添加自己的rule">添加自己的Rule</a></li>
+      <li><a href="#参考文献" id="markdown-toc-参考文献">参考文献</a></li>
+    </ul>
+  </li>
+</ul>
+<h3 id="background">Background</h3>
+<p>关于spark的catalyst</p>
+
+<h1 id="spark-sql-catalyst">Spark Sql Catalyst</h1>
+
+<p>Catalyst是spark官方为spark sql设计的query优化框架， 基于函数式编程语言Scala实现。Catalyst有一个优化规则库，可以针对spark sql语句进行自动分析优化。而且Catalyst利用Scala的强大语言特性，例如模式匹配和运行时元程序设计(<a href="https://docs.scala-lang.org/overviews/quasiquotes/intro.html">基于scala quasiquotes</a>)，使得开发者可以简单方便的定制优化规则。</p>
+
+<h3 id="treenode-and-rule">TreeNode And Rule</h3>
+
+<p><code class="highlighter-rouge">TreeNode</code>和<code class="highlighter-rouge">Rule</code>是Catalyst重要的两种类型。</p>
+
+<h4 id="treenode">TreeNode</h4>
+
+<p>在sql语句中，每条sql语句都会被解析为一个AST(abstract syntax tree)，而TreeNode就是spark sql抽象语法树中的节点。</p>
+
+<p>TreeNode是一个抽象类，子类有很多种，比如可以是Projection，Attribute, Literal(常量)，或者是一个操作(比如Sum,Add)，或者是join,hashAggregate这些，或者filter,scan等等。</p>
+
+<p>比如下面这条sql语句。</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">SELECT</span> <span class="k">sum</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> 
+<span class="k">FROM</span> <span class="p">(</span>
+<span class="k">SELECT</span> 
+<span class="n">ta</span><span class="p">.</span><span class="k">key</span><span class="p">,</span> 
+<span class="mi">1</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">tb</span><span class="p">.</span><span class="n">value</span> <span class="k">AS</span> <span class="n">v</span>
+<span class="k">FROM</span>   <span class="n">ta</span> <span class="k">JOIN</span> <span class="n">tb</span>
+ <span class="k">WHERE</span>
+ <span class="n">ta</span><span class="p">.</span><span class="k">key</span> <span class="o">=</span> <span class="n">tb</span><span class="p">.</span><span class="k">key</span> <span class="k">AND</span> 
+ <span class="n">tb</span><span class="p">.</span><span class="k">key</span> <span class="o">&gt;</span> <span class="mi">90</span><span class="p">)</span> <span class="n">tmp</span>
+</code></pre></div></div>
+
+<p>它会解析为一个AST。</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Parsed Logical Plan ==
+'Project [unresolvedalias('sum('v), None)]
++- 'SubqueryAlias tmp
+   +- 'Project ['ta.key, ((1 + 2) + 'ta.value) AS v#12]
+      +- 'Filter (('ta.key = 'tb.key) &amp;&amp; ('tb.value &gt; 90))
+         +- 'Join Inner
+            :- 'UnresolvedRelation `ta`
+            +- 'UnresolvedRelation `tb`
+</code></pre></div></div>
+
+<p><img src="/imgs/spark-catalyst/sql-ast.png" alt="" /></p>
+
+<h4 id="rule">Rule</h4>
+
+<p>而Rule就是运用在这个AST上面的规则。通过规则对树里面的TreeNode进行转化。</p>
+
+<p>观察TreeNode，里面有一个很重要的方法：</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">def</span> <span class="nf">transform</span><span class="o">(</span><span class="n">rule</span><span class="k">:</span> <span class="kt">PartialFunction</span><span class="o">[</span><span class="kt">BaseType</span>, <span class="kt">BaseType</span><span class="o">])</span><span class="k">:</span> <span class="kt">BaseType</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="nf">transformDown</span><span class="o">(</span><span class="n">rule</span><span class="o">)</span>
+  <span class="o">}</span>
+</code></pre></div></div>
+
+<p>默认是对树中的TreeNode使用前序遍历方式（transformDown)进行转化，也可以使用后续遍历(transformUp)对TreeNode进行转化。</p>
+
+<p>查看Rule的子类，发现有很多规则, 这些规则是很多种，在AST转换的各个阶段的规则都有，比如列裁剪，谓词下推，合并filter，展开projection等等。</p>
+
+<p>RuleExecutor是一个用来执行rule的执行器，里面有一个batch字段，是一系列的rule，这些是作用在treeNode组成的tree之上，rule的执行策略有两种，一种是Once，只执行一次，另外一种是fixedPoint，意思是在rule一直作用在tree之上，直到tree达到一个不动点，不再改变。</p>
+
+<h3 id="catalyst-in-spark-sql">Catalyst In Spark Sql</h3>
+
+<p>spark sql是 apache spark的其中一个模块，主要用于进行结构化数据的处理。spark sql的底层执行还是调用rdd来执行。一条sql语句从String到RddChain的过程如下图所示。</p>
+
+<p><img src="/imgs/spark-catalyst/catalyst.png" alt="" /></p>
+
+<p>SQL语句到转换为rdd总共分为以下阶段，<a href="./Spark-sql-Analysis.md">具体参考Spark sql 执行流程-从sql string 到 rdd</a></p>
+
+<ol>
+  <li>SQL 语句经过 SqlParser(ANTLR4) 解析成 Unresolved LogicalPlan;</li>
+  <li>使用 analyzer 结合数据数据字典 (catalog) 进行绑定, 生成 resolved LogicalPlan;</li>
+  <li>对 resolved LogicalPlan 进行优化, 生成 optimized LogicalPlan;</li>
+  <li>将 LogicalPlan 转换成 PhysicalPlan;</li>
+  <li>将 PhysicalPlan 转换成可执行物理计划;</li>
+  <li>使用 execute() 执行可执行物理计划;</li>
+  <li>生成 RDD。</li>
+</ol>
+
+<p>而Catalyst参与其中的四个阶段，分别是：</p>
+
+<ul>
+  <li>将Unresolved Logical Plan转化为resolved logical plan</li>
+  <li>logical plan 到optimized logical plan</li>
+  <li>optimized logical plan 到physical plan</li>
+  <li>code generation(在转换为可执行物理计划阶段)</li>
+</ul>
+
+<p>在生成physical plan阶段，可能会使用CBO(cost based optimization，目前是用于join策略的选择),其他阶段都是RBO(rule based optimization)。</p>
+
+<h4 id="analysis">Analysis</h4>
+
+<p>Analysis阶段的输入是一个AST(抽象语法树)或者是一个DataFrame，称之为unresolved logic plan。因为这些plan中的元素属性都是未知的。比如上面举例的sql语句，是否存在ta这个表，ta这个表有没有key 和 value字段，以及这些字段的类型都是未知的。</p>
+
+<p><code class="highlighter-rouge">org.apache.spark.sql.catalyst.analysisAnalyzer</code>是一个用于执行analysis的类，这个类继承RuleExecutor，其中定义了一系列的解析规则顺序执行来解析这些字段和函数等里面的属性。</p>
+
+<p>Spark sql使用Catalyst规则和catalog来查询这些表是否存在，并来获得查询需要的具体属性。</p>
+
+<ul>
+  <li>向catalog查询relations</li>
+  <li>根据属性的名字做映射</li>
+  <li>对名字相同的attribute给unique id标注：例如前面sql语句的ta.key =  tb.key， 会被解析为 key#1 = key#6</li>
+  <li>对expressions的类型做解析：例如 (cast((1 + 2) as bigint) + value#1L),  sum(v#12L) AS sum(v)#28L</li>
+  <li>如果有UDF，还要解析UDF</li>
+  <li>等等</li>
+</ul>
+
+<p>下面就是resolved logical plan：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Analyzed Logical Plan ==
+sum(v): bigint
+Aggregate [sum(v#12L) AS sum(v)#28L]
++- SubqueryAlias tmp
+   +- Project [key#0, (cast((1 + 2) as bigint) + value#1L) AS v#12L]
+      +- Filter ((key#0 = key#6) &amp;&amp; (value#7L &gt; cast(90 as bigint)))
+         +- Join Inner
+            :- SubqueryAlias ta, `ta`
+            :  +- Relation[key#0,value#1L] json
+            +- SubqueryAlias tb, `tb`
+               +- Relation[key#6,value#7L] json
+</code></pre></div></div>
+
+<p>可以看出，每个attribute都有一个Unique ID，例如 key#0, sum(v)#28L</p>
+
+<h4 id="logical-optimizations">Logical Optimizations</h4>
+
+<p>在获得resolved logical plan之后，就对这个plan进行优化。</p>
+
+<p>这个其实类似analyzer，<code class="highlighter-rouge">org.apache.spark.sql.catalyst.optimizer.Optimizer</code>同样是继承RuleExecutor，然后里面包含了一系列的优化策略。然后每个策略对Tree进行transform。主要的优化策略列表如下：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PushProjectionThroughUnion,
+ReorderJoin,
+EliminateOuterJoin,
+PushPredicateThroughJoin,
+PushDownPredicate,
+LimitPushDown,
+ColumnPruning,
+InferFiltersFromConstraints,
+// Operator combine
+CollapseRepartition,
+CollapseProject,
+CollapseWindow,
+CombineFilters,
+CombineLimits,
+CombineUnions,
+// Constant folding and strength reduction
+NullPropagation,
+FoldablePropagation,
+OptimizeIn(conf),
+ConstantFolding,
+ReorderAssociativeOperator,
+LikeSimplification,
+BooleanSimplification,
+SimplifyConditionals,
+RemoveDispensableExpressions,
+SimplifyBinaryComparison,
+PruneFilters,
+EliminateSorts,
+SimplifyCasts,
+SimplifyCaseConversionExpressions,
+RewriteCorrelatedScalarSubquery,
+EliminateSerialization,
+RemoveRedundantAliases,
+RemoveRedundantProject
+</code></pre></div></div>
+
+<p>常见的谓词下推啊，常数合并，filter合并等等。</p>
+
+<p>在我们上面的那条sql语句中，用到了谓词下推和常数合并，以及添加了isNotNull判断和filter合并等。下面就是优化之后逻辑计划。</p>
+
+<p>我们可以看到在resolved logical plan中，filter条件在join之上，在优化之后，filter条件下推，这样可以提早过滤掉一部分数据，减小join部分的压力。</p>
+
+<p>还有就是之前的<code class="highlighter-rouge">1+2</code>在这里已经转化为3，还有就是在filter里面都加了 <code class="highlighter-rouge">isNotNull</code>判断。</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Optimized Logical Plan ==
+Aggregate [sum(v#12L) AS sum(v)#28L]
++- Project [(3 + value#1L) AS v#12L]
+   +- Join Inner, (key#0 = key#6)
+      :- Filter isnotnull(key#0)
+      :  +- Relation[key#0,value#1L] json
+      +- Project [key#6]
+         +- Filter ((isnotnull(value#7L) &amp;&amp; (value#7L &gt; 90)) &amp;&amp; isnotnull(key#6))
+            +- Relation[key#6,value#7L] json
+</code></pre></div></div>
+
+<h4 id="物理计划">物理计划</h4>
+
+<p>在获得 optimized logical plan之后，接下来就要准备可以执行的物理计划。观察上面的优化之后的逻辑计划，只说了join，但是怎么join，是broadcastJoin 还是 SortMergeJoin。 只有Relation[key#6,value#7L] json，但是去哪里获得数据，等等。物理计划就是要完善这部分。</p>
+
+<p>同前面几个阶段相同，这个阶段也是一系列的策略：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def strategies: Seq[Strategy] =
+    extraStrategies ++ (
+    FileSourceStrategy ::
+    DataSourceStrategy ::
+    DDLStrategy ::
+    SpecialLimits ::
+    Aggregation ::
+    JoinSelection ::
+    InMemoryScans ::
+    BasicOperators :: Nil)
+</code></pre></div></div>
+
+<p>可以看出这些策略是选择输入源相关，DDL策略相关，join等等。</p>
+
+<p>前面部分粗略的提到过，Spark sql关于其他阶段的优化都是RBO，而join选择是基于CBO。目前CBO还在逐渐完善，可以关注<a href="https://issues.apache.org/jira/browse/SPARK-16026">相关JIRA</a></p>
+
+<p>因为join的选择必须要基于表的大小相关的信息，才能做出好的选择。关注这个JoinSelection策略。</p>
+
+<p>此处就选择一个方法，不再展开。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">private</span> <span class="k">def</span> <span class="nf">canBroadcast</span><span class="o">(</span><span class="n">plan</span><span class="k">:</span> <span class="kt">LogicalPlan</span><span class="o">)</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="o">{</span>
+  <span class="nv">plan</span><span class="o">.</span><span class="py">statistics</span><span class="o">.</span><span class="py">isBroadcastable</span> <span class="o">||</span>
+    <span class="o">(</span><span class="nv">plan</span><span class="o">.</span><span class="py">statistics</span><span class="o">.</span><span class="py">sizeInBytes</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span>
+      <span class="nv">plan</span><span class="o">.</span><span class="py">statistics</span><span class="o">.</span><span class="py">sizeInBytes</span> <span class="o">&lt;=</span> <span class="nv">conf</span><span class="o">.</span><span class="py">autoBroadcastJoinThreshold</span><span class="o">)</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>可以看到这个方法判断是否能够broadcast的规则就是通过统计的数据, statistics中的sizeInBytes大小，来判断这个表的大小是否超过broadcast参数设置的阈值，如果小于阈值，则选用broadcastJoin，这样可以避免shuffle。</p>
+
+<h4 id="code-generation">Code Generation</h4>
+
+<p>上面的物理计划阶段得到的只是一个中间阶段的物理计划，要想物理计划阶段得以运行还要进行一系列操作，这部分体现在<code class="highlighter-rouge">org.apache.spark.sql.execution.QueryExecution类的preparations方法中</code>.</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cm">/** A sequence of rules that will be applied in order to the physical plan before execution. */</span>
+<span class="k">protected</span> <span class="k">def</span> <span class="nf">preparations</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">Rule</span><span class="o">[</span><span class="kt">SparkPlan</span><span class="o">]]</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
+  <span class="nv">python</span><span class="o">.</span><span class="py">ExtractPythonUDFs</span><span class="o">,</span>
+  <span class="nc">PlanSubqueries</span><span class="o">(</span><span class="n">sparkSession</span><span class="o">),</span>
+  <span class="nc">EnsureRequirements</span><span class="o">(</span><span class="nv">sparkSession</span><span class="o">.</span><span class="py">sessionState</span><span class="o">.</span><span class="py">conf</span><span class="o">),</span>
+  <span class="nc">CollapseCodegenStages</span><span class="o">(</span><span class="nv">sparkSession</span><span class="o">.</span><span class="py">sessionState</span><span class="o">.</span><span class="py">conf</span><span class="o">),</span>
+  <span class="nc">ReuseExchange</span><span class="o">(</span><span class="nv">sparkSession</span><span class="o">.</span><span class="py">sessionState</span><span class="o">.</span><span class="py">conf</span><span class="o">),</span>
+  <span class="nc">ReuseSubquery</span><span class="o">(</span><span class="nv">sparkSession</span><span class="o">.</span><span class="py">sessionState</span><span class="o">.</span><span class="py">conf</span><span class="o">))</span>
+</code></pre></div></div>
+
+<p>这里会添加排序，分区策略，codegen。</p>
+
+<p>排序，分区就是类似于 spark core中的shuffle阶段。而codegen是Catalyst中的重要内容。</p>
+
+<p>由于spark sql是操纵内存中的datasets，cpu是一个重要的瓶颈，因此codegen就是为了生成高效的代码，来加速性能。Catalyst的codegen依赖scala的一个特性 <a href="https://docs.scala-lang.org/overviews/quasiquotes/intro.html">quasiquotes</a>来使得codegen变得简单。</p>
+
+<p>codeGen是给一些可以进行codeGen的例子，制定了一套通用的模板，固定的部分是相同的，定制的部分传入一些具体的参数，然后可以运行时编程运行，如下。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">val</span> <span class="nv">source</span> <span class="k">=</span> <span class="n">s</span><span class="s">"""
+  public Object generate(Object[] references) {
+    return new GeneratedIterator(references);
+  }
+
+  ${ctx.registerComment(s"""</span><span class="nc">Codegend</span> <span class="n">pipeline</span> <span class="k">for</span><span class="o">\</span><span class="n">n$</span><span class="o">{</span><span class="nv">child</span><span class="o">.</span><span class="py">treeString</span><span class="o">.</span><span class="py">trim</span><span class="o">}</span><span class="s">""")}
+  final class GeneratedIterator extends org.apache.spark.sql.execution.BufferedRowIterator {
+
+    private Object[] references;
+    private scala.collection.Iterator[] inputs;
+    ${ctx.declareMutableStates()}
+
+    public GeneratedIterator(Object[] references) {
+      this.references = references;
+    }
+
+    public void init(int index, scala.collection.Iterator[] inputs) {
+      partitionIndex = index;
+      this.inputs = inputs;
+      ${ctx.initMutableStates()}
+      ${ctx.initPartition()}
+    }
+
+    ${ctx.declareAddedFunctions()}
+
+    protected void processNext() throws java.io.IOException {
+      ${code.trim}
+    }
+  }
+  """</span><span class="o">.</span><span class="py">trim</span>
+</code></pre></div></div>
+
+<p>最终得到可执行的物理计划，如下所示。</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Physical Plan ==
+*HashAggregate(keys=[], functions=[sum(v#12L)], output=[sum(v)#28L])
++- Exchange SinglePartition
+   +- *HashAggregate(keys=[], functions=[partial_sum(v#12L)], output=[sum#30L])
+      +- *Project [(3 + value#1L) AS v#12L]
+         +- *BroadcastHashJoin [key#0], [key#6], Inner, BuildRight
+            :- *Project [key#0, value#1L]
+            :  +- *Filter isnotnull(key#0)
+            :     +- *FileScan json [key#0,value#1L] Batched: false, Format: JSON, Location: InMemoryFileIndex[file:/Users/bbw/todo/sparkApp/data/kv.json], PartitionFilters: [], PushedFilters: [IsNotNull(key)], ReadSchema: struct&lt;key:string,value:bigint&gt;
+            +- BroadcastExchange HashedRelationBroadcastMode(List(input[0, string, true]))
+               +- *Project [key#6]
+                  +- *Filter ((isnotnull(value#7L) &amp;&amp; (value#7L &gt; 90)) &amp;&amp; isnotnull(key#6))
+                     +- *FileScan json [key#6,value#7L] Batched: false, Format: JSON, Location: InMemoryFileIndex[file:/Users/bbw/todo/sparkApp/data/kv.json], PartitionFilters: [], PushedFilters: [IsNotNull(value), GreaterThan(value,90), IsNotNull(key)], ReadSchema: struct&lt;key:string,value:bigint&gt;
+</code></pre></div></div>
+
+<p>可以看出，可执行计划里给了Location，到哪里去读数据。broadcastExchange，怎么分配数据。BroadcastHashJoin，进行什么种类的join等等。</p>
+
+<p>后面就可以转化为RDD。</p>
+
+<h3 id="添加自己的rule">添加自己的Rule</h3>
+
+<p>这里有一个查询，如下：</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">org.apache.spark.sql.functions._</span>
+<span class="k">val</span> <span class="nv">tableA</span> <span class="k">=</span> <span class="nv">spark</span><span class="o">.</span><span class="py">range</span><span class="o">(</span><span class="mi">20000000</span><span class="o">).</span><span class="py">as</span><span class="o">(</span><span class="ss">'a</span><span class="o">)</span> 
+<span class="k">val</span> <span class="nv">tableB</span> <span class="k">=</span> <span class="nv">spark</span><span class="o">.</span><span class="py">range</span><span class="o">(</span><span class="mi">10000000</span><span class="o">).</span><span class="py">as</span><span class="o">(</span><span class="ss">'b</span><span class="o">)</span> 
+<span class="k">val</span> <span class="nv">result</span><span class="k">=</span> <span class="nv">tableA</span><span class="o">.</span><span class="py">join</span><span class="o">(</span><span class="n">tableB</span><span class="o">,</span><span class="nc">Seq</span><span class="o">(</span><span class="s">"id"</span><span class="o">))</span>
+    <span class="o">.</span><span class="py">groupBy</span><span class="o">()</span>
+    <span class="o">.</span><span class="py">count</span><span class="o">()</span>
+<span class="nv">result</span><span class="o">.</span><span class="py">show</span><span class="o">()</span>
+</code></pre></div></div>
+
+<p>物理计划如下，耗时33秒：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Physical Plan ==
+*HashAggregate(keys=[], functions=[count(1)])
++- Exchange SinglePartition
+   +- *HashAggregate(keys=[], functions=[partial_count(1)])
+      +- *Project
+         +- *SortMergeJoin [id#0L], [id#4L], Inner
+            :- *Sort [id#0L ASC NULLS FIRST], false, 0
+            :  +- Exchange hashpartitioning(id#0L, 200)
+            :     +- *Range (0, 20000000, step=1, splits=Some(1))
+            +- *Sort [id#4L ASC NULLS FIRST], false, 0
+               +- Exchange hashpartitioning(id#4L, 200)
+                  +- *Range (0, 10000000, step=1, splits=Some(1))
+</code></pre></div></div>
+
+<p>tableA 和tableB 都是一个range，一个是[0,19999999]，另外一个[0,9999999],让两个表求交集。</p>
+
+<p>其实可以添加优化规则，判断两个range的start 和 end，来求区间的交集。</p>
+
+<p>因此我们添加了一个Rule，如下。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">org.apache.spark.SparkConf</span>
+<span class="k">import</span> <span class="nn">org.apache.spark.sql.SparkSession</span>
+<span class="k">import</span> <span class="nn">org.apache.spark.sql.execution.</span><span class="o">{</span><span class="nc">ProjectExec</span><span class="o">,</span> <span class="nc">RangeExec</span><span class="o">,</span> <span class="nc">SparkPlan</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">org.apache.spark.sql.Strategy</span>
+<span class="k">import</span> <span class="nn">org.apache.spark.sql.catalyst.expressions.</span><span class="o">{</span><span class="nc">Alias</span><span class="o">,</span> <span class="nc">EqualTo</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">org.apache.spark.sql.catalyst.plans.Inner</span>
+<span class="k">import</span> <span class="nn">org.apache.spark.sql.catalyst.plans.logical.</span><span class="o">{</span><span class="nc">Join</span><span class="o">,</span> <span class="nc">LogicalPlan</span><span class="o">,</span> <span class="nc">Range</span><span class="o">}</span>
+
+<span class="k">case</span> <span class="k">object</span> <span class="nc">IntervalJoin</span> <span class="k">extends</span> <span class="nc">Strategy</span> <span class="k">with</span> <span class="nc">Serializable</span> <span class="o">{</span>
+  <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">plan</span><span class="k">:</span> <span class="kt">LogicalPlan</span><span class="o">)</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">SparkPlan</span><span class="o">]</span> <span class="k">=</span> <span class="n">plan</span> <span class="k">match</span> <span class="o">{</span>
+    <span class="k">case</span> <span class="nc">Join</span><span class="o">(</span><span class="nc">Range</span><span class="o">(</span><span class="n">start1</span><span class="o">,</span> <span class="n">end1</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="n">part1</span><span class="o">,</span> <span class="nc">Seq</span><span class="o">(</span><span class="n">o1</span><span class="o">)),</span>
+    <span class="nc">Range</span><span class="o">(</span><span class="n">start2</span><span class="o">,</span> <span class="n">end2</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="n">part2</span><span class="o">,</span> <span class="nc">Seq</span><span class="o">(</span><span class="n">o2</span><span class="o">)),</span>
+    <span class="nc">Inner</span><span class="o">,</span> <span class="nc">Some</span><span class="o">(</span><span class="nc">EqualTo</span><span class="o">(</span><span class="n">e1</span><span class="o">,</span> <span class="n">e2</span><span class="o">)))</span>
+      <span class="nf">if</span> <span class="o">((</span><span class="n">o1</span> <span class="n">semanticEquals</span> <span class="n">e1</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">o2</span> <span class="n">semanticEquals</span> <span class="n">e2</span><span class="o">))</span> <span class="o">||</span>
+        <span class="o">((</span><span class="n">o1</span> <span class="n">semanticEquals</span> <span class="n">e2</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">o2</span> <span class="n">semanticEquals</span> <span class="n">e1</span><span class="o">))</span> <span class="k">=&gt;</span>
+      <span class="nf">if</span> <span class="o">((</span><span class="n">end2</span> <span class="o">&gt;=</span> <span class="n">start1</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">end2</span> <span class="o">&lt;=</span> <span class="n">end2</span><span class="o">))</span> <span class="o">{</span>
+        <span class="k">val</span> <span class="nv">start</span> <span class="k">=</span> <span class="nv">math</span><span class="o">.</span><span class="py">max</span><span class="o">(</span><span class="n">start1</span><span class="o">,</span> <span class="n">start2</span><span class="o">)</span>
+        <span class="k">val</span> <span class="nv">end</span> <span class="k">=</span> <span class="nv">math</span><span class="o">.</span><span class="py">min</span><span class="o">(</span><span class="n">end1</span><span class="o">,</span> <span class="n">end2</span><span class="o">)</span>
+        <span class="k">val</span> <span class="nv">part</span> <span class="k">=</span> <span class="nv">math</span><span class="o">.</span><span class="py">max</span><span class="o">(</span><span class="nv">part1</span><span class="o">.</span><span class="py">getOrElse</span><span class="o">(</span><span class="mi">200</span><span class="o">),</span> <span class="nv">part2</span><span class="o">.</span><span class="py">getOrElse</span><span class="o">(</span><span class="mi">200</span><span class="o">))</span>
+        <span class="k">val</span> <span class="nv">result</span> <span class="k">=</span> <span class="nc">RangeExec</span><span class="o">(</span><span class="nc">Range</span><span class="o">(</span><span class="n">start</span><span class="o">,</span> <span class="n">end</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="nc">Some</span><span class="o">(</span><span class="n">part</span><span class="o">),</span> <span class="n">o1</span> <span class="o">::</span> <span class="nc">Nil</span><span class="o">))</span>
+        <span class="k">val</span> <span class="nv">twoColumns</span> <span class="k">=</span> <span class="nc">ProjectExec</span><span class="o">(</span>
+          <span class="nc">Alias</span><span class="o">(</span><span class="n">o1</span><span class="o">,</span> <span class="nv">o1</span><span class="o">.</span><span class="py">name</span><span class="o">)(</span><span class="n">exprId</span> <span class="k">=</span> <span class="nv">o1</span><span class="o">.</span><span class="py">exprId</span><span class="o">)</span> <span class="o">::</span> <span class="nc">Nil</span><span class="o">,</span>
+          <span class="n">result</span><span class="o">)</span>
+        <span class="n">twoColumns</span> <span class="o">::</span> <span class="nc">Nil</span>
+      <span class="o">}</span>
+      <span class="k">else</span> <span class="o">{</span>
+        <span class="nc">Nil</span>
+      <span class="o">}</span>
+    <span class="k">case</span> <span class="k">_</span> <span class="k">=&gt;</span> <span class="nc">Nil</span>
+
+
+  <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="c1">//添加规则到外部规则列表中， spark is a spark session</span>
+<span class="nv">spark</span><span class="o">.</span><span class="py">experimental</span><span class="o">.</span><span class="py">extraStrategies</span> <span class="k">=</span> <span class="nc">IntervalJoin</span> <span class="o">::</span> <span class="nc">Nil</span>
+
+</code></pre></div></div>
+
+<p>物理计划如下，耗时0.5s:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Physical Plan ==
+*HashAggregate(keys=[], functions=[count(1)])
++- Exchange SinglePartition
+   +- *HashAggregate(keys=[], functions=[partial_count(1)])
+      +- *Project
+         +- *Project [id#0L AS id#0L]
+            +- *Range (0, 10000000, step=1, splits=Some(1))
+</code></pre></div></div>
+
+<h3 id="参考文献">参考文献</h3>
+
+<p>https://databricks.com/session/a-deep-dive-into-spark-sqls-catalyst-optimizer</p>
+
+<p>https://databricks.com/blog/2015/04/13/deep-dive-into-spark-sqls-catalyst-optimizer.html</p>
+
+<p>https://databricks.com/blog/2017/08/31/cost-based-optimizer-in-apache-spark-2-2.html</p>
+
+:ET

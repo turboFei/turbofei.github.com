@@ -1,0 +1,348 @@
+I"�
+<p>目录</p>
+
+<ul id="markdown-toc">
+  <li><a href="#background" id="markdown-toc-background">Background</a></li>
+  <li><a href="#promise" id="markdown-toc-promise">Promise</a>    <ul>
+      <li><a href="#nonfatal--controlthrowable" id="markdown-toc-nonfatal--controlthrowable">Nonfatal &amp; ControlThrowable</a></li>
+      <li><a href="#try" id="markdown-toc-try">Try</a></li>
+    </ul>
+  </li>
+  <li><a href="#forkjoinpool" id="markdown-toc-forkjoinpool">ForkJoinPool</a>    <ul>
+      <li><a href="#work-steamling机制" id="markdown-toc-work-steamling机制">work-steamling机制</a></li>
+    </ul>
+  </li>
+</ul>
+<h3 id="background">Background</h3>
+
+<p>关于并发编程的一些总结与思考，包括promise, forkJoinPool, and etc.
+在使用scala进行并发编程时，常用的一个就是Promise，Promise和Future是相关的。在生产中，Promise往往和Thread结合一起用，在一个线程中去执行Promise.trySuccess.提到线程就不得不提线程池，而ForkJoinPool是一个特殊的线程池，它比较适合计算密集型的场景。</p>
+
+<h3 id="promise">Promise</h3>
+
+<p>Promise是scala中独有的，java中没有。中文意思就是承诺，它可以在获得承诺的value时成功结束，也可以在遇到异常时失败。
+一个Promise只能承诺一次，如果它已经完成承诺，或者失败，或者超时，再对它进行调用就会抛出IllegalStateException。在promize中有很多方法,如下</p>
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">tryComplete</span><span class="o">,</span> <span class="n">tryCompleteWith</span><span class="o">,</span> <span class="n">complete</span><span class="err">，</span>
+<span class="n">tryFailureWith</span><span class="o">,</span> <span class="n">success</span><span class="o">,</span> <span class="n">failure</span><span class="o">,</span> <span class="n">trySuccess</span><span class="o">,</span> <span class="n">tryFailure</span>
+<span class="n">isCompleted</span><span class="err">，</span> <span class="n">future</span>
+</code></pre></div></div>
+
+<p>这些方法有所不同，例如complete系列(包括tryComplete， tryCompleteWith)是可以返回值，也可以是异常的。</p>
+
+<p>而failure系列只能是异常，而success系列智能是返回value。因此，complete系列更像是一个对后两者的并集。</p>
+
+<p>在使用中，我们可以按照自己的需求去选择这些方法。</p>
+
+<p>比如我们可以直接使用complete系列将所有系列包容，也可以使用trySuccess 然后在捕获异常之后，将异常直接给failure方法。</p>
+
+<p>isComplete是用于判断Promise是否已经完成，而future是一个包含Promise结果的Future。</p>
+
+<p>我们通常将Promise和Await一起用。如果Promise在执行中出现了异常，Await是可以将其抛出，而如果Promise没有在规定时间内返回，那么将会抛出TimeoutException.</p>
+
+<p>例子如下:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">scala.concurrent.duration.Duration</span>
+<span class="k">import</span> <span class="nn">scala.concurrent.</span><span class="o">{</span><span class="nc">Await</span><span class="o">,</span> <span class="nc">ExecutionContext</span><span class="o">,</span> <span class="nc">Future</span><span class="o">,</span> <span class="nc">Promise</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">scala.util.Try</span>
+<span class="k">import</span> <span class="nn">scala.util.control.NonFatal</span>
+
+<span class="k">object</span> <span class="nc">TestPromise</span> <span class="o">{</span>
+
+  <span class="k">def</span> <span class="nf">method</span><span class="o">()</span><span class="k">:</span> <span class="kt">Long</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="cm">/**
+     * 此处是为了校验超时异常
+     * 以及执行中异常.
+     */</span>
+    <span class="c1">// Thread.sleep(13000)</span>
+    <span class="c1">// throw new Exception("this is an exception")</span>
+    <span class="mi">123L</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="nf">trySuccess</span><span class="o">(</span><span class="n">promisedLong</span><span class="k">:</span> <span class="kt">Promise</span><span class="o">[</span><span class="kt">Long</span><span class="o">])</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="k">new</span> <span class="nc">Thread</span><span class="o">(</span><span class="s">"test promise"</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">override</span> <span class="k">def</span> <span class="nf">run</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+          <span class="nv">promisedLong</span><span class="o">.</span><span class="py">trySuccess</span> <span class="o">{</span>
+            <span class="nf">method</span><span class="o">()</span>
+          <span class="o">}</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">{</span>
+          <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">Exception</span> <span class="kt">if</span> <span class="kt">NonFatal</span><span class="o">(</span><span class="kt">e</span><span class="o">)</span> <span class="o">=&gt;</span>
+            <span class="nv">promisedLong</span><span class="o">.</span><span class="py">failure</span><span class="o">(</span><span class="n">e</span><span class="o">)</span>
+<span class="c1">//            promisedLong.tryFailure(e)</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+    <span class="o">}.</span><span class="py">start</span><span class="o">()</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="nf">tryComplete</span><span class="o">(</span><span class="n">promisedLong</span><span class="k">:</span> <span class="kt">Promise</span><span class="o">[</span><span class="kt">Long</span><span class="o">])</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="k">new</span> <span class="nc">Thread</span><span class="o">(</span><span class="s">"test promise"</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">override</span> <span class="k">def</span> <span class="nf">run</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+          <span class="nv">promisedLong</span><span class="o">.</span><span class="py">tryComplete</span> <span class="o">{</span>
+            <span class="nc">Try</span> <span class="o">{</span>
+              <span class="nf">method</span><span class="o">()</span>
+            <span class="o">}</span>
+          <span class="o">}</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+    <span class="o">}.</span><span class="py">start</span><span class="o">()</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="nf">tryCompleteWith</span><span class="o">(</span><span class="n">promisedLong</span><span class="k">:</span> <span class="kt">Promise</span><span class="o">[</span><span class="kt">Long</span><span class="o">])</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="k">implicit</span> <span class="k">val</span> <span class="nv">global</span><span class="k">=</span>  <span class="nv">ExecutionContext</span><span class="o">.</span><span class="py">global</span>
+    <span class="k">new</span> <span class="nc">Thread</span><span class="o">(</span><span class="s">"test promise"</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">override</span> <span class="k">def</span> <span class="nf">run</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+          <span class="nv">promisedLong</span><span class="o">.</span><span class="py">tryCompleteWith</span> <span class="o">{</span>
+            <span class="nc">Future</span> <span class="o">{</span>
+              <span class="nf">method</span><span class="o">()</span>
+            <span class="o">}</span>
+          <span class="o">}</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+    <span class="o">}.</span><span class="py">start</span><span class="o">()</span>
+  <span class="o">}</span>
+
+  <span class="k">def</span> <span class="nf">main</span><span class="o">(</span><span class="n">args</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="nv">promisedLong</span> <span class="k">=</span> <span class="nc">Promise</span><span class="o">[</span><span class="kt">Long</span><span class="o">]</span>
+    <span class="nf">tryComplete</span><span class="o">(</span><span class="n">promisedLong</span><span class="o">)</span>
+    <span class="k">try</span> <span class="o">{</span>
+      <span class="k">val</span> <span class="nv">r</span> <span class="k">=</span> <span class="nv">Await</span><span class="o">.</span><span class="py">result</span><span class="o">(</span><span class="nv">promisedLong</span><span class="o">.</span><span class="py">future</span><span class="o">,</span> <span class="nc">Duration</span><span class="o">(</span><span class="s">"12s"</span><span class="o">))</span>
+      <span class="nf">println</span><span class="o">(</span><span class="n">r</span><span class="o">)</span>
+    <span class="o">}</span> <span class="k">catch</span> <span class="o">{</span>
+      <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">Exception</span> <span class="o">=&gt;</span>
+        <span class="nv">e</span><span class="o">.</span><span class="py">printStackTrace</span><span class="o">()</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h4 id="nonfatal--controlthrowable">Nonfatal &amp; ControlThrowable</h4>
+
+<p>上面的例子中提到了Nonfatal，这在生产中是一个常用的类。</p>
+
+<p>顾名思义，Nonfatal代表非致命的，方法体也很短.</p>
+
+<p>可以看出致命的错误有，虚拟机Error，ThreadDeath，中断异常，链接Error，以及<code class="highlighter-rouge">ControlThrowable</code>。除了这几种，其他都是非致命的。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">object</span> <span class="nc">NonFatal</span> <span class="o">{</span>
+   <span class="cm">/**
+    * Returns true if the provided `Throwable` is to be considered non-fatal, or false if it is to be considered fatal
+    */</span>
+   <span class="k">def</span> <span class="nf">apply</span><span class="o">(</span><span class="n">t</span><span class="k">:</span> <span class="kt">Throwable</span><span class="o">)</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="n">t</span> <span class="k">match</span> <span class="o">{</span>
+     <span class="c1">// VirtualMachineError includes OutOfMemoryError and other fatal errors</span>
+     <span class="k">case</span> <span class="k">_:</span> <span class="kt">VirtualMachineError</span> <span class="kt">|</span> <span class="k">_</span><span class="kt">:</span> <span class="kt">ThreadDeath</span> <span class="kt">|</span> <span class="k">_</span><span class="kt">:</span> <span class="kt">InterruptedException</span> <span class="kt">|</span> <span class="k">_</span><span class="kt">:</span> <span class="kt">LinkageError</span> <span class="kt">|</span> <span class="k">_</span><span class="kt">:</span> <span class="kt">ControlThrowable</span> <span class="o">=&gt;</span> <span class="kc">false</span>
+     <span class="k">case</span> <span class="k">_</span> <span class="k">=&gt;</span> <span class="kc">true</span>
+   <span class="o">}</span>
+  <span class="cm">/**
+   * Returns Some(t) if NonFatal(t) == true, otherwise None
+   */</span>
+  <span class="k">def</span> <span class="nf">unapply</span><span class="o">(</span><span class="n">t</span><span class="k">:</span> <span class="kt">Throwable</span><span class="o">)</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[</span><span class="kt">Throwable</span><span class="o">]</span> <span class="k">=</span> <span class="nf">if</span> <span class="o">(</span><span class="nf">apply</span><span class="o">(</span><span class="n">t</span><span class="o">))</span> <span class="nc">Some</span><span class="o">(</span><span class="n">t</span><span class="o">)</span> <span class="k">else</span> <span class="nc">None</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>一般在程序中，都是对Nonfatal进行catch处理， 而致命的就不catch了。</p>
+
+<p>那么什么是<code class="highlighter-rouge">ControlThrowable</code>呢？</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">trait</span> <span class="nc">ControlThrowable</span> <span class="k">extends</span> <span class="nc">Throwable</span> <span class="k">with</span> <span class="nc">NoStackTrace</span>
+</code></pre></div></div>
+
+<p>我们可以看到它继承了NoStackTrace类，也就是说这个异常栈是不能打印的。ControlThrowable代表这个Throwable是被放在控制流中。因为这个异常时作为控制流异常（比如BreadControl等等）， 因此发生这种异常，需要propagate，而不能catch，不过这一切都被封装在了Nonfatal，我们在编程中只要判断Nonfatal就可以。</p>
+
+<h4 id="try">Try</h4>
+
+<p>关于Try，它和try catch中的try不同，它代表执行一个程序块，通常和match，以及Success， Failure一起使用。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">def</span> <span class="nf">testTry</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="nc">Try</span> <span class="o">{</span>
+<span class="c1">//      throw new Exception("this is an exception")</span>
+      <span class="mi">123L</span>
+    <span class="o">}</span> <span class="k">match</span> <span class="o">{</span>
+      <span class="k">case</span> <span class="nc">Success</span><span class="o">(</span><span class="n">v</span><span class="o">)</span> <span class="k">=&gt;</span>
+        <span class="nf">println</span><span class="o">(</span><span class="n">v</span><span class="o">)</span>
+      <span class="k">case</span> <span class="nc">Failure</span><span class="o">(</span><span class="n">e</span><span class="o">)</span> <span class="k">=&gt;</span>
+        <span class="nf">println</span><span class="o">(</span><span class="nv">e</span><span class="o">.</span><span class="py">getMessage</span><span class="o">)</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+</code></pre></div></div>
+
+<h3 id="forkjoinpool">ForkJoinPool</h3>
+
+<p><strong>其实看源码中注释是理解源码最好的方式。</strong>
+ForkJoinPool是一个用于运行ForkJoinTask的线程池. ForkJoinPool和其他的ExecutorService不同，他有一套work-窃取机制，每个线程都可以尝试去find和执行pool中或者其他task提交的任务，这样就可以更加高效，因为每个线程的执行都不是限制死的，如果它空闲了就可以去窃取其他forkJointask的任务，这样也减少了线程的上下文切换，所以对于计算密集型的任务效率会很高，所以，如果你的任务是计算密集型，不妨试一下ForkJoinPool。相当于大家同心协力去把pool中的所有task运行完，这样避免了因为倾斜带来的低效。</p>
+
+<p>asyncMode默认是false，当设为true，这更适合于事件类型的任务，从来不会有join。</p>
+
+<p>下面是一个计算从1到n和的一个程序，采用了普通线程池和ForkJoinPool来实现，实验证明，forkjoinpool性能领先很大。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">java.util.ArrayList</span><span class="o">;</span>
+<span class="k">import</span> <span class="nn">java.util.concurrent.</span><span class="o">*;</span>
+
+<span class="n">public</span> <span class="k">class</span> <span class="nc">TestForkJoinPool</span> <span class="o">{</span>
+    <span class="n">public</span> <span class="n">static</span> <span class="n">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">long</span> <span class="n">current</span> <span class="k">=</span> <span class="nv">System</span><span class="o">.</span><span class="py">currentTimeMillis</span><span class="o">();</span>
+        <span class="nv">System</span><span class="o">.</span><span class="py">out</span><span class="o">.</span><span class="py">println</span><span class="o">(</span><span class="nf">sumWithExecutorService</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">100000000</span><span class="o">,</span> <span class="mi">1000</span><span class="o">));</span>
+        <span class="n">long</span> <span class="n">cost</span> <span class="k">=</span> <span class="o">(</span><span class="nv">System</span><span class="o">.</span><span class="py">currentTimeMillis</span><span class="o">()</span> <span class="o">-</span> <span class="n">current</span><span class="o">);</span>
+        <span class="nv">System</span><span class="o">.</span><span class="py">out</span><span class="o">.</span><span class="py">println</span><span class="o">(</span><span class="s">"Cost Time is:"</span> <span class="o">+</span> <span class="n">cost</span> <span class="o">+</span> <span class="s">"ms!"</span><span class="o">);</span>
+        <span class="n">current</span> <span class="k">=</span> <span class="nv">System</span><span class="o">.</span><span class="py">currentTimeMillis</span><span class="o">();</span>
+        <span class="nv">System</span><span class="o">.</span><span class="py">out</span><span class="o">.</span><span class="py">println</span><span class="o">(</span><span class="nf">executeWithForkJoinPool</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">100000000</span><span class="o">,</span> <span class="mi">100000</span><span class="o">));</span>
+        <span class="n">cost</span> <span class="k">=</span> <span class="o">(</span><span class="nv">System</span><span class="o">.</span><span class="py">currentTimeMillis</span><span class="o">()</span> <span class="o">-</span> <span class="n">current</span><span class="o">);</span>
+        <span class="nv">System</span><span class="o">.</span><span class="py">out</span><span class="o">.</span><span class="py">println</span><span class="o">(</span><span class="s">"ForkJoinPoll Cost Time is:"</span> <span class="o">+</span> <span class="n">cost</span> <span class="o">+</span> <span class="s">"ms!"</span><span class="o">);</span>
+    <span class="o">}</span>
+
+    <span class="n">public</span> <span class="n">static</span> <span class="n">int</span> <span class="nf">sumWithExecutorService</span><span class="o">(</span><span class="n">int</span> <span class="n">from</span><span class="o">,</span> <span class="n">int</span> <span class="n">to</span><span class="o">,</span> <span class="n">int</span> <span class="n">threadNum</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nc">ExecutorService</span> <span class="n">pool</span> <span class="k">=</span> <span class="nv">Executors</span><span class="o">.</span><span class="py">newFixedThreadPool</span><span class="o">(</span><span class="n">threadNum</span><span class="o">);</span>
+        <span class="n">int</span> <span class="n">sum</span> <span class="k">=</span> <span class="mi">0</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="cm">/**
+             * 这里，如果前面不进行强制类型转换，那么除了之后就是一个int
+             * 就没有必要取ceil 了，切记。
+             */</span>
+            <span class="n">int</span> <span class="n">step</span> <span class="k">=</span> <span class="o">(</span><span class="n">int</span><span class="o">)</span><span class="nv">Math</span><span class="o">.</span><span class="py">ceil</span><span class="o">(((</span><span class="n">double</span><span class="o">)(</span><span class="n">to</span> <span class="o">-</span> <span class="n">from</span> <span class="o">+</span> <span class="mi">1</span><span class="o">))/</span><span class="n">threadNum</span><span class="o">);</span>
+            <span class="nc">ArrayList</span><span class="o">&lt;</span><span class="nc">Future</span><span class="o">&lt;</span><span class="nc">Integer</span><span class="o">&gt;&gt;</span> <span class="n">futures</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">ArrayList</span><span class="o">&lt;&gt;();</span>
+            <span class="nf">for</span> <span class="o">(</span><span class="n">int</span> <span class="n">i</span> <span class="k">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span><span class="o">&lt;</span> <span class="n">threadNum</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+                <span class="nf">if</span> <span class="o">((</span><span class="n">from</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">step</span><span class="o">)</span> <span class="o">&lt;=</span> <span class="nv">Math</span><span class="o">.</span><span class="py">min</span><span class="o">(</span><span class="n">to</span><span class="o">,</span> <span class="n">from</span> <span class="o">+</span> <span class="o">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="o">)</span> <span class="o">*</span> <span class="n">step</span> <span class="o">-</span><span class="mi">1</span><span class="o">))</span> <span class="o">{</span>
+                    <span class="nv">futures</span><span class="o">.</span><span class="py">add</span><span class="o">(</span><span class="nv">pool</span><span class="o">.</span><span class="py">submit</span><span class="o">(</span><span class="k">new</span> <span class="nc">SumTask</span><span class="o">(</span>
+                            <span class="n">from</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">step</span><span class="o">,</span> <span class="nv">Math</span><span class="o">.</span><span class="py">min</span><span class="o">(</span><span class="n">to</span><span class="o">,</span> <span class="n">from</span> <span class="o">+</span> <span class="o">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="o">)</span> <span class="o">*</span> <span class="n">step</span> <span class="o">-</span><span class="mi">1</span><span class="o">))));</span>
+                <span class="o">}</span>
+            <span class="o">}</span>
+            <span class="nf">for</span> <span class="o">(</span><span class="nc">Future</span><span class="o">&lt;</span><span class="nc">Integer</span><span class="o">&gt;</span> <span class="n">future</span><span class="k">:</span> <span class="kt">futures</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">sum</span> <span class="o">+=</span> <span class="nv">future</span><span class="o">.</span><span class="py">get</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span> <span class="nf">catch</span> <span class="o">(</span><span class="nc">Exception</span> <span class="n">ignore</span><span class="o">)</span> <span class="o">{</span>
+
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="nv">pool</span><span class="o">.</span><span class="py">shutdown</span><span class="o">();</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">sum</span><span class="o">;</span>
+    <span class="o">}</span>
+
+    <span class="k">private</span> <span class="n">static</span> <span class="k">class</span> <span class="nc">SumTask</span> <span class="n">implements</span> <span class="nc">Callable</span><span class="o">&lt;</span><span class="nc">Integer</span><span class="o">&gt;</span> <span class="o">{</span>
+        <span class="k">private</span> <span class="n">int</span> <span class="n">from</span><span class="o">;</span>
+        <span class="k">private</span> <span class="n">int</span> <span class="n">to</span><span class="o">;</span>
+        <span class="n">public</span> <span class="nc">SumTask</span><span class="o">(</span><span class="n">int</span> <span class="n">from</span><span class="o">,</span> <span class="n">int</span> <span class="n">to</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">this</span><span class="o">.</span><span class="py">from</span> <span class="k">=</span> <span class="n">from</span><span class="o">;</span>
+            <span class="k">this</span><span class="o">.</span><span class="py">to</span> <span class="k">=</span> <span class="n">to</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="nd">@Override</span>
+        <span class="n">public</span> <span class="nc">Integer</span> <span class="nf">call</span><span class="o">()</span> <span class="n">throws</span> <span class="nc">Exception</span> <span class="o">{</span>
+            <span class="n">int</span> <span class="n">sum</span> <span class="k">=</span> <span class="mi">0</span><span class="o">;</span>
+            <span class="nf">for</span> <span class="o">(</span><span class="n">int</span> <span class="n">i</span> <span class="k">=</span><span class="n">from</span><span class="o">;</span> <span class="n">i</span><span class="o">&lt;=</span> <span class="n">to</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+                <span class="n">sum</span> <span class="o">+=</span> <span class="n">i</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">return</span> <span class="n">sum</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="n">public</span> <span class="n">static</span> <span class="n">int</span> <span class="nf">executeWithForkJoinPool</span><span class="o">(</span><span class="n">int</span> <span class="n">from</span><span class="o">,</span> <span class="n">int</span> <span class="n">to</span><span class="o">,</span> <span class="n">int</span> <span class="n">thresHold</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nc">ForkJoinPool</span> <span class="n">forkJoinPool</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">ForkJoinPool</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+        <span class="k">try</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="nv">forkJoinPool</span><span class="o">.</span><span class="py">invoke</span><span class="o">(</span><span class="k">new</span> <span class="nc">ForkJoinSumTask</span><span class="o">(</span><span class="n">from</span><span class="o">,</span> <span class="n">to</span><span class="o">,</span> <span class="n">thresHold</span><span class="o">));</span>
+        <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="nv">forkJoinPool</span><span class="o">.</span><span class="py">shutdown</span><span class="o">();</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+
+    <span class="k">private</span> <span class="n">static</span> <span class="k">class</span> <span class="nc">ForkJoinSumTask</span> <span class="k">extends</span> <span class="nc">RecursiveTask</span><span class="o">&lt;</span><span class="nc">Integer</span><span class="o">&gt;</span> <span class="o">{</span>
+        <span class="k">private</span> <span class="n">int</span> <span class="n">from</span><span class="o">;</span>
+        <span class="k">private</span> <span class="n">int</span> <span class="n">to</span><span class="o">;</span>
+        <span class="k">private</span> <span class="n">int</span> <span class="n">thresHold</span><span class="o">;</span>
+        <span class="n">public</span> <span class="nc">ForkJoinSumTask</span><span class="o">(</span><span class="n">int</span> <span class="n">from</span><span class="o">,</span> <span class="n">int</span> <span class="n">to</span><span class="o">,</span> <span class="n">int</span> <span class="n">thresHold</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">this</span><span class="o">.</span><span class="py">from</span> <span class="k">=</span> <span class="n">from</span><span class="o">;</span>
+            <span class="k">this</span><span class="o">.</span><span class="py">to</span> <span class="k">=</span> <span class="n">to</span><span class="o">;</span>
+            <span class="k">this</span><span class="o">.</span><span class="py">thresHold</span> <span class="k">=</span> <span class="n">thresHold</span><span class="o">;</span>
+        <span class="o">}</span>
+
+        <span class="nd">@Override</span>
+        <span class="k">protected</span> <span class="nc">Integer</span> <span class="nf">compute</span><span class="o">()</span> <span class="o">{</span>
+            <span class="nf">if</span> <span class="o">(</span><span class="n">to</span> <span class="o">-</span> <span class="n">from</span> <span class="o">&lt;</span> <span class="n">thresHold</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">int</span> <span class="n">sum</span> <span class="k">=</span> <span class="mi">0</span><span class="o">;</span>
+                <span class="nf">for</span> <span class="o">(</span><span class="n">int</span> <span class="n">i</span> <span class="k">=</span><span class="n">from</span><span class="o">;</span> <span class="n">i</span><span class="o">&lt;=</span><span class="n">to</span><span class="o">;</span><span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+                    <span class="n">sum</span> <span class="o">+=</span> <span class="n">i</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">return</span> <span class="n">sum</span><span class="o">;</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="n">int</span> <span class="n">mid</span> <span class="k">=</span> <span class="o">(</span><span class="n">to</span> <span class="o">+</span> <span class="n">from</span><span class="o">)</span> <span class="o">/</span> <span class="mi">2</span><span class="o">;</span>
+                <span class="nc">ForkJoinSumTask</span> <span class="n">leftTask</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">ForkJoinSumTask</span><span class="o">(</span><span class="n">from</span><span class="o">,</span> <span class="n">mid</span><span class="o">,</span> <span class="n">thresHold</span><span class="o">);</span>
+                <span class="nc">ForkJoinSumTask</span> <span class="n">rightTask</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">ForkJoinSumTask</span><span class="o">(</span><span class="n">mid</span> <span class="o">+</span><span class="mi">1</span><span class="o">,</span> <span class="n">to</span><span class="o">,</span> <span class="n">thresHold</span><span class="o">);</span>
+                <span class="nv">leftTask</span><span class="o">.</span><span class="py">fork</span><span class="o">();</span>
+                <span class="nv">rightTask</span><span class="o">.</span><span class="py">fork</span><span class="o">();</span>
+                <span class="k">return</span> <span class="nv">leftTask</span><span class="o">.</span><span class="py">join</span><span class="o">()</span> <span class="o">+</span> <span class="nv">rightTask</span><span class="o">.</span><span class="py">join</span><span class="o">();</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+</code></pre></div></div>
+
+<h4 id="work-steamling机制">work-steamling机制</h4>
+
+<p>ForkJoinPool中的fork和join是unix中创建线程的方法，在Unix中使用fork可以创建一个子进程，然后join是让父进程等待子进程执行完毕才进行。但是在ForkJoinPool中并不是每次fork都要创建一个子线程，我们可以设置poolSize，规定线程数目的上限。</p>
+
+<p>ForkJoinPool中的每个线程会维护一个工作队列.这个队列是双端队列，在每次执行自己队列的任务时会尝试随机窃取一个task，窃取对应队列的顺序是FIFO，而执行自己队列中的任务在同步模式下是LIFO。可以看到fork函数是将task放置在队列的尾部。</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="n">public</span> <span class="k">final</span> <span class="nc">ForkJoinTask</span><span class="o">&lt;</span><span class="n">V</span><span class="o">&gt;</span> <span class="nf">fork</span><span class="o">()</span> <span class="o">{</span>
+        <span class="nc">Thread</span> <span class="n">t</span><span class="o">;</span>
+        <span class="nf">if</span> <span class="o">((</span><span class="n">t</span> <span class="k">=</span> <span class="nv">Thread</span><span class="o">.</span><span class="py">currentThread</span><span class="o">())</span> <span class="n">instanceof</span> <span class="nc">ForkJoinWorkerThread</span><span class="o">)</span>
+            <span class="o">((</span><span class="nc">ForkJoinWorkerThread</span><span class="o">)</span><span class="n">t</span><span class="o">).</span><span class="py">workQueue</span><span class="o">.</span><span class="py">push</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+        <span class="k">else</span>
+            <span class="nv">ForkJoinPool</span><span class="o">.</span><span class="py">common</span><span class="o">.</span><span class="py">externalPush</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+        <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>而join操作呢?</p>
+
+<ol>
+  <li>判断该任务是否已经完成，如果完成返回，否则2</li>
+  <li>这个任务是自己的工作队列中，如果在，则执行，等待其完成。</li>
+  <li>如果不在自己的工作队列中，则已经被小偷窃取。</li>
+  <li>找到小偷，窃取他队列中的任务，FIFO方式窃取，帮助他早日完成任务。</li>
+  <li>如果小偷已经做完自己的任务，自己在等待被其他小偷窃取走的任务时，帮助他。</li>
+  <li>递归5，直到返回结果。</li>
+</ol>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="k">private</span> <span class="n">int</span> <span class="nf">doJoin</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">int</span> <span class="n">s</span><span class="o">;</span> <span class="nc">Thread</span> <span class="n">t</span><span class="o">;</span> <span class="nc">ForkJoinWorkerThread</span> <span class="n">wt</span><span class="o">;</span> <span class="nv">ForkJoinPool</span><span class="o">.</span><span class="py">WorkQueue</span> <span class="n">w</span><span class="o">;</span>
+        <span class="nf">return</span> <span class="o">(</span><span class="n">s</span> <span class="k">=</span> <span class="n">status</span><span class="o">)</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="n">s</span> <span class="k">:</span>
+            <span class="o">((</span><span class="kt">t</span> <span class="o">=</span> <span class="kt">Thread.currentThread</span><span class="o">())</span> <span class="kt">instanceof</span> <span class="kt">ForkJoinWorkerThread</span><span class="o">)</span> <span class="o">?</span>
+            <span class="o">(</span><span class="n">w</span> <span class="k">=</span> <span class="o">(</span><span class="n">wt</span> <span class="k">=</span> <span class="o">(</span><span class="nc">ForkJoinWorkerThread</span><span class="o">)</span><span class="n">t</span><span class="o">).</span><span class="py">workQueue</span><span class="o">).</span>
+            <span class="nf">tryUnpush</span><span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">s</span> <span class="k">=</span> <span class="nf">doExec</span><span class="o">())</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="o">?</span> <span class="n">s</span> <span class="k">:</span>
+            <span class="kt">wt.pool.awaitJoin</span><span class="o">(</span><span class="kt">w</span><span class="o">,</span> <span class="kt">this</span><span class="o">,</span> <span class="mi">0L</span><span class="o">)</span> <span class="k">:</span>
+            <span class="kt">externalAwaitDone</span><span class="o">();</span>
+    <span class="o">}</span>
+
+    <span class="cm">/**
+     * Blocks a non-worker-thread until completion.
+     * @return status upon completion
+     */</span>
+    <span class="k">private</span> <span class="n">int</span> <span class="nf">externalAwaitDone</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">int</span> <span class="n">s</span> <span class="k">=</span> <span class="o">((</span><span class="k">this</span> <span class="n">instanceof</span> <span class="nc">CountedCompleter</span><span class="o">)</span> <span class="o">?</span> <span class="c1">// try helping</span>
+                 <span class="nv">ForkJoinPool</span><span class="o">.</span><span class="py">common</span><span class="o">.</span><span class="py">externalHelpComplete</span><span class="o">(</span>
+                     <span class="o">(</span><span class="nc">CountedCompleter</span><span class="o">&lt;?&gt;)</span><span class="k">this</span><span class="o">,</span> <span class="mi">0</span><span class="o">)</span> <span class="k">:</span>
+                 <span class="kt">ForkJoinPool.common.tryExternalUnpush</span><span class="o">(</span><span class="kt">this</span><span class="o">)</span> <span class="kt">?</span> <span class="kt">doExec</span><span class="o">()</span> <span class="kt">:</span> <span class="err">0</span><span class="o">);</span>
+        <span class="nf">if</span> <span class="o">(</span><span class="n">s</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="o">(</span><span class="n">s</span> <span class="k">=</span> <span class="n">status</span><span class="o">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">boolean</span> <span class="n">interrupted</span> <span class="k">=</span> <span class="kc">false</span><span class="o">;</span>
+            <span class="k">do</span> <span class="o">{</span>
+                <span class="nf">if</span> <span class="o">(</span><span class="nv">U</span><span class="o">.</span><span class="py">compareAndSwapInt</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="nc">STATUS</span><span class="o">,</span> <span class="n">s</span><span class="o">,</span> <span class="n">s</span> <span class="o">|</span> <span class="nc">SIGNAL</span><span class="o">))</span> <span class="o">{</span>
+                    <span class="nf">synchronized</span> <span class="o">(</span><span class="k">this</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="nf">if</span> <span class="o">(</span><span class="n">status</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+                            <span class="k">try</span> <span class="o">{</span>
+                                <span class="nf">wait</span><span class="o">(</span><span class="mi">0L</span><span class="o">);</span>
+                            <span class="o">}</span> <span class="nf">catch</span> <span class="o">(</span><span class="nc">InterruptedException</span> <span class="n">ie</span><span class="o">)</span> <span class="o">{</span>
+                                <span class="n">interrupted</span> <span class="k">=</span> <span class="kc">true</span><span class="o">;</span>
+                            <span class="o">}</span>
+                        <span class="o">}</span>
+                        <span class="k">else</span>
+                            <span class="nf">notifyAll</span><span class="o">();</span>
+                    <span class="o">}</span>
+                <span class="o">}</span>
+            <span class="o">}</span> <span class="nf">while</span> <span class="o">((</span><span class="n">s</span> <span class="k">=</span> <span class="n">status</span><span class="o">)</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">);</span>
+            <span class="nf">if</span> <span class="o">(</span><span class="n">interrupted</span><span class="o">)</span>
+                <span class="nv">Thread</span><span class="o">.</span><span class="py">currentThread</span><span class="o">().</span><span class="py">interrupt</span><span class="o">();</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="n">s</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+:ET

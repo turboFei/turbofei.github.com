@@ -16,6 +16,8 @@ http://www.turbofei.wang/public/html/rss.xml
 http://www.turbofei.wang/sitemap.txt
 http://www.turbofei.wang/tags
 
+http://www.turbofei.wang/spark/2020/03/28/%E8%AE%B0%E4%B8%80%E6%AC%A1%E4%B8%8ESpark-bucket-table%E7%9B%B8%E5%85%B3%E7%9A%84%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98
+http://www.turbofei.wang/spark/2020/03/10/spark-timeout-parameters
 http://www.turbofei.wang/essay/2020/01/10/%E9%87%8D%E6%96%B0%E4%BA%86%E8%A7%A3%E6%95%B0%E5%AD%97%E7%B1%BB%E5%9E%8B
 http://www.turbofei.wang/hadoop/2019/12/28/About-Hdfs-Lease
 http://www.turbofei.wang/spark/2019/12/04/Spark%E9%9A%8F%E7%AC%94

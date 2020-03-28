@@ -1,0 +1,318 @@
+I"�
+<p>目录</p>
+
+<ul id="markdown-toc">
+  <li><a href="#背景" id="markdown-toc-背景">背景</a></li>
+  <li><a href="#hdfs-lease机制" id="markdown-toc-hdfs-lease机制">Hdfs lease机制</a>    <ul>
+      <li><a href="#soft-limit" id="markdown-toc-soft-limit">Soft limit</a>        <ul>
+          <li><a href="#基于soft-limit的lock" id="markdown-toc-基于soft-limit的lock">基于Soft Limit的Lock？</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#附录-soft-limit-单元测试" id="markdown-toc-附录-soft-limit-单元测试">附录-Soft Limit 单元测试</a></li>
+</ul>
+<p>关于Hdfs的租约机制</p>
+
+<h3 id="背景">背景</h3>
+
+<p>最近有需求，需要了解一下hdfs 的lease机制。</p>
+
+<h3 id="hdfs-lease机制">Hdfs lease机制</h3>
+
+<p>本章节代码基于hadoop-2.7.4分支。</p>
+
+<p>hdfs是一个分布式文件系统，分布式意味着高并发，经常会面临文件同时访问的问题，如果保证合理有序的访问这些文件呢？答案就是lease机制，lease顾名思义租约，就是服务端给客户端一个临时的ticket，无此ticket以及ticket过期将不会再允许对此文件进行某些操作。</p>
+
+<p>Hdfs管理租约的类叫LeaseManager，里面维护了三个有序集合(TreeMap/TreeSet)，相当于三个不同的索引，用于不同的操作进行查询。</p>
+
+<ul>
+  <li>租约持有者与租约的有序映射</li>
+  <li>文件路径与租约的映射</li>
+  <li>按照时间排序的租约集合</li>
+</ul>
+
+<p>此外里面有两个重要的字段:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="kd">private</span> <span class="kt">long</span> <span class="n">softLimit</span> <span class="o">=</span> <span class="nc">HdfsConstants</span><span class="o">.</span><span class="na">LEASE_SOFTLIMIT_PERIOD</span><span class="o">;</span> <span class="c1">// 60s</span>
+  <span class="kd">private</span> <span class="kt">long</span> <span class="n">hardLimit</span> <span class="o">=</span> <span class="nc">HdfsConstants</span><span class="o">.</span><span class="na">LEASE_HARDLIMIT_PERIOD</span><span class="o">;</span> <span class="c1">// 1hour</span>
+</code></pre></div></div>
+
+<p>这里的softLimit 和hardLimit与linux中 soft limit和hard limit不同，linux中limit代表的是打开文件的上限，而这里的limit其实是一个周期。</p>
+
+<p>LeaseManager中大多数方法都是 get/remove/set方法以及renew操作，这些方法都是用于与dfsClient进行交互，是一些被动的操作，LeaseManager中一个最重要的操作是释放过期的租约，因为往往会有异常情况发生，DfsClient没有优雅的发送释放自己租约的请求而就异常关闭了。这时候，如果租约得不到释放， 将会影响到其他dfsClient对其持有文件的访问。</p>
+
+<p>LeaseManager中的做法是创建一个守护监控线程，定时的来监控和释放租约，其Monitor实现类如下:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="kd">class</span> <span class="nc">Monitor</span> <span class="kd">implements</span> <span class="nc">Runnable</span> <span class="o">{</span>
+    <span class="kd">final</span> <span class="nc">String</span> <span class="n">name</span> <span class="o">=</span> <span class="n">getClass</span><span class="o">().</span><span class="na">getSimpleName</span><span class="o">();</span>
+
+    <span class="cm">/** Check leases periodically. */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+      <span class="k">for</span><span class="o">(;</span> <span class="n">shouldRunMonitor</span> <span class="o">&amp;&amp;</span> <span class="n">fsnamesystem</span><span class="o">.</span><span class="na">isRunning</span><span class="o">();</span> <span class="o">)</span> <span class="o">{</span>
+        <span class="kt">boolean</span> <span class="n">needSync</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="k">try</span> <span class="o">{</span>
+          <span class="n">fsnamesystem</span><span class="o">.</span><span class="na">writeLockInterruptibly</span><span class="o">();</span>
+          <span class="k">try</span> <span class="o">{</span>
+            <span class="c1">// 当前模式不是安全模式</span>
+            <span class="k">if</span> <span class="o">(!</span><span class="n">fsnamesystem</span><span class="o">.</span><span class="na">isInSafeMode</span><span class="o">())</span> <span class="o">{</span>
+              <span class="c1">// 调用checkLease，并且返回sortedLeases 是否需要sync</span>
+              <span class="n">needSync</span> <span class="o">=</span> <span class="n">checkLeases</span><span class="o">();</span>
+            <span class="o">}</span>
+          <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="n">fsnamesystem</span><span class="o">.</span><span class="na">writeUnlock</span><span class="o">(</span><span class="s">"leaseManager"</span><span class="o">);</span>
+            <span class="c1">// lease reassignments should to be sync'ed.</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">needSync</span><span class="o">)</span> <span class="o">{</span>
+              <span class="c1">// 如果需要sync sortedLeases，则进行同步</span>
+              <span class="n">fsnamesystem</span><span class="o">.</span><span class="na">getEditLog</span><span class="o">().</span><span class="na">logSync</span><span class="o">();</span>
+            <span class="o">}</span>
+          <span class="o">}</span>
+          <span class="c1">// 周期为 2000 ms</span>
+          <span class="nc">Thread</span><span class="o">.</span><span class="na">sleep</span><span class="o">(</span><span class="nc">HdfsServerConstants</span><span class="o">.</span><span class="na">NAMENODE_LEASE_RECHECK_INTERVAL</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">catch</span><span class="o">(</span><span class="nc">InterruptedException</span> <span class="n">ie</span><span class="o">)</span> <span class="o">{</span>
+          <span class="k">if</span> <span class="o">(</span><span class="no">LOG</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+            <span class="no">LOG</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="n">name</span> <span class="o">+</span> <span class="s">" is interrupted"</span><span class="o">,</span> <span class="n">ie</span><span class="o">);</span>
+          <span class="o">}</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+</code></pre></div></div>
+
+<p>代码中显示，其会根据NAMENODE_LEASE_RECHECK_INTERVAL(2000ms)定时的调用<code class="highlighter-rouge">checkLeases</code>方法。</p>
+
+<p>代码可以分为三部分：</p>
+
+<ol>
+  <li>由于sortedLease是按照时间对租约排序，第一部分就是取出最老的lease 用于检查</li>
+  <li>第二部分是一个while循环检查这个lease</li>
+  <li>第三部分是在检查完之后，检查sortedLeases是否需要进行sync，返回检查结果，这个结果用于后续在monitor线程中对这个sortedLease进行同步。</li>
+</ol>
+
+<p>代码很清晰，核心逻辑是第二部分，我们看下第二部分的while循环代码。</p>
+
+<p>可以看到一上来就是先看当前lease 是否超出了hardLimit的限制，如果没有，那么直接退出check操作。</p>
+
+<p>如果超出了hardLimit的限制：</p>
+
+<ol>
+  <li>获取当前lease持有的文件路径</li>
+  <li>如果其持有文件路径，则这些文件路径从租约中删除</li>
+  <li>将此租约删除。</li>
+</ol>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>   <span class="k">while</span><span class="o">(</span><span class="n">leaseToCheck</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+      <span class="k">if</span> <span class="o">(!</span><span class="n">leaseToCheck</span><span class="o">.</span><span class="na">expiredHardLimit</span><span class="o">())</span> <span class="o">{</span>
+        <span class="k">break</span><span class="o">;</span>
+      <span class="o">}</span>
+
+      <span class="no">LOG</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="n">leaseToCheck</span> <span class="o">+</span> <span class="s">" has expired hard limit"</span><span class="o">);</span>
+
+      <span class="kd">final</span> <span class="nc">List</span><span class="o">&lt;</span><span class="nc">String</span><span class="o">&gt;</span> <span class="n">removing</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">ArrayList</span><span class="o">&lt;</span><span class="nc">String</span><span class="o">&gt;();</span>
+      <span class="c1">// need to create a copy of the oldest lease paths, because </span>
+      <span class="c1">// internalReleaseLease() removes paths corresponding to empty files,</span>
+      <span class="c1">// i.e. it needs to modify the collection being iterated over</span>
+      <span class="c1">// causing ConcurrentModificationException</span>
+      <span class="nc">String</span><span class="o">[]</span> <span class="n">leasePaths</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">String</span><span class="o">[</span><span class="n">leaseToCheck</span><span class="o">.</span><span class="na">getPaths</span><span class="o">().</span><span class="na">size</span><span class="o">()];</span>
+      <span class="n">leaseToCheck</span><span class="o">.</span><span class="na">getPaths</span><span class="o">().</span><span class="na">toArray</span><span class="o">(</span><span class="n">leasePaths</span><span class="o">);</span>
+      <span class="k">for</span><span class="o">(</span><span class="nc">String</span> <span class="n">p</span> <span class="o">:</span> <span class="n">leasePaths</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">try</span> <span class="o">{</span>
+          <span class="nc">INodesInPath</span> <span class="n">iip</span> <span class="o">=</span> <span class="n">fsnamesystem</span><span class="o">.</span><span class="na">getFSDirectory</span><span class="o">().</span><span class="na">getINodesInPath</span><span class="o">(</span><span class="n">p</span><span class="o">,</span>
+              <span class="kc">true</span><span class="o">);</span>
+          <span class="kt">boolean</span> <span class="n">completed</span> <span class="o">=</span> <span class="n">fsnamesystem</span><span class="o">.</span><span class="na">internalReleaseLease</span><span class="o">(</span><span class="n">leaseToCheck</span><span class="o">,</span> <span class="n">p</span><span class="o">,</span>
+              <span class="n">iip</span><span class="o">,</span> <span class="nc">HdfsServerConstants</span><span class="o">.</span><span class="na">NAMENODE_LEASE_HOLDER</span><span class="o">);</span>
+          <span class="k">if</span> <span class="o">(</span><span class="no">LOG</span><span class="o">.</span><span class="na">isDebugEnabled</span><span class="o">())</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">completed</span><span class="o">)</span> <span class="o">{</span>
+              <span class="no">LOG</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">"Lease recovery for "</span> <span class="o">+</span> <span class="n">p</span> <span class="o">+</span> <span class="s">" is complete. File closed."</span><span class="o">);</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+              <span class="no">LOG</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="s">"Started block recovery "</span> <span class="o">+</span> <span class="n">p</span> <span class="o">+</span> <span class="s">" lease "</span> <span class="o">+</span> <span class="n">leaseToCheck</span><span class="o">);</span>
+            <span class="o">}</span>
+          <span class="o">}</span>
+          <span class="c1">// If a lease recovery happened, we need to sync later.</span>
+          <span class="k">if</span> <span class="o">(!</span><span class="n">needSync</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">completed</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">needSync</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+          <span class="o">}</span>
+        <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="nc">IOException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+          <span class="no">LOG</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="s">"Cannot release the path "</span> <span class="o">+</span> <span class="n">p</span> <span class="o">+</span> <span class="s">" in the lease "</span>
+              <span class="o">+</span> <span class="n">leaseToCheck</span><span class="o">,</span> <span class="n">e</span><span class="o">);</span>
+          <span class="n">removing</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">p</span><span class="o">);</span>
+        <span class="o">}</span>
+      <span class="o">}</span>
+
+      <span class="k">for</span><span class="o">(</span><span class="nc">String</span> <span class="n">p</span> <span class="o">:</span> <span class="n">removing</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">removeLease</span><span class="o">(</span><span class="n">leaseToCheck</span><span class="o">,</span> <span class="n">p</span><span class="o">);</span>
+      <span class="o">}</span>
+      <span class="n">leaseToCheck</span> <span class="o">=</span> <span class="n">sortedLeases</span><span class="o">.</span><span class="na">higher</span><span class="o">(</span><span class="n">leaseToCheck</span><span class="o">);</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<h4 id="soft-limit">Soft limit</h4>
+
+<p>上面我们看到在checkLease方法中，使用到了hardLimit，如果租约超时hardLimit，那么就将该lease相关清除掉。</p>
+
+<p>那么softLimit的作用呢？</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="cm">/** @return true if the Soft Limit Timer has expired */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">expiredSoftLimit</span><span class="o">()</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="nf">monotonicNow</span><span class="o">()</span> <span class="o">-</span> <span class="n">lastUpdate</span> <span class="o">&gt;</span> <span class="n">softLimit</span><span class="o">;</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>通过查看代码，我们看到有一个<code class="highlighter-rouge">expiredSoftLimit</code>方法， 其调用是发生在<code class="highlighter-rouge">FSNameSystem</code>中，对应方法为<code class="highlighter-rouge">recoverLeaseInternal</code>，调用部分如下，如果当前的持有者已经在上个softLimit周期没有刷新这个lease,</p>
+
+<p>那么调用<code class="highlighter-rouge">internalReleaseLease</code>， 顾名思义，释放internalLease, 其注释为 <code class="highlighter-rouge">Move a file that is being written to be immutable.</code>, 也就是说把一个正在被写的文件变为不可改变的状态.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        <span class="c1">// If the original holder has not renewed in the last SOFTLIMIT </span>
+        <span class="c1">// period, then start lease recovery.</span>
+        <span class="c1">//</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">lease</span><span class="o">.</span><span class="na">expiredSoftLimit</span><span class="o">())</span> <span class="o">{</span>
+          <span class="no">LOG</span><span class="o">.</span><span class="na">info</span><span class="o">(</span><span class="s">"startFile: recover "</span> <span class="o">+</span> <span class="n">lease</span> <span class="o">+</span> <span class="s">", src="</span> <span class="o">+</span> <span class="n">src</span> <span class="o">+</span> <span class="s">" client "</span>
+              <span class="o">+</span> <span class="n">clientName</span><span class="o">);</span>
+          <span class="k">if</span> <span class="o">(</span><span class="n">internalReleaseLease</span><span class="o">(</span><span class="n">lease</span><span class="o">,</span> <span class="n">src</span><span class="o">,</span> <span class="n">iip</span><span class="o">,</span> <span class="kc">null</span><span class="o">))</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+          <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="k">throw</span> <span class="k">new</span> <span class="nf">RecoveryInProgressException</span><span class="o">(</span>
+                <span class="n">op</span><span class="o">.</span><span class="na">getExceptionMessage</span><span class="o">(</span><span class="n">src</span><span class="o">,</span> <span class="n">holder</span><span class="o">,</span> <span class="n">clientMachine</span><span class="o">,</span>
+                    <span class="s">"lease recovery is in progress. Try again later."</span><span class="o">));</span>
+          <span class="o">}</span>
+        <span class="o">}</span>
+</code></pre></div></div>
+
+<p>关于这方面的上下文如下:</p>
+
+<ul>
+  <li>首先DFSClient是获取lease的主体，当其生成之后会被添加到对应的LeaseRenewer的dfsClient列表里面，周期性的进行刷新lease，周期是固定的softLimitPeriod/2,也就是30s</li>
+  <li>
+    <p>所以一般情况下这个lease不会超过softLimit，除非</p>
+
+    <ul>
+      <li>
+        <p>LeaseRenewer发生严重的GC，无法renew //可能性极小</p>
+      </li>
+      <li>
+        <p>DFSClient异常退出，已经从LeaseRenewer中移出，但是租约还未超过HardLimit所以租约还未移除</p>
+      </li>
+    </ul>
+  </li>
+  <li>将文件从正在被写变为不可变状态意味着另外一个dfsClient可以开始对其写入，例如进行append操作。</li>
+</ul>
+
+<h5 id="基于soft-limit的lock">基于Soft Limit的Lock？</h5>
+
+<p>那么是否可以利用soft limit做一个简单的锁？</p>
+
+<p>例如在app1 中create 一个lock文件，在应用正常结束时会清理掉这个lock文件，当然如果其异常退出，是不会清理掉这个lock文件的。</p>
+
+<p>另外一个app2尝试去探测这个lock文件，探测方法为如果这个lock存在则尝试append这个lock文件，如果append成功，则代表可以获得这个lock。</p>
+
+<p>如果不能append成功，则有两种可能:</p>
+
+<ul>
+  <li>这个lock正在被另一个app持有</li>
+  <li>另一个app异常退出，但是距其异常退出的间隔还未到达softLimitPeriod</li>
+</ul>
+
+<p>所以这个锁，就相当于app正常退出会释放， 如果app异常退出，超过softLimitPeriod(60s)也会自动释放。</p>
+
+<h3 id="附录-soft-limit-单元测试">附录-Soft Limit 单元测试</h3>
+
+<p>在pom.xml文件中添加:</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="nt">&lt;dependency&gt;</span>
+      <span class="nt">&lt;groupId&gt;</span>org.apache.hadoop<span class="nt">&lt;/groupId&gt;</span>
+      <span class="nt">&lt;artifactId&gt;</span>hadoop-minicluster<span class="nt">&lt;/artifactId&gt;</span>
+      <span class="nt">&lt;version&gt;</span>${hadoop.version}<span class="nt">&lt;/version&gt;</span>
+      <span class="nt">&lt;scope&gt;</span>test<span class="nt">&lt;/scope&gt;</span>
+    <span class="nt">&lt;/dependency&gt;</span>
+</code></pre></div></div>
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">scala.util.</span><span class="o">{</span><span class="nc">Failure</span><span class="o">,</span> <span class="nc">Success</span><span class="o">,</span> <span class="nc">Try</span><span class="o">}</span>
+
+<span class="k">import</span> <span class="nn">org.apache.hadoop.fs.Path</span>
+<span class="k">import</span> <span class="nn">org.apache.hadoop.hdfs.</span><span class="o">{</span><span class="nc">DistributedFileSystem</span><span class="o">,</span> <span class="nc">HdfsConfiguration</span><span class="o">,</span> <span class="nc">MiniDFSCluster</span><span class="o">}</span>
+<span class="k">import</span> <span class="nn">org.apache.hadoop.hdfs.protocol.HdfsConstants</span>
+<span class="k">import</span> <span class="nn">org.scalatest.Assertions.intercept</span>
+
+<span class="k">object</span> <span class="nc">SoftLimitLockSuite</span> <span class="o">{</span>
+  <span class="k">val</span> <span class="nv">hdfsConf</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">HdfsConfiguration</span>
+  <span class="nv">hdfsConf</span><span class="o">.</span><span class="py">set</span><span class="o">(</span><span class="s">"fs.hdfs.impl.disable.cache"</span><span class="o">,</span> <span class="s">"true"</span><span class="o">)</span>
+  <span class="k">val</span> <span class="nv">cluster</span> <span class="k">=</span> <span class="k">new</span> <span class="nv">MiniDFSCluster</span><span class="o">.</span><span class="py">Builder</span><span class="o">(</span><span class="n">hdfsConf</span><span class="o">).</span><span class="py">build</span><span class="o">()</span>
+  <span class="nv">cluster</span><span class="o">.</span><span class="py">waitClusterUp</span><span class="o">()</span>
+  <span class="k">val</span> <span class="nv">fs</span> <span class="k">=</span> <span class="nv">cluster</span><span class="o">.</span><span class="py">getFileSystem</span>
+
+  <span class="k">def</span> <span class="nf">main</span><span class="o">(</span><span class="n">args</span><span class="k">:</span> <span class="kt">Array</span><span class="o">[</span><span class="kt">String</span><span class="o">])</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="k">try</span> <span class="o">{</span>
+      <span class="k">val</span> <span class="nv">lock</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">Path</span><span class="o">(</span><span class="nv">fs</span><span class="o">.</span><span class="py">getHomeDirectory</span><span class="o">,</span> <span class="s">"LOCK"</span><span class="o">)</span>
+      <span class="c1">// app 正常结束</span>
+      <span class="k">val</span> <span class="nv">app1</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">AppLockThread</span><span class="o">(</span><span class="n">lock</span><span class="o">,</span> <span class="n">abort</span> <span class="k">=</span> <span class="kc">false</span><span class="o">)</span>
+      <span class="nv">app1</span><span class="o">.</span><span class="py">start</span><span class="o">()</span>
+      <span class="nv">Thread</span><span class="o">.</span><span class="py">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">)</span>
+      <span class="nv">app1</span><span class="o">.</span><span class="py">interrupt</span><span class="o">()</span>
+      <span class="nv">app1</span><span class="o">.</span><span class="py">join</span><span class="o">()</span>
+      <span class="c1">// fs 可以append 这个lock文件成功</span>
+      <span class="nv">fs</span><span class="o">.</span><span class="py">append</span><span class="o">(</span><span class="n">lock</span><span class="o">).</span><span class="py">close</span><span class="o">()</span>
+
+      <span class="c1">// app 异常退出</span>
+      <span class="k">val</span> <span class="nv">app2</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">AppLockThread</span><span class="o">(</span><span class="n">lock</span><span class="o">,</span> <span class="n">abort</span> <span class="k">=</span> <span class="kc">true</span><span class="o">)</span>
+      <span class="nv">app2</span><span class="o">.</span><span class="py">start</span><span class="o">()</span>
+      <span class="nv">Thread</span><span class="o">.</span><span class="py">sleep</span><span class="o">(</span><span class="mi">1000</span><span class="o">)</span>
+      <span class="nv">app2</span><span class="o">.</span><span class="py">interrupt</span><span class="o">()</span>
+      <span class="nv">app2</span><span class="o">.</span><span class="py">join</span><span class="o">()</span>
+      <span class="n">intercept</span><span class="o">[</span><span class="kt">Exception</span><span class="o">](</span><span class="nv">fs</span><span class="o">.</span><span class="py">append</span><span class="o">(</span><span class="n">lock</span><span class="o">).</span><span class="py">close</span><span class="o">())</span>
+      <span class="c1">// 等待一个soft limit 周期</span>
+      <span class="nv">Thread</span><span class="o">.</span><span class="py">sleep</span><span class="o">(</span><span class="nv">HdfsConstants</span><span class="o">.</span><span class="py">LEASE_SOFTLIMIT_PERIOD</span><span class="o">)</span>
+      <span class="c1">// fs 可以append成功</span>
+      <span class="nv">fs</span><span class="o">.</span><span class="py">append</span><span class="o">(</span><span class="n">lock</span><span class="o">).</span><span class="py">close</span><span class="o">()</span>
+    <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+      <span class="nv">fs</span><span class="o">.</span><span class="py">close</span><span class="o">()</span>
+      <span class="nv">cluster</span><span class="o">.</span><span class="py">shutdown</span><span class="o">()</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="cm">/**
+   * 模拟一个app 线程, abort 参数代表是否正常退出
+   */</span>
+  <span class="k">class</span> <span class="nc">AppLockThread</span><span class="o">(</span><span class="n">lock</span><span class="k">:</span> <span class="kt">Path</span><span class="o">,</span> <span class="n">abort</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="kc">false</span><span class="o">)</span> <span class="k">extends</span> <span class="nc">Thread</span> <span class="o">{</span>
+    <span class="k">override</span> <span class="k">def</span> <span class="nf">run</span><span class="o">()</span><span class="k">:</span> <span class="kt">Unit</span> <span class="o">=</span> <span class="o">{</span>
+      <span class="k">var</span> <span class="n">dfs</span><span class="k">:</span> <span class="kt">Option</span><span class="o">[</span><span class="kt">DistributedFileSystem</span><span class="o">]</span> <span class="k">=</span> <span class="nc">None</span>
+      <span class="k">try</span> <span class="o">{</span>
+        <span class="n">dfs</span> <span class="k">=</span> <span class="nc">Some</span><span class="o">(</span><span class="nv">cluster</span><span class="o">.</span><span class="py">getFileSystem</span><span class="o">)</span>
+        <span class="nv">dfs</span><span class="o">.</span><span class="py">get</span><span class="o">.</span><span class="py">create</span><span class="o">(</span><span class="n">lock</span><span class="o">)</span>
+        <span class="nf">while</span> <span class="o">(</span><span class="kc">true</span><span class="o">)</span> <span class="o">{</span>
+          <span class="nv">Thread</span><span class="o">.</span><span class="py">sleep</span><span class="o">(</span><span class="nv">HdfsConstants</span><span class="o">.</span><span class="py">LEASE_SOFTLIMIT_PERIOD</span><span class="o">)</span>
+        <span class="o">}</span>
+      <span class="o">}</span> <span class="k">catch</span> <span class="o">{</span>
+        <span class="k">case</span> <span class="k">_:</span> <span class="kt">InterruptedException</span> <span class="o">=&gt;</span>
+          <span class="k">try</span> <span class="o">{</span>
+            <span class="c1">// Here is an reflection implementation of DistributedFileSystem.close()</span>
+            <span class="nv">dfs</span><span class="o">.</span><span class="py">foreach</span><span class="o">(</span><span class="nv">_</span><span class="o">.</span><span class="py">getClient</span><span class="o">.</span><span class="py">closeOutputStreams</span><span class="o">(</span><span class="n">abort</span><span class="o">))</span>
+            <span class="nf">invokeSuperMethod</span><span class="o">(</span><span class="nv">dfs</span><span class="o">.</span><span class="py">get</span><span class="o">,</span> <span class="s">"close"</span><span class="o">)</span>
+          <span class="o">}</span> <span class="k">finally</span> <span class="o">{</span>
+            <span class="nv">dfs</span><span class="o">.</span><span class="py">foreach</span><span class="o">(</span><span class="nv">_</span><span class="o">.</span><span class="py">getClient</span><span class="o">.</span><span class="py">close</span><span class="o">())</span>
+          <span class="o">}</span>
+      <span class="o">}</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+
+  <span class="cm">/**
+   * Invoke a super method of an object via reflection.
+   */</span>
+  <span class="k">private</span> <span class="k">def</span> <span class="nf">invokeSuperMethod</span><span class="o">(</span><span class="n">o</span><span class="k">:</span> <span class="kt">Any</span><span class="o">,</span> <span class="n">name</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Any</span> <span class="o">=</span> <span class="o">{</span>
+    <span class="nc">Try</span> <span class="o">{</span>
+      <span class="k">val</span> <span class="nv">method</span> <span class="k">=</span> <span class="k">try</span> <span class="o">{</span>
+        <span class="nv">o</span><span class="o">.</span><span class="py">getClass</span><span class="o">.</span><span class="py">getSuperclass</span><span class="o">.</span><span class="py">getDeclaredMethod</span><span class="o">(</span><span class="n">name</span><span class="o">)</span>
+      <span class="o">}</span> <span class="k">catch</span> <span class="o">{</span>
+        <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">NoSuchMethodException</span> <span class="o">=&gt;</span>
+          <span class="nv">o</span><span class="o">.</span><span class="py">getClass</span><span class="o">.</span><span class="py">getMethod</span><span class="o">(</span><span class="n">name</span><span class="o">)</span>
+      <span class="o">}</span>
+      <span class="nv">method</span><span class="o">.</span><span class="py">setAccessible</span><span class="o">(</span><span class="kc">true</span><span class="o">)</span>
+      <span class="nv">method</span><span class="o">.</span><span class="py">invoke</span><span class="o">(</span><span class="n">o</span><span class="o">)</span>
+    <span class="o">}</span> <span class="k">match</span> <span class="o">{</span>
+      <span class="k">case</span> <span class="nc">Success</span><span class="o">(</span><span class="n">value</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="n">value</span>
+      <span class="k">case</span> <span class="nc">Failure</span><span class="o">(</span><span class="n">e</span><span class="o">)</span> <span class="k">=&gt;</span> <span class="k">throw</span> <span class="n">e</span>
+    <span class="o">}</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+:ET

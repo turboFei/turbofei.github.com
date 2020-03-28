@@ -1,0 +1,376 @@
+I"kg
+<p>目录</p>
+<ul id="markdown-toc">
+  <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
+  <li><a href="#telnet" id="markdown-toc-telnet">telnet</a></li>
+  <li><a href="#ss--somaxconn" id="markdown-toc-ss--somaxconn">ss &amp; somaxconn</a>    <ul>
+      <li><a href="#recv-q--send-q" id="markdown-toc-recv-q--send-q">Recv-Q &amp; Send-Q</a></li>
+      <li><a href="#somaxconn" id="markdown-toc-somaxconn">somaxconn</a></li>
+    </ul>
+  </li>
+  <li><a href="#netstat" id="markdown-toc-netstat">netstat</a></li>
+  <li><a href="#top" id="markdown-toc-top">top</a></li>
+  <li><a href="#sysctl--systemctl" id="markdown-toc-sysctl--systemctl">sysctl &amp; systemctl</a></li>
+  <li><a href="#to-be-continued" id="markdown-toc-to-be-continued">To Be Continued</a></li>
+  <li><a href="#references" id="markdown-toc-references">References</a></li>
+</ul>
+<p>作为一个大数据平台从业人员，会操作线上服务器是必备的技能，因此必须要会一些常见的Linux运维命令。 本文记录一下最近用到的一些线上操作命令。</p>
+
+<h3 id="前言">前言</h3>
+
+<p>由于之前对线上操作不多，而最近开始接触线上操作，因此也在这个过程中学习到了一些Linux命令。</p>
+
+<p>解决问题的思维也需要慢慢进行转变，之前在定位Spark问题的时候，总是会从PAAS层进行寻找问题，例如去看是否是Spark自身的问题，而往往不会去考虑是否是Linux系统的问题。这也是自己所欠缺的地方。</p>
+
+<p>例如本周遇到的问题，是说executor 向External Shuffle Service发出连接请求，而总是connect timeout,当时我的第一想法就是说看是否是ESS所在的nodemanager比较繁忙。</p>
+
+<p>我的思路是首先查看PID，然后查看其jstack信息，以及gcutil信息，查看之后就发现其GC并不严重。到此，我就不知道该如何去定位问题了。但是在组里经验更加丰富的同事进行排查跟踪后，发现是其系统配置的<code class="highlighter-rouge">somaxconn</code>参数过小，不能处理处于大量的请求，导致丢包。</p>
+
+<p>因此这就需要深入了解Linux系统，了解TCP连接建立的过程，以及使用对应的命令进行排查。</p>
+
+<p>下面讲线上操作常见的操作命令。</p>
+
+<h3 id="telnet">telnet</h3>
+
+<p>在linux系统中，通常需要判断一些网络问题。比如某个节点是否是联通的，可以使用Ping 命令。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ping <span class="nb">hostname</span>
+</code></pre></div></div>
+
+<p>而如果要判断一个host的port是否互通就需要使用telnet命令。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>telnet host port
+</code></pre></div></div>
+
+<p>嗯，感觉这个就够了…</p>
+
+<h3 id="ss--somaxconn">ss &amp; somaxconn</h3>
+
+<p>说实话这个命令之前都没听过。</p>
+
+<p>ss 是socket statistics的简称。用于查看socket相关的统计信息。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Usage: ss <span class="o">[</span> OPTIONS <span class="o">]</span>
+       ss <span class="o">[</span> OPTIONS <span class="o">]</span> <span class="o">[</span> FILTER <span class="o">]</span>
+   <span class="nt">-h</span>, <span class="nt">--help</span>           this message      <span class="c">#显示帮助菜单</span>
+   <span class="nt">-V</span>, <span class="nt">--version</span>        output version information      <span class="c">#输出版本信息</span>
+   <span class="nt">-n</span>, <span class="nt">--numeric</span>        don<span class="s1">'t resolve service names    #不解析服务名
+   -r, --resolve       resolve host names   #解析主机名
+   -a, --all            display all sockets     #显示所有的套接字
+   -l, --listening      display listening sockets   #显示监听状态的socket
+   -o, --options       show timer information   #显示计时器信息
+   -e, --extended      show detailed socket information #展示详细的socket信息
+   -m, --memory        show socket memory usage #展示socket的内存使用
+   -p, --processes      show process using socket   #展示使用socket的进程
+   -i, --info           show internal TCP information   #展示tcp内部信息
+   -s, --summary        show socket usage summary   #展示socket使用汇总
+
+   -4, --ipv4          display only IP version 4 sockets    #只显示ipv4的sockets
+   -6, --ipv6          display only IP version 6 sockets    #只显示ipv6的sockets
+   -0, --packet display PACKET sockets  #显示包经过的网络接口
+   -t, --tcp            display only TCP sockets    #显示tcp套接字
+   -u, --udp            display only UDP sockets    #显示udp套接字
+   -d, --dccp           display only DCCP sockets   #显示dccp套接字
+   -w, --raw            display only RAW sockets    #显示raw套接字
+   -x, --unix           display only Unix domain sockets    #显示unix套接字
+   -f, --family=FAMILY display sockets of type FAMILY   #显示指定类型的套接字
+
+   -A, --query=QUERY, --socket=QUERY    #查看某种类型
+       QUERY := {all|inet|tcp|udp|raw|unix|packet|netlink}[,QUERY]
+
+   -D, --diag=FILE      Dump raw information about TCP sockets to FILE  #将关于TCP套接字的原始信息转储到文件中
+   -F, --filter=FILE   read filter information from FILE #使用此参数指定的过滤规则文件，过滤某种状态的连接
+       FILTER := [ state TCP-STATE ] [ EXPRESSION ]
+</span></code></pre></div></div>
+
+<p>这里讲一下 -n 参数，如果不加 <code class="highlighter-rouge">-n</code>参数，那么会显示服务名，而如果使用<code class="highlighter-rouge">-n</code>，那么则不解析服务名。示例如下。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>fwang12@fwang-dev1-3474144 ~]<span class="nv">$ </span>ss <span class="nt">-t</span>
+State       Recv-Q Send-Q  Local Address:Port                   Peer Address:Port
+ESTAB       0      168    10.194.228.167:ssh                   10.242.101.88:56151
+ESTAB       0      0      10.194.228.167:38570                 10.232.128.78:ldaps
+ESTAB       0      0      10.194.228.167:54564                10.169.164.189:4505
+<span class="o">[</span>fwang12@fwang-dev1-3474144 ~]<span class="nv">$ </span>ss <span class="nt">-tn</span>
+State       Recv-Q Send-Q    Local Address:Port                   Peer Address:Port
+ESTAB       0      168      10.194.228.167:22                    10.242.101.88:56151
+ESTAB       0      0        10.194.228.167:38570                 10.232.128.78:636
+ESTAB       0      0        10.194.228.167:54564                10.169.164.189:4505
+</code></pre></div></div>
+
+<p>这样我们就可以看到服务所使用的端口号，这样就可以通过一些端口号来查看其socket 信息。例如我们熟知的ExternalShuffleService就是默认以7337作为端口，那么就可以使用<code class="highlighter-rouge">ss -ln |grep 7337</code>来查看其socket信息。</p>
+
+<h4 id="recv-q--send-q">Recv-Q &amp; Send-Q</h4>
+
+<ol>
+  <li>当 client 通过 connect 向 server 发出 SYN 包时，client 会维护一个 socket 等待队列，而 server 会维护一个 SYN 队列</li>
+  <li>此时进入半链接的状态，如果 socket 等待队列满了，server 则会丢弃，而 client 也会由此返回 connection time out；只要是 client 没有收到 SYN+ACK，3s 之后，client 会再次发送，如果依然没有收到，9s 之后会继续发送</li>
+  <li>半连接 syn 队列的长度为 max(64, /proc/sys/net/ipv4/tcp_max_syn_backlog)  决定</li>
+  <li>当 server 收到 client 的 SYN 包后，会返回 SYN, ACK 的包加以确认，client 的 TCP 协议栈会唤醒 socket 等待队列，发出 connect 调用</li>
+  <li>client 返回 ACK 的包后，server 会进入一个新的叫 accept 的队列，该队列的长度为 min(backlog, somaxconn)，默认情况下，<code class="highlighter-rouge">somaxconn</code> 的值为 128，表示最多有 129 的 ESTAB 的连接等待 accept()，而 backlog 的值则由 <a href="http://http//linux.die.net/man/2/listen">int listen(int sockfd, int backlog)</a> 中的第二个参数指定，listen 里面的 backlog 的含义请看这里。需要注意的是，<a href="http://serverfault.com/questions/518862/testifying-rasing-net-core-somaxconn-can-make-a-difference">一些 Linux 的发型版本可能存在对 somaxcon 错误 truncating 方式</a>。</li>
+  <li>当 accept 队列满了之后，即使 client 继续向 server 发送 ACK 的包，也会不被相应，此时，server 通过 /proc/sys/net/ipv4/tcp_abort_on_overflow 来决定如何返回，0 表示直接丢丢弃该 ACK，1 表示发送 RST 通知 client；相应的，client 则会分别返回 read timeout 或者 connection reset by peer。上面说的只是些理论，如果服务器不及时的调用 accept()，当 queue 满了之后，服务器并不会按照理论所述，不再对 SYN 进行应答，返回 ETIMEDOUT。根据<a href="http://www.douban.com/note/178129553/">这篇</a>文档的描述，实际情况并非如此，服务器会随机的忽略收到的 SYN，建立起来的连接数可以无限的增加，只不过客户端会遇到延时以及超时的情况。</li>
+</ol>
+
+<p>可以看到，整个 TCP stack 有如下的两个 queue:</p>
+<ol>
+  <li>一个是 half open(syn queue) queue(max(tcp_max_syn_backlog, 64))，用来保存 SYN_SENT 以及 SYN_RECV 的信息。</li>
+  <li>另外一个是 accept queue(min(somaxconn, backlog))，保存 ESTAB 的状态，但是调用 accept()。</li>
+</ol>
+
+<h4 id="somaxconn">somaxconn</h4>
+
+<p>前面提到，client返回ack之后，server进入一个新的叫accept的队列，队列长度为min(backlog, somaxconn)。</p>
+
+<p>somaxconn定义了系统中每一个端口最大的监听队列的长度,这是个全局的参数,默认值为128.限制了每个端口接收新tcp连接侦听队列的大小。针对线上一些服务，比如说Spark 的External Shuffle Service，默认的128太小，必须设置很大才能满足生产需求。</p>
+
+<p>而somaxconn 是在文件<code class="highlighter-rouge">/etc/sysctl.conf</code>中。</p>
+
+<p>保存之后使用<code class="highlighter-rouge">sysctl -p</code>立即生效。</p>
+
+<h3 id="netstat">netstat</h3>
+
+<p>netstat的作用其实与 ss 类似。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>fwang12@fwang-dev1-3474144 ~]<span class="nv">$ </span>netstat <span class="nt">-h</span>
+usage: netstat <span class="o">[</span><span class="nt">-vWeenNcCF</span><span class="o">]</span> <span class="o">[</span>&lt;Af&gt;] <span class="nt">-r</span>         netstat <span class="o">{</span><span class="nt">-V</span>|--version|-h|--help<span class="o">}</span>
+       netstat <span class="o">[</span><span class="nt">-vWnNcaeol</span><span class="o">]</span> <span class="o">[</span>&lt;Socket&gt; ...]
+       netstat <span class="o">{</span> <span class="o">[</span><span class="nt">-vWeenNac</span><span class="o">]</span> <span class="nt">-I</span><span class="o">[</span>&lt;Iface&gt;] | <span class="o">[</span><span class="nt">-veenNac</span><span class="o">]</span> <span class="nt">-i</span> | <span class="o">[</span><span class="nt">-cnNe</span><span class="o">]</span> <span class="nt">-M</span> | <span class="nt">-s</span> <span class="o">[</span><span class="nt">-6tuw</span><span class="o">]</span> <span class="o">}</span> <span class="o">[</span>delay]
+
+        <span class="nt">-r</span>, <span class="nt">--route</span>              display routing table
+        <span class="nt">-I</span>, <span class="nt">--interfaces</span><span class="o">=</span>&lt;Iface&gt; display interface table <span class="k">for</span> &lt;Iface&gt;
+        <span class="nt">-i</span>, <span class="nt">--interfaces</span>         display interface table
+        <span class="nt">-g</span>, <span class="nt">--groups</span>             display multicast group memberships
+        <span class="nt">-s</span>, <span class="nt">--statistics</span>         display networking statistics <span class="o">(</span>like SNMP<span class="o">)</span>
+        <span class="nt">-M</span>, <span class="nt">--masquerade</span>         display masqueraded connections
+
+        <span class="nt">-v</span>, <span class="nt">--verbose</span>            be verbose
+        <span class="nt">-W</span>, <span class="nt">--wide</span>               don<span class="s1">'t truncate IP addresses
+        -n, --numeric            don'</span>t resolve names
+        <span class="nt">--numeric-hosts</span>          don<span class="s1">'t resolve host names
+        --numeric-ports          don'</span>t resolve port names
+        <span class="nt">--numeric-users</span>          don<span class="s1">'t resolve user names
+        -N, --symbolic           resolve hardware names
+        -e, --extend             display other/more information
+        -p, --programs           display PID/Program name for sockets
+        -o, --timers             display timers
+        -c, --continuous         continuous listing
+
+        -l, --listening          display listening server sockets
+        -a, --all                display all sockets (default: connected)
+        -F, --fib                display Forwarding Information Base (default)
+        -C, --cache              display routing cache instead of FIB
+        -Z, --context            display SELinux security context for sockets
+
+  &lt;Socket&gt;={-t|--tcp} {-u|--udp} {-U|--udplite} {-S|--sctp} {-w|--raw}
+           {-x|--unix} --ax25 --ipx --netrom
+  &lt;AF&gt;=Use '</span><span class="nt">-6</span>|-4<span class="s1">' or '</span><span class="nt">-A</span> &lt;af&gt;<span class="s1">' or '</span><span class="nt">--</span>&lt;af&gt;<span class="s1">'; default: inet
+  List of possible address families (which support routing):
+    inet (DARPA Internet) inet6 (IPv6) ax25 (AMPR AX.25)
+    netrom (AMPR NET/ROM) ipx (Novell IPX) ddp (Appletalk DDP)
+    x25 (CCITT X.25)
+</span></code></pre></div></div>
+
+<p>例如可以使用<code class="highlighter-rouge">netstat -antlp</code>列出所有非解析服务名字的tcp监听状态的server sockets，并打出pid.</p>
+
+<h3 id="top">top</h3>
+
+<p>输入top打印如下。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>top - 11:05:18 up 9 days, 15:59,  1 user,  load average: 0.00, 0.01, 0.05
+Tasks: 184 total,   1 running, 183 sleeping,   0 stopped,   0 zombie
+%Cpu<span class="o">(</span>s<span class="o">)</span>:  0.0 us,  0.0 sy,  0.0 ni,100.0 <span class="nb">id</span>,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+KiB Mem : 32778616 total, 31754528 free,   350816 used,   673272 buff/cache
+KiB Swap:        0 total,        0 free,        0 used. 31972344 avail Mem
+
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
+ 9198 fwang12   20   0  172408   2424   1632 R   0.3  0.0   0:00.01 top
+</code></pre></div></div>
+
+<p>其中显示的列信息，可以在进入top之后，按F进入编辑列，使用空格决定是否显示列信息。</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>* PID     = Process Id
+* USER    = Effective User Name
+* PR      = Priority
+* NI      = Nice Value  //PR(new) = PR(old) + NI
+* VIRT    = Virtual Image (KiB)
+* RES     = Resident Size (KiB)
+* SHR     = Shared Memory (KiB)
+* S       = Process Status
+* %CPU    = CPU Usage
+* %MEM    = Memory Usage (RES)
+* TIME+   = CPU Time, hundredths
+* COMMAND = Command Name/Line
+  PPID    = Parent Process pid
+  UID     = Effective User Id
+  RUID    = Real User Id
+  RUSER   = Real User Name
+  SUID    = Saved User Id
+  SUSER   = Saved User Name
+  GID     = Group Id
+  GROUP   = Group Name
+  PGRP    = Process Group Id
+  TTY     = Controlling Tty
+  TPGID   = Tty Process Grp Id
+  SID     = Session Id
+  nTH     = Number of Threads
+  P       = Last Used Cpu (SMP)
+  TIME    = CPU Time
+  SWAP    = Swapped Size (KiB)
+  CODE    = Code Size (KiB)
+  DATA    = Data+Stack (KiB)
+  nMaj    = Major Page Faults
+  nMin    = Minor Page Faults
+  nDRT    = Dirty Pages Count
+  WCHAN   = Sleeping in Function
+  Flags   = Task Flags &lt;sched.h&gt;
+  CGROUPS = Control Groups
+  SUPGIDS = Supp Groups IDs
+  SUPGRPS = Supp Groups Names
+  TGID    = Thread Group Id
+  ENVIRON = Environment vars
+  vMj     = Major Faults delta
+  vMn     = Minor Faults delta
+  USED    = Res+Swap Size (KiB)
+  nsIPC   = IPC namespace Inode
+  nsMNT   = MNT namespace Inode
+  nsNET   = NET namespace Inode
+  nsPID   = PID namespace Inode
+  nsUSER  = USER namespace Inode
+  nsUTS   = UTS namespace Inode
+</code></pre></div></div>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>fwang12@fwang-dev1-3474144 ~]<span class="nv">$ </span>top <span class="nt">-h</span>
+  procps-ng version 3.3.10
+Usage:
+  top <span class="nt">-hv</span> | <span class="nt">-bcHiOSs</span> <span class="nt">-d</span> secs <span class="nt">-n</span> max <span class="nt">-u</span>|U user <span class="nt">-p</span> pid<span class="o">(</span>s<span class="o">)</span> <span class="nt">-o</span> field <span class="nt">-w</span> <span class="o">[</span>cols]
+</code></pre></div></div>
+
+<p>可以指定用户，PID等信息.</p>
+
+<p>进入top之后输入<code class="highlighter-rouge">?</code>可以查看帮助，查看可以使用什么命令。</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Help <span class="k">for </span>Interactive Commands - procps-ng version 3.3.10
+Window 1:Def: Cumulative mode Off.  System: Delay 3.0 secs<span class="p">;</span> Secure mode Off.
+
+  Z,B,E,e   Global: <span class="s1">'Z'</span> colors<span class="p">;</span> <span class="s1">'B'</span> bold<span class="p">;</span> <span class="s1">'E'</span>/<span class="s1">'e'</span> summary/task memory scale
+  l,t,m     Toggle Summary: <span class="s1">'l'</span> load avg<span class="p">;</span> <span class="s1">'t'</span> task/cpu stats<span class="p">;</span> <span class="s1">'m'</span> memory info
+  0,1,2,3,I Toggle: <span class="s1">'0'</span> zeros<span class="p">;</span> <span class="s1">'1/2/3'</span> cpus or numa node views<span class="p">;</span> <span class="s1">'I'</span> Irix mode
+  f,F,X     Fields: <span class="s1">'f'</span>/<span class="s1">'F'</span> add/remove/order/sort<span class="p">;</span> <span class="s1">'X'</span> increase fixed-width
+
+  L,&amp;,&lt;,&gt; <span class="nb">.</span> Locate: <span class="s1">'L'</span>/<span class="s1">'&amp;'</span> find/again<span class="p">;</span> Move <span class="nb">sort </span>column: <span class="s1">'&lt;'</span>/<span class="s1">'&gt;'</span> left/right
+  R,H,V,J <span class="nb">.</span> Toggle: <span class="s1">'R'</span> Sort<span class="p">;</span> <span class="s1">'H'</span> Threads<span class="p">;</span> <span class="s1">'V'</span> Forest view<span class="p">;</span> <span class="s1">'J'</span> Num justify
+  c,i,S,j <span class="nb">.</span> Toggle: <span class="s1">'c'</span> Cmd name/line<span class="p">;</span> <span class="s1">'i'</span> Idle<span class="p">;</span> <span class="s1">'S'</span> Time<span class="p">;</span> <span class="s1">'j'</span> Str justify
+  x,y     <span class="nb">.</span> Toggle highlights: <span class="s1">'x'</span> <span class="nb">sort </span>field<span class="p">;</span> <span class="s1">'y'</span> running tasks
+  z,b     <span class="nb">.</span> Toggle: <span class="s1">'z'</span> color/mono<span class="p">;</span> <span class="s1">'b'</span> bold/reverse <span class="o">(</span>only <span class="k">if</span> <span class="s1">'x'</span> or <span class="s1">'y'</span><span class="o">)</span>
+  u,U,o,O <span class="nb">.</span> Filter by: <span class="s1">'u'</span>/<span class="s1">'U'</span> effective/any user<span class="p">;</span> <span class="s1">'o'</span>/<span class="s1">'O'</span> other criteria
+  n,#,^O  <span class="nb">.</span> Set: <span class="s1">'n'</span>/<span class="s1">'#'</span> max tasks displayed<span class="p">;</span> Show: Ctrl+<span class="s1">'O'</span> other filter<span class="o">(</span>s<span class="o">)</span>
+  C,...   <span class="nb">.</span> Toggle scroll coordinates msg <span class="k">for</span>: up,down,left,right,home,end
+
+  k,r       Manipulate tasks: <span class="s1">'k'</span> <span class="nb">kill</span><span class="p">;</span> <span class="s1">'r'</span> renice
+  d or s    Set update interval
+  W,Y       Write configuration file <span class="s1">'W'</span><span class="p">;</span> Inspect other output <span class="s1">'Y'</span>
+  q         Quit
+          <span class="o">(</span> commands shown with <span class="s1">'.'</span> require a visible task display window <span class="o">)</span>
+Press <span class="s1">'h'</span> or <span class="s1">'?'</span> <span class="k">for </span><span class="nb">help </span>with Windows,
+Type <span class="s1">'q'</span> or &lt;Esc&gt; to <span class="k">continue</span>
+</code></pre></div></div>
+
+<p>常用可以使用<code class="highlighter-rouge">1</code>查看CPU信息。</p>
+
+<h3 id="sysctl--systemctl">sysctl &amp; systemctl</h3>
+
+<p>sysctl用于运行时配置内核参数，这些参数位于/proc/sys目录下。sysctl配置与显示在/proc/sys目录中的内核参数．可以用sysctl来设置或重新设置联网功能，如IP转发、IP碎片去除以及源路由检查等。用户只需要编辑/etc/sysctl.conf文件，即可手工或自动执行由sysctl控制的功能。</p>
+
+<p>systemctl用于管理系统服务，systemd(system dameon),是相对于service和chkconfig的新命令.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">daemon命令</th>
+      <th style="text-align: center">systemctl命令</th>
+      <th style="text-align: center">说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">service [服务] start</td>
+      <td style="text-align: center">systemctl start [unit type]</td>
+      <td style="text-align: center">启动服务</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">service [服务] stop</td>
+      <td style="text-align: center">systemctl stop [unit type]</td>
+      <td style="text-align: center">停止服务</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">service [服务] restart</td>
+      <td style="text-align: center">systemctl restart [unit type]</td>
+      <td style="text-align: center">重启服务</td>
+    </tr>
+  </tbody>
+</table>
+
+<table>
+  <thead>
+    <tr>
+      <th style="text-align: center">daemon命令</th>
+      <th style="text-align: center">systemctl命令</th>
+      <th style="text-align: center">说明</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: center">chkconfig [服务] on</td>
+      <td style="text-align: center">systemctl enable [unit type]</td>
+      <td style="text-align: center">设置服务开机启动</td>
+    </tr>
+    <tr>
+      <td style="text-align: center">chkconfig [服务] off</td>
+      <td style="text-align: center">systemctl disable [unit type]</td>
+      <td style="text-align: center">设备服务禁止开机启动</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span>fwang12@fwang-dev1-3474144 ~]<span class="nv">$ </span>sysctl <span class="nt">-h</span>
+
+Usage:
+ sysctl <span class="o">[</span>options] <span class="o">[</span>variable[<span class="o">=</span>value] ...]
+
+Options:
+  <span class="nt">-a</span>, <span class="nt">--all</span>            display all variables
+  <span class="nt">-A</span>                   <span class="nb">alias </span>of <span class="nt">-a</span>
+  <span class="nt">-X</span>                   <span class="nb">alias </span>of <span class="nt">-a</span>
+      <span class="nt">--deprecated</span>     include deprecated parameters to listing
+  <span class="nt">-b</span>, <span class="nt">--binary</span>         print value without new line
+  <span class="nt">-e</span>, <span class="nt">--ignore</span>         ignore unknown variables errors
+  <span class="nt">-N</span>, <span class="nt">--names</span>          print variable names without values
+  <span class="nt">-n</span>, <span class="nt">--values</span>         print only values of a variables
+  <span class="nt">-p</span>, <span class="nt">--load</span><span class="o">[=</span>&lt;file&gt;]  <span class="nb">read </span>values from file
+  <span class="nt">-f</span>                   <span class="nb">alias </span>of <span class="nt">-p</span>
+      <span class="nt">--system</span>         <span class="nb">read </span>values from all system directories
+  <span class="nt">-r</span>, <span class="nt">--pattern</span> &lt;expression&gt;
+                       <span class="k">select </span>setting that match expression
+  <span class="nt">-q</span>, <span class="nt">--quiet</span>          <span class="k">do </span>not <span class="nb">echo </span>variable <span class="nb">set</span>
+  <span class="nt">-w</span>, <span class="nt">--write</span>          <span class="nb">enable </span>writing a value to variable
+  <span class="nt">-o</span>                   does nothing
+  <span class="nt">-x</span>                   does nothing
+  <span class="nt">-d</span>                   <span class="nb">alias </span>of <span class="nt">-h</span>
+
+ <span class="nt">-h</span>, <span class="nt">--help</span>     display this <span class="nb">help </span>and <span class="nb">exit</span>
+ <span class="nt">-V</span>, <span class="nt">--version</span>  output version information and <span class="nb">exit</span>
+</code></pre></div></div>
+
+<p>常用的几个， <code class="highlighter-rouge">sysctl -w</code>可以直接写入一个值到sys内核参数中。</p>
+
+<p>Sysctl -p 可以立即读取/etc/sysctl.conf中的参数并生效。</p>
+
+<p>sysctl -a可以列出所有的内核参数。</p>
+
+<h3 id="to-be-continued">To Be Continued</h3>
+
+<h3 id="references">References</h3>
+
+<p><a href="https://www.cnblogs.com/leezhxing/p/5329786.html">ss与 Recv-Q Send-Q</a></p>
+
+<p><a href="https://blog.csdn.net/yjclsx/article/details/81508455">linux Top Usage</a></p>
+:ET

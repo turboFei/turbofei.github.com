@@ -1,0 +1,71 @@
+I"�
+<p>目录</p>
+<ul id="markdown-toc">
+  <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
+  <li><a href="#关于bucket-table" id="markdown-toc-关于bucket-table">关于Bucket Table</a>    <ul>
+      <li><a href="#创建bucket-表" id="markdown-toc-创建bucket-表">创建bucket 表</a></li>
+      <li><a href="#bucket表参数" id="markdown-toc-bucket表参数">Bucket表参数</a></li>
+      <li><a href="#insert-into-bucket-table" id="markdown-toc-insert-into-bucket-table">Insert into bucket table</a></li>
+    </ul>
+  </li>
+  <li><a href="#问题分析" id="markdown-toc-问题分析">问题分析</a></li>
+</ul>
+<p>记一次与bucket table相关的小文件问题</p>
+
+<h3 id="前言">前言</h3>
+
+<p>最近遇到了一次跟Spark bucket table相关的小文件问题。</p>
+
+<p>场景如下:</p>
+
+<p>存在一张bucket table, bucket column 是 c1, bucket数量是1000，用户在对这张bucket 表进行insert overwrite的时候，已经将spark.sql.shuffle.partitions 设置成了1000，而且对bucket column那列进行了distribute by 操作，理想情况下，这次overwrite操作将生成1000个小文件，但是出人意料的是，这次操作生成了 1000*1000=100万个小文件!!!</p>
+
+<p>这么多小文件必定需要很多次create 请求和rename请求，因此触发了Hadoop集群报警机制。而且长此以往也会大大增大namenode 的压力。</p>
+
+<h3 id="关于bucket-table">关于Bucket Table</h3>
+
+<p>Spark和Hive中都有bucket table，但是其格式不尽相同。本文不对此进行赘述，关于内容是关于Spark的bucket表。</p>
+
+<p>Bucket表的作用相当于一种数据预处理，如果两个bucket 表的bucket数量相同，且对两个表的bucket key进行join，那个可以避免shuffle 操作，需要数据管理者进行一定的设计。</p>
+
+<h4 id="创建bucket-表">创建bucket 表</h4>
+
+<p>语句格式:</p>
+
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TABLE</span> <span class="p">[</span><span class="n">IF</span> <span class="k">NOT</span> <span class="k">EXISTS</span><span class="p">]</span> <span class="p">[</span><span class="n">db_name</span><span class="p">.]</span><span class="k">table_name</span>
+  <span class="p">[(</span><span class="n">col_name1</span> <span class="n">col_type1</span> <span class="p">[</span><span class="k">COMMENT</span> <span class="n">col_comment1</span><span class="p">],</span> <span class="p">...)]</span>
+  <span class="k">USING</span> <span class="n">data_source</span>
+  <span class="p">[</span><span class="k">OPTIONS</span> <span class="p">(</span><span class="n">key1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">key2</span><span class="o">=</span><span class="n">val2</span><span class="p">,</span> <span class="p">...)]</span>
+  <span class="p">[</span><span class="n">PARTITIONED</span> <span class="k">BY</span> <span class="p">(</span><span class="n">col_name1</span><span class="p">,</span> <span class="n">col_name2</span><span class="p">,</span> <span class="p">...)]</span>
+  <span class="p">[</span><span class="n">CLUSTERED</span> <span class="k">BY</span> <span class="p">(</span><span class="n">col_name3</span><span class="p">,</span> <span class="n">col_name4</span><span class="p">,</span> <span class="p">...)</span> <span class="n">SORTED</span> <span class="k">BY</span> <span class="p">(</span><span class="n">col_name1</span> <span class="k">ASC</span><span class="p">,</span> <span class="n">col_name2</span> <span class="k">DESC</span><span class="p">)</span> <span class="k">INTO</span> <span class="n">num_buckets</span> <span class="n">BUCKETS</span><span class="p">]</span>
+  <span class="p">[</span><span class="k">LOCATION</span> <span class="n">path</span><span class="p">]</span>
+  <span class="p">[</span><span class="k">COMMENT</span> <span class="n">table_comment</span><span class="p">]</span>
+  <span class="p">[</span><span class="n">TBLPROPERTIES</span> <span class="p">(</span><span class="n">key1</span><span class="o">=</span><span class="n">val1</span><span class="p">,</span> <span class="n">key2</span><span class="o">=</span><span class="n">val2</span><span class="p">,</span> <span class="p">...)]</span>
+  <span class="p">[</span><span class="k">AS</span> <span class="n">select_statement</span><span class="p">]</span>
+</code></pre></div></div>
+
+<p>PS: 创建bucket表时候用到的<code class="highlighter-rouge">clustered by (key)</code> 和 <code class="highlighter-rouge">sorted by (key)</code>，和在select 数据时候用的<code class="highlighter-rouge">cluster by key</code> 和<code class="highlighter-rouge">sort by key</code> 很相似，但是用法是不同的。</p>
+
+<p>另外在select 时候有<code class="highlighter-rouge">distribute by</code> 和 <code class="highlighter-rouge">cluster by</code>两种语法，<code class="highlighter-rouge">cluster by key</code> = <code class="highlighter-rouge">distribute by key sort by key</code>. <code class="highlighter-rouge">distribute by key</code> = <code class="highlighter-rouge">hash shuffle by key</code>.</p>
+
+<h4 id="bucket表参数">Bucket表参数</h4>
+
+<p>Spark中有两个bucket表相关参数：</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>spark.sql.sources.bucketing.enabled  是否将bucekt表看成是bucekt表
+spark.sql.sources.bucketing.maxBuckets 允许的最大bucekt 数量，默认是100000
+</code></pre></div></div>
+
+<p>关于第一个参数，作用是否将bucket表看成是bucekt表。</p>
+
+<p>Spark针对bucket表读取的时候，会对每一个bucket分配一个task来读取，因为如果进行bucket join就不能再对这个bucket的数据进行拆分。但是有些时候，我们不是读取这个bucket表进行join，比如是简单的ETL，而此时map阶段会针对每个bucket分配一个mapTask，而如果这个bucket数据量很大，就会很缓慢。而如果此时，我们把spark.sql.sources.bucketing.enabled 设为false，那么就相当于一个普通表，map端可能会针对这个bucket的数据进行split，从而多分配一些task，加快速度。</p>
+
+<h4 id="insert-into-bucket-table">Insert into bucket table</h4>
+
+<p>Insert into bucket table的时候，会加一个针对bucket column的hashPartitioning 函数。因此如果一个task中的数据在insert into这个bucket table的时候，没有提前针对这个bucket column 进行过基于bucket number  的hash(可以将spark.sql.shuffle.partitions 设置为bucket number，然后进行distribute/cluster by),那么每个task 将会生成 bucket number个文件。</p>
+
+<h3 id="问题分析">问题分析</h3>
+
+<p><img src="" alt="" /></p>
+
+:ET

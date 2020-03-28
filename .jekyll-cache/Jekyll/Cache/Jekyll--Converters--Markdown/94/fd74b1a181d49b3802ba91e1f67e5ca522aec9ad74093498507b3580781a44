@@ -1,0 +1,134 @@
+I"&
+<p>目录</p>
+<ul id="markdown-toc">
+  <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
+  <li><a href="#已废弃参数" id="markdown-toc-已废弃参数">已废弃参数</a></li>
+  <li><a href="#misc" id="markdown-toc-misc">Misc</a></li>
+  <li><a href="#dynamic-allocation" id="markdown-toc-dynamic-allocation">Dynamic Allocation</a></li>
+  <li><a href="#network" id="markdown-toc-network">Network</a></li>
+  <li><a href="#rpc" id="markdown-toc-rpc">RPC</a></li>
+  <li><a href="#shuffle" id="markdown-toc-shuffle">Shuffle</a></li>
+  <li><a href="#sql" id="markdown-toc-sql">SQL</a></li>
+  <li><a href="#storage" id="markdown-toc-storage">Storage</a></li>
+  <li><a href="#task" id="markdown-toc-task">Task</a></li>
+  <li><a href="#worker" id="markdown-toc-worker">Worker</a></li>
+</ul>
+<p>记录Spark中的timeout参数</p>
+
+<h3 id="前言">前言</h3>
+
+<p>Spark中许多timeout参数，本文对core和sql模块的相关参数进行梳理，基于spark-2.3.</p>
+
+<h3 id="已废弃参数">已废弃参数</h3>
+
+<p>spark从1.4开始用rpc取代了akka，所以akka相关的参数被rpc参数取代。详情请看[RPC]部分.</p>
+
+<ul>
+  <li>Spark.akka.askTimeout -&gt; spark.rpc.spark.rpc.askTimeout</li>
+  <li>spark.akka.lookupTimeout -&gt; spark.rpc.lookupTimeout</li>
+</ul>
+
+<h3 id="misc">Misc</h3>
+
+<p>spark.starvation.timeout</p>
+
+<ul>
+  <li>
+    <p>spark.blacklist.timeout</p>
+
+    <blockquote>
+      <p>默认 1h</p>
+
+      <p>一个节点或者executor对整个应用而言被blacklist的时间</p>
+    </blockquote>
+  </li>
+  <li>
+    <p>spark.files.fetchTimeout</p>
+
+    <blockquote>
+      <p>默认60s</p>
+
+      <p>通过调用SparkContex.addFile方法添加文件时的timeout.</p>
+    </blockquote>
+  </li>
+  <li>
+    <p>spark.launcher.childConectionTimeout</p>
+
+    <blockquote>
+      <p>默认10s</p>
+
+      <p>当调用SparkLauncher start()方法时，等待子线程和launcher server通信的timeout.</p>
+    </blockquote>
+  </li>
+  <li>
+    <p>spark.starvation.timeout</p>
+
+    <blockquote>
+      <p>默认15s</p>
+
+      <p>用于在应用初始阶段，以其为时间间隔检查是否task已经启动， 如果没有启动则表示task处于饥饿状态，打出warning通知用户。如果已经task启动， 则退出检查。</p>
+    </blockquote>
+  </li>
+</ul>
+
+<h3 id="dynamic-allocation">Dynamic Allocation</h3>
+
+<ul>
+  <li>
+    <p>spark.dynamicAllocation.cachedExecutorIdleTimeout</p>
+
+    <blockquote>
+
+    </blockquote>
+
+    <p>spark.dynamicAllocation.executorIdleTimeout
+spark.dynamicAllocation.schedulerBacklogTimeout
+spark.dynamicAllocation.shuffleTimeout
+spark.dynamicAllocation.sustainedSchedulerBacklogTimeout</p>
+  </li>
+</ul>
+
+<h3 id="network">Network</h3>
+
+<p>spark.network.auth.rpcTimeout
+spark.network.timeout</p>
+
+<h3 id="rpc">RPC</h3>
+
+<p>spark.rpc.RpcTimeout
+spark.rpc.askTimeout
+spark.rpc.long.timeout
+spark.rpc.lookupTimeout
+spark.rpc.short.timeout</p>
+
+<h3 id="shuffle">Shuffle</h3>
+
+<p>spark.shuffle.io.connectionTimeout
+spark.shuffle.registration.timeout
+spark.shuffle.sasl.timeout</p>
+
+<h3 id="sql">SQL</h3>
+
+<p>spark.sql.broadcastTimeout
+spark.sql.catalyst.plans.logical.EventTimeTimeout
+spark.sql.catalyst.plans.logical.NoTimeout
+spark.sql.catalyst.plans.logical.ProcessingTimeTimeout
+spark.sql.streaming.GroupStateTimeout
+spark.sql.streaming.stopTimeout</p>
+
+<h3 id="storage">Storage</h3>
+
+<p>spark.storage.blockManagerSlaveTimeoutMs
+spark.storage.blockManagerTimeout</p>
+
+<h3 id="task">Task</h3>
+
+<p>spark.task.killTimeout
+spark.task.reaper.killTimeout</p>
+
+<h3 id="worker">Worker</h3>
+
+<p>spark.worker.driverTerminateTimeout
+spark.worker.timeout</p>
+
+:ET

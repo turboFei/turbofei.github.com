@@ -1,0 +1,795 @@
+I"�
+<p>目录</p>
+
+<ul id="markdown-toc">
+  <li><a href="#background" id="markdown-toc-background">Background</a></li>
+  <li><a href="#基本概念" id="markdown-toc-基本概念">基本概念</a>    <ul>
+      <li><a href="#lifecycle" id="markdown-toc-lifecycle">lifecycle</a></li>
+      <li><a href="#phase" id="markdown-toc-phase">phase</a></li>
+      <li><a href="#goal" id="markdown-toc-goal">goal</a></li>
+    </ul>
+  </li>
+  <li><a href="#什么是pom" id="markdown-toc-什么是pom">什么是pom?</a>    <ul>
+      <li><a href="#快速察看" id="markdown-toc-快速察看">快速察看</a></li>
+      <li><a href="#基本内容" id="markdown-toc-基本内容">基本内容：</a></li>
+      <li><a href="#pom关系" id="markdown-toc-pom关系">POM关系</a>        <ul>
+          <li><a href="#依赖" id="markdown-toc-依赖">依赖</a>            <ul>
+              <li><a href="#非开源包处理" id="markdown-toc-非开源包处理">非开源包处理</a></li>
+            </ul>
+          </li>
+          <li><a href="#继承" id="markdown-toc-继承">继承</a></li>
+          <li><a href="#合成" id="markdown-toc-合成">合成</a></li>
+        </ul>
+      </li>
+      <li><a href="#build设置" id="markdown-toc-build设置">build设置</a>        <ul>
+          <li><a href="#resources" id="markdown-toc-resources">resources</a></li>
+          <li><a href="#plugins配置" id="markdown-toc-plugins配置">plugins配置</a></li>
+          <li><a href="#pluginmanagement配置" id="markdown-toc-pluginmanagement配置">pluginManagement配置</a></li>
+          <li><a href="#extensions" id="markdown-toc-extensions">Extensions</a></li>
+          <li><a href="#reporting" id="markdown-toc-reporting">reporting</a></li>
+          <li><a href="#maven-shade-plugin" id="markdown-toc-maven-shade-plugin">Maven-shade-plugin</a></li>
+        </ul>
+      </li>
+      <li><a href="#更多项目信息" id="markdown-toc-更多项目信息">更多项目信息</a>        <ul>
+          <li><a href="#环境设置" id="markdown-toc-环境设置">环境设置</a>            <ul>
+              <li><a href="#issuemanagement" id="markdown-toc-issuemanagement">issueManagement</a></li>
+              <li><a href="#repositories" id="markdown-toc-repositories">Repositories</a></li>
+              <li><a href="#pluginrepositories" id="markdown-toc-pluginrepositories">pluginRepositories</a></li>
+              <li><a href="#distributionmanagement" id="markdown-toc-distributionmanagement">distributionManagement</a></li>
+              <li><a href="#profiles" id="markdown-toc-profiles">profiles</a></li>
+            </ul>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#references" id="markdown-toc-references">References</a></li>
+</ul>
+<h3 id="background">Background</h3>
+
+<p>关于maven的使用</p>
+
+<h3 id="基本概念">基本概念</h3>
+
+<p>lifecycle, phase, goal</p>
+
+<p>以下是参考<a href="http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html">官方文档</a>。</p>
+
+<h4 id="lifecycle">lifecycle</h4>
+
+<p>maven的一个中心概念就是build lifecycle, 也就是说build以及发布一个project的过程是明确定义好的。对于build 一个project的人来说，这意味着只需要了解不多的maven命令就可以编译任何maven项目，而且POM可以保证它得到想要的结果。</p>
+
+<p>有三个内置的build lifecycle: default, clean 和site.</p>
+
+<p>default 发布项目，clean清空编译，site创建site文档.</p>
+
+<h4 id="phase">phase</h4>
+
+<p>一个build lifec是由一系列phase组成，每个phase代表build lifecycle的一个阶段。</p>
+
+<p>例如: default lifecycle由下列phase组成.</p>
+
+<ul>
+  <li>validate: 确定项目是正确的，且需要的information都是available</li>
+  <li>compile: 编译</li>
+  <li>test： 单元测试，不需要打包</li>
+  <li>package: 打包为可发布版本，例如jar</li>
+  <li>verify:  run any checks on results of integration tests to ensure quality criteria are met。应该是确保包可用.</li>
+  <li>install: 在本地库安装，用来作为本地项目的依赖</li>
+  <li>deploy: 编译环境中完成，将包拷贝至远端库，用来分享给其他developers和projects</li>
+</ul>
+
+<p>所以只需要 mvn install 就可以从validate一直执行到install，因此使用mvn命令只需要指定最后一个phase，前面的phase不用指定.</p>
+
+<p>在编译环境中，使用clean 可以清除掉前面编译的classes。 常用下面命令进行打包。</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn clean package
+</code></pre></div></div>
+
+<h4 id="goal">goal</h4>
+
+<p>前面说了lifecycle是由多个phase组成，而每个phase又包含了多个goal。</p>
+
+<p>每个plugin的goal都是一个指定的任务，一个goal可以绑定至0个或者多个goal。如果一个goal没有指定phase，那么可以在build的lifecycle之外进行显示指定.</p>
+
+<p>执行的顺序由调用顺序决定。例如,下面的这个命令, clean和package属于编译phases，而dependency:copy-dependencies是一个goal(属于maven-dependency-plugin)。</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn clean dependency:copy-dependencies package
+</code></pre></div></div>
+
+<p>这条命令clean 会最下执行，也就是说先运行clean lifecycle,然后运行 dependency:copy-dependencies, 最后进行package(包括package之前的phases).</p>
+
+<p>如果一个goal被绑定至多个phase，那么每个phase都会去执行这个goal.</p>
+
+<p>如果一个phase中没有goal，那么那个phase不做任何执行，但如何一个phase有多个goal，则会执行所有的goals。</p>
+
+<p><strong>有一些phase通常不在命令行中被使用</strong></p>
+
+<p>一些带前缀(pre-*， post-*, process-*)的命令通常不被直接使用。</p>
+
+<p>其他文档太长，以后用到再看,<a href="http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html">官方文档</a>。</p>
+
+<h3 id="什么是pom">什么是pom?</h3>
+
+<p>POM(Project Object Model)作为项目对象模型。通过xml表示maven项目，使用pom.xml来实现。主要描述了项目：包括配置文件；开发者需要遵循的规则，缺陷管理系统，组织和licenses，项目的url，项目的依赖性，以及其他所有的项目相关因素。</p>
+
+<h4 id="快速察看">快速察看</h4>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;project&gt;</span>
+  <span class="nt">&lt;modelVersion&gt;</span>4.0.0<span class="nt">&lt;/modelVersion&gt;</span>
+<span class="c">&lt;!--maven2.0必须是这样写，现在是maven2唯一支持的版本--&gt;</span>
+  <span class="c">&lt;!-- 基础设置 --&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>...<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>...<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>...<span class="nt">&lt;/version&gt;</span>
+  <span class="nt">&lt;packaging&gt;</span>...<span class="nt">&lt;/packaging&gt;</span>
+
+  <span class="nt">&lt;name&gt;</span>...<span class="nt">&lt;/name&gt;</span>
+
+  <span class="nt">&lt;url&gt;</span>...<span class="nt">&lt;/url&gt;</span>
+  <span class="nt">&lt;dependencies&gt;</span>...<span class="nt">&lt;/dependencies&gt;</span>
+  <span class="nt">&lt;parent&gt;</span>...<span class="nt">&lt;/parent&gt;</span>
+  <span class="nt">&lt;dependencyManagement&gt;</span>...<span class="nt">&lt;/dependencyManagement&gt;</span>
+  <span class="nt">&lt;modules&gt;</span>...<span class="nt">&lt;/modules&gt;</span>
+  <span class="nt">&lt;properties&gt;</span>...<span class="nt">&lt;/properties&gt;</span>
+
+  <span class="c">&lt;!--构建设置 --&gt;</span>
+  <span class="nt">&lt;build&gt;</span>...<span class="nt">&lt;/build&gt;</span>
+  <span class="nt">&lt;reporting&gt;</span>...<span class="nt">&lt;/reporting&gt;</span>
+
+  <span class="c">&lt;!-- 更多项目信息 --&gt;</span>
+  <span class="nt">&lt;name&gt;</span>...<span class="nt">&lt;/name&gt;</span>
+  <span class="nt">&lt;description&gt;</span>...<span class="nt">&lt;/description&gt;</span>
+  <span class="nt">&lt;url&gt;</span>...<span class="nt">&lt;/url&gt;</span>
+  <span class="nt">&lt;inceptionYear&gt;</span>...<span class="nt">&lt;/inceptionYear&gt;</span>
+  <span class="nt">&lt;licenses&gt;</span>...<span class="nt">&lt;/licenses&gt;</span>
+  <span class="nt">&lt;organization&gt;</span>...<span class="nt">&lt;/organization&gt;</span>
+  <span class="nt">&lt;developers&gt;</span>...<span class="nt">&lt;/developers&gt;</span>
+  <span class="nt">&lt;contributors&gt;</span>...<span class="nt">&lt;/contributors&gt;</span>
+
+  <span class="c">&lt;!-- 环境设置--&gt;</span>
+  <span class="nt">&lt;issueManagement&gt;</span>...<span class="nt">&lt;/issueManagement&gt;</span>
+  <span class="nt">&lt;ciManagement&gt;</span>...<span class="nt">&lt;/ciManagement&gt;</span>
+  <span class="nt">&lt;mailingLists&gt;</span>...<span class="nt">&lt;/mailingLists&gt;</span> 
+  <span class="nt">&lt;scm&gt;</span>...<span class="nt">&lt;/scm&gt;</span>
+  <span class="nt">&lt;prerequisites&gt;</span>...<span class="nt">&lt;/prerequisites&gt;</span>
+  <span class="nt">&lt;repositories&gt;</span>...<span class="nt">&lt;/repositories&gt;</span>
+  <span class="nt">&lt;pluginRepositories&gt;</span>...<span class="nt">&lt;/pluginRepositories&gt;</span>
+  <span class="nt">&lt;distributionManagement&gt;</span>...<span class="nt">&lt;/distributionManagement&gt;</span>
+  <span class="nt">&lt;profiles&gt;</span>...<span class="nt">&lt;/profiles&gt;</span>
+<span class="nt">&lt;/project&gt;</span>
+</code></pre></div></div>
+
+<h4 id="基本内容">基本内容：</h4>
+
+<p>POM包括了所有的项目信息</p>
+
+<p>groupId:项目或者组织的唯一标志，并且配置时生成路径也是由此生成，如org.myproject.mojo生成的相对路径为：/org/myproject/mojo</p>
+
+<p>artifactId:项目的通用名称</p>
+
+<p>version:项目的版本</p>
+
+<p>packaging:打包机制，如pom,jar,maven-plugin,ejb,war,ear,rar,par</p>
+
+<p>name:用户描述项目的名称，无关紧要的东西，可选</p>
+
+<p>url:应该是只是写明开发团队的网站，无关紧要，可选</p>
+
+<p>classifer:分类</p>
+
+<p>其中groupId,artifactId,version,packaging这四项组成了项目的唯一坐标。一般情况下，前面三项(<strong>groupId:artifactId:version</strong>)就可以组成项目的唯一坐标了。</p>
+
+<h4 id="pom关系">POM关系</h4>
+
+<p>POM关系：主要为依赖，继承，合成</p>
+
+<h5 id="依赖">依赖</h5>
+
+<p>依赖不仅是dependencies的依赖，也包括plugins的依赖等等.</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;dependencies&gt;</span>
+    <span class="nt">&lt;dependency&gt;</span>
+      <span class="nt">&lt;groupId&gt;</span>junit<span class="nt">&lt;/groupId&gt;</span>
+      <span class="nt">&lt;artifactId&gt;</span>junit<span class="nt">&lt;/artifactId&gt;</span>
+      <span class="nt">&lt;version&gt;</span>4.0<span class="nt">&lt;/version&gt;</span>
+      <span class="nt">&lt;type&gt;</span>jar<span class="nt">&lt;/type&gt;</span>
+      <span class="nt">&lt;scope&gt;</span>test<span class="nt">&lt;/scope&gt;</span>
+      <span class="nt">&lt;optional&gt;</span>true<span class="nt">&lt;/optional&gt;</span>
+    <span class="nt">&lt;/dependency&gt;</span>
+    <span class="nt">&lt;dependency&gt;</span>
+        <span class="nt">&lt;groupId&gt;</span>com.alibaba.china.shared<span class="nt">&lt;/groupId&gt;</span>
+        <span class="nt">&lt;artifactId&gt;</span>alibaba.apollo.webx<span class="nt">&lt;/artifactId&gt;</span>
+        <span class="nt">&lt;version&gt;</span>2.5.0<span class="nt">&lt;/version&gt;</span>
+				<span class="c">&lt;!-- 这里用于排除掉一些依赖jar，避免一些jar包冲突 --&gt;</span>
+        <span class="nt">&lt;exclusions&gt;</span>
+          <span class="nt">&lt;exclusion&gt;</span>
+            <span class="nt">&lt;artifactId&gt;</span>org.slf4j.slf4j-api<span class="nt">&lt;/artifactId&gt;</span>
+            <span class="nt">&lt;groupId&gt;</span>com.alibaba.external<span class="nt">&lt;/groupId&gt;</span>
+          <span class="nt">&lt;/exclusion&gt;</span>
+          ....
+        <span class="nt">&lt;/exclusions&gt;</span>
+......
+<span class="nt">&lt;/dependencies&gt;</span>
+</code></pre></div></div>
+
+<p>其中groupId, artifactId, version这三个组合标示依赖的具体工程，而且 这个依赖工程必需是maven中心包管理范围内的，如果碰上非开源包，maven支持不了这个包，那么则有有三种 方法处理：</p>
+
+<h6 id="非开源包处理">非开源包处理</h6>
+
+<p>1.本地安装这个插件install plugin</p>
+
+<p>例如：mvn install:intall-file -Dfile=non-maven-proj.jar -DgroupId=som.group -DartifactId=non-maven-proj -Dversion=1</p>
+
+<p>2.创建自己的repositories并且部署这个包，使用类似上面的deploy:deploy-file命令，</p>
+
+<p>3.设置scope为system,并且指定系统路径。</p>
+
+<p>dependency里属性介绍：</p>
+
+<p><strong>type</strong>：默认为jar类型，常用的类型有：jar,ejb-client,test-jar…,可设置plugins中的extensions值为true后在增加 新的类型，</p>
+
+<p><strong>scope</strong>：是用来指定当前包的依赖范围</p>
+
+<ul>
+  <li>compile 依赖打入包</li>
+  <li>provided 次之，除了最后不打入包</li>
+  <li>runtime，只在运行和测试时使用这些依赖</li>
+  <li>test 只在测试时使用这些依赖</li>
+  <li>system 手动指定的本地依赖</li>
+</ul>
+
+<h5 id="继承">继承</h5>
+
+<p>子模块的pom继承父模块的POM.</p>
+
+<p>如果一个工程是parent或者aggregation（即mutil-module的）的，那么必须在packing赋值为pom,child工程从<strong>parent继承</strong>的包括：dependencies,developers,contributors,plugin lists,reports lists,plugin execution with matching ids,plugin configuration</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;parent&gt;</span> 
+    <span class="nt">&lt;groupId&gt;</span>org.codehaus.mojo<span class="nt">&lt;/groupId&gt;</span> 
+    <span class="nt">&lt;artifactId&gt;</span>my-parent<span class="nt">&lt;/artifactId&gt;</span> 
+    <span class="nt">&lt;version&gt;</span>2.0<span class="nt">&lt;/version&gt;</span> 
+    <span class="nt">&lt;relativePath&gt;</span>../my-parent<span class="nt">&lt;/relativePath&gt;</span> 
+  <span class="nt">&lt;/parent&gt;</span>
+</code></pre></div></div>
+
+<p>个人认为继承还包括一些依赖被继承。</p>
+
+<p><strong>optional</strong>:设置指依赖是否可选，默认为false,即子项目默认都<strong>继承</strong>，为true,则子项目必需显示的引入，与dependencyManagement里定义的依赖类似 。</p>
+
+<p><strong>exclusions</strong>：如果X需要A,A包含B依赖，那么X可以声明不要B依赖，只要在exclusions中声明exclusion.</p>
+
+<p><strong>exclusion</strong>:是将B从依赖树中删除，如上配置，alibaba.apollo.webx不想使用com.alibaba.external  ,但是alibaba.apollo.webx是集成了com.alibaba.external,r所以就需要排除掉.</p>
+
+<p>relativePath是可选的,maven会首先搜索这个地址,在搜索本地远程repositories之前.</p>
+
+<p><strong>dependencyManagement</strong>：是用于帮助管理chidren的dependencies的。例如如果parent使用dependencyManagement定义了一个dependencyon junit:junit4.0,那么 它的children就可以只引用 groupId和artifactId,而version就可以通过parent来设置，这样的好处就是可以集中管理 依赖的详情</p>
+
+<h5 id="合成">合成</h5>
+
+<p>对于多模块的project,outer-module没有必需考虑inner-module的dependencies,当列出modules的时候，modules的顺序是不重要的，因为maven会自动根据依赖关系来拓扑排序，</p>
+
+<p>modules例子如下 ：</p>
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;module&gt;</span>my-project<span class="nt">&lt;/module&gt;</span>
+<span class="nt">&lt;module&gt;</span>other-project<span class="nt">&lt;/module&gt;</span>
+</code></pre></div></div>
+
+<p><strong>properties</strong>:是为pom定义一些常量，在pom中的其它地方可以直接引用。</p>
+
+<p>定义方式如下：</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;properties&gt;</span>
+      <span class="nt">&lt;file.encoding&gt;</span>UTF-8<span class="nt">&lt;/file_encoding&gt;</span>
+      <span class="nt">&lt;java.source.version&gt;</span>1.5<span class="nt">&lt;/java_source_version&gt;</span>
+      <span class="nt">&lt;java.target.version&gt;</span>1.5<span class="nt">&lt;/java_target_version&gt;</span>
+<span class="nt">&lt;/properties&gt;</span>
+</code></pre></div></div>
+<p>使用方式 如下 ：</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>${file.encoding}
+</code></pre></div></div>
+
+<p>还可以使用project.xx引用pom里定义的其它属性：如$(project.version}</p>
+
+<h4 id="build设置">build设置</h4>
+
+<p><strong>defaultGoal</strong>:默认的目标，必须跟命令行上的参数相同，如：jar:jar,或者与phase相同,例如install</p>
+
+<p><strong>directory</strong>:指定build target目标的目录，默认为$(basedir}/target,即项目根目录下的target</p>
+
+<p><strong>finalName</strong>:指定去掉后缀的工程名字，例如：默认为${artifactId}-${version}</p>
+
+<p><strong>filters</strong>:用于定义指定filter属性的位置，例如filter元素赋值filters/filter1.properties,那么这个文件里面就可以定义name=value对，这个name=value对的值就可以在工程pom中通过${name}引用，默认的filter目录是${basedir}/src/main/fiters/</p>
+
+<h5 id="resources">resources</h5>
+
+<p>构建Maven项目的时候，如果没有进行特殊的配置，Maven会按照标准的目录结构查找和处理各种类型文件。</p>
+
+<blockquote>
+  <p><strong>src/main/java和src/test/java</strong></p>
+
+  <p>这两个目录中的所有*.java文件会分别在comile和test-comiple阶段被编译，编译结果分别放到了target/classes和targe/test-classes目录中，但是这两个目录中的其他文件都会被忽略掉。</p>
+
+  <p><strong>src/main/resouces和src/test/resources</strong></p>
+
+  <p>这两个目录中的文件也会分别被复制到target/classes和target/test-classes目录中。</p>
+
+  <p><strong>target/classes</strong></p>
+
+  <p>打包插件默认会把这个目录中的所有内容打入到jar包或者war包中。</p>
+
+  <p>maven项目的结构一般如下:</p>
+
+  <ul>
+    <li>src
+      <ul>
+        <li>main
+          <ul>
+            <li><strong>java</strong>         源文件</li>
+            <li><strong>resources</strong>    资源文件</li>
+            <li>filters   资源过滤文件</li>
+            <li>config   配置文件</li>
+            <li>scripts   脚本文件</li>
+            <li>webapp   web应用文件</li>
+          </ul>
+        </li>
+        <li>test
+          <ul>
+            <li><strong>java</strong>    测试源文件</li>
+            <li>resources    测试资源文件</li>
+            <li>filters    测试资源过滤文件</li>
+          </ul>
+        </li>
+        <li>it       集成测试</li>
+        <li>assembly    assembly descriptors</li>
+        <li>site    Site</li>
+      </ul>
+    </li>
+    <li>target
+      <ul>
+        <li>generated-sources</li>
+        <li>classes</li>
+        <li>generated-test-sources</li>
+        <li>test-classes</li>
+        <li>xxx.jar</li>
+      </ul>
+    </li>
+    <li><strong>pom.xml</strong></li>
+    <li>LICENSE.txt</li>
+    <li>NOTICE.txt</li>
+    <li>README.txt</li>
+  </ul>
+</blockquote>
+
+<p><code class="highlighter-rouge">resources</code>标签用于描述工程中资源的位置.</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>			<span class="nt">&lt;resource&gt;</span> 
+        <span class="nt">&lt;targetPath&gt;</span>META-INF/plexus<span class="nt">&lt;/targetPath&gt;</span> 
+        <span class="nt">&lt;filtering&gt;</span>false<span class="nt">&lt;/filtering&gt;</span> 
+        <span class="nt">&lt;directory&gt;</span>${basedir}/src/main/plexus<span class="nt">&lt;/directory&gt;</span> 
+        <span class="nt">&lt;includes&gt;</span> 
+          <span class="nt">&lt;include&gt;</span>configuration.xml<span class="nt">&lt;/include&gt;</span> 
+        <span class="nt">&lt;/includes&gt;</span> 
+        <span class="nt">&lt;excludes&gt;</span> 
+          <span class="nt">&lt;exclude&gt;</span>**/*.properties<span class="nt">&lt;/exclude&gt;</span> 
+        <span class="nt">&lt;/excludes&gt;</span> 
+      <span class="nt">&lt;/resource&gt;</span>
+</code></pre></div></div>
+
+<p><strong>targetPath</strong>:指定build资源到哪个目录，默认是base directory</p>
+
+<p><strong>filtering</strong>:指定是否将filter文件(即上面说的filters里定义的*.property文件)的变量值在这个resource文件有效,例如上面就指定那些变量值在configuration文件无效。</p>
+
+<p><strong>directory</strong>:指定属性文件的目录，build的过程需要找到它，并且将其放到targetPath下，默认的directory是${basedir}/src/main/resources</p>
+
+<p><strong>includes</strong>:指定包含文件的patterns,符合样式并且在directory目录下的文件将会包含进project的资源文件。</p>
+
+<p><strong>excludes</strong>:指定不包含在内的patterns,如果inclues与excludes有冲突，那么excludes胜利，那些符合冲突的样式的文件是不会包含进来的。</p>
+
+<p><strong>testResources</strong>:这个模块包含测试资源元素，其内容定义与resources类似，不同的一点是默认的测试资源路径是${basedir}/src/test/resources,测试资源是不部署的。</p>
+
+<h5 id="plugins配置">plugins配置</h5>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>			<span class="nt">&lt;plugin&gt;</span> 
+        <span class="nt">&lt;groupId&gt;</span>org.apache.maven.plugins<span class="nt">&lt;/groupId&gt;</span> 
+        <span class="nt">&lt;artifactId&gt;</span>maven-jar-plugin<span class="nt">&lt;/artifactId&gt;</span> 
+        <span class="nt">&lt;version&gt;</span>2.0<span class="nt">&lt;/version&gt;</span> 
+        <span class="nt">&lt;extensions&gt;</span>false<span class="nt">&lt;/extensions&gt;</span> 
+        <span class="nt">&lt;inherited&gt;</span>true<span class="nt">&lt;/inherited&gt;</span> 
+        <span class="nt">&lt;configuration&gt;</span> 
+          <span class="nt">&lt;classifier&gt;</span>test<span class="nt">&lt;/classifier&gt;</span> 
+        <span class="nt">&lt;/configuration&gt;</span> 
+        <span class="nt">&lt;dependencies&gt;</span>...<span class="nt">&lt;/dependencies&gt;</span> 
+        <span class="nt">&lt;executions&gt;</span>...<span class="nt">&lt;/executions&gt;</span> 
+      <span class="nt">&lt;/plugin&gt;</span>
+</code></pre></div></div>
+<p><strong>extensions</strong>:true or false, 决定是否要load这个plugin的extensions，默认为true.</p>
+
+<p><strong>inherited</strong>:是否让子pom继承，ture or false 默认为true.</p>
+
+<p><strong>configuration</strong>:通常用于私有不开源的plugin,不能够详细了解plugin的内部工作原理，但使plugin满足的properties</p>
+
+<p><strong>dependencies</strong>:与pom基础的dependencies的结构和功能都相同，只是plugin的dependencies用于plugin,而pom的denpendencies用于项目本身。在plugin的dependencies主要用于改变plugin原来的dependencies，例如排除一些用不到的dependency或者修改dependency的版本等，详细请看pom的denpendencies.</p>
+
+<p><strong>executions</strong>:plugin也有很多个目标，每个目标具有不同的配置，executions就是设定plugin的目标，</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>					<span class="nt">&lt;execution&gt;</span> 
+            <span class="nt">&lt;id&gt;</span>echodir<span class="nt">&lt;/id&gt;</span> 
+            <span class="nt">&lt;goals&gt;</span> 
+              <span class="nt">&lt;goal&gt;</span>run<span class="nt">&lt;/goal&gt;</span> 
+            <span class="nt">&lt;/goals&gt;</span> 
+            <span class="nt">&lt;phase&gt;</span>verify<span class="nt">&lt;/phase&gt;</span> 
+            <span class="nt">&lt;inherited&gt;</span>false<span class="nt">&lt;/inherited&gt;</span> 
+            <span class="nt">&lt;configuration&gt;</span> 
+              <span class="nt">&lt;tasks&gt;</span> 
+                <span class="nt">&lt;echo&gt;</span>Build Dir: ${project.build.directory}<span class="nt">&lt;/echo&gt;</span> 
+              <span class="nt">&lt;/tasks&gt;</span> 
+            <span class="nt">&lt;/configuration&gt;</span> 
+          <span class="nt">&lt;/execution&gt;</span> 
+</code></pre></div></div>
+<p><strong>id</strong>:标识符</p>
+
+<p><strong>goals</strong>:里面列出一系列的goals元素，例如上面的run goal</p>
+
+<p><strong>phase</strong>:声明goals执行的时期，例如：verify</p>
+
+<p><strong>inherited</strong>:是否传递execution到子pom里。</p>
+
+<p><strong>configuration</strong>:设置execution下列表的goals的设置，而不是plugin所有的goals的设置</p>
+
+<h5 id="pluginmanagement配置">pluginManagement配置</h5>
+
+<p>pluginManagement的作用类似于denpendencyManagement,只是denpendencyManagement是用于管理项目jar包依赖，pluginManagement是用于管理plugin。与pom build里的plugins区别是，<strong>这里的plugin是列出来，然后让子pom来决定是否引用。</strong></p>
+
+<p>例如：</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>	<span class="nt">&lt;pluginManagement&gt;</span> 
+     <span class="nt">&lt;plugins&gt;</span> 
+        <span class="nt">&lt;plugin&gt;</span> 
+          <span class="nt">&lt;groupId&gt;</span>org.apache.maven.plugins<span class="nt">&lt;/groupId&gt;</span> 
+          <span class="nt">&lt;artifactId&gt;</span>maven-jar-plugin<span class="nt">&lt;/artifactId&gt;</span> 
+          <span class="nt">&lt;version&gt;</span>2.2<span class="nt">&lt;/version&gt;</span> 
+          <span class="nt">&lt;executions&gt;</span> 
+            <span class="nt">&lt;execution&gt;</span> 
+              <span class="nt">&lt;id&gt;</span>pre-process-classes<span class="nt">&lt;/id&gt;</span> 
+              <span class="nt">&lt;phase&gt;</span>compile<span class="nt">&lt;/phase&gt;</span> 
+              <span class="nt">&lt;goals&gt;</span> 
+                <span class="nt">&lt;goal&gt;</span>jar<span class="nt">&lt;/goal&gt;</span> 
+              <span class="nt">&lt;/goals&gt;</span> 
+              <span class="nt">&lt;configuration&gt;</span> 
+                <span class="nt">&lt;classifier&gt;</span>pre-process<span class="nt">&lt;/classifier&gt;</span> 
+              <span class="nt">&lt;/configuration&gt;</span> 
+            <span class="nt">&lt;/execution&gt;</span> 
+          <span class="nt">&lt;/executions&gt;</span> 
+        <span class="nt">&lt;/plugin&gt;</span> 
+      <span class="nt">&lt;/plugins&gt;</span> 
+    <span class="nt">&lt;/pluginManagement&gt;</span> 
+</code></pre></div></div>
+<p>子pom引用方法： 
+在pom的build里的plugins引用： </p>
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="nt">&lt;plugins&gt;</span> 
+      <span class="nt">&lt;plugin&gt;</span> 
+        <span class="nt">&lt;groupId&gt;</span>org.apache.maven.plugins<span class="nt">&lt;/groupId&gt;</span> 
+        <span class="nt">&lt;artifactId&gt;</span>maven-jar-plugin<span class="nt">&lt;/artifactId&gt;</span> 
+      <span class="nt">&lt;/plugin&gt;</span> 
+    <span class="nt">&lt;/plugins&gt;</span>
+</code></pre></div></div>
+
+<p>build里的directories:</p>
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>		<span class="nt">&lt;sourceDirectory&gt;</span>${basedir}/src/main/java<span class="nt">&lt;/sourceDirectory&gt;</span> 
+    <span class="nt">&lt;scriptSourceDirectory&gt;</span>${basedir}/src/main/scripts<span class="nt">&lt;/scriptSourceDirectory&gt;</span> 
+    <span class="nt">&lt;testSourceDirectory&gt;</span>${basedir}/src/test/java<span class="nt">&lt;/testSourceDirectory&gt;</span> 
+    <span class="nt">&lt;outputDirectory&gt;</span>${basedir}/target/classes<span class="nt">&lt;/outputDirectory&gt;</span> 
+    <span class="nt">&lt;testOutputDirectory&gt;</span>${basedir}/target/test-classes<span class="nt">&lt;/testOutputDirectory&gt;</span>
+</code></pre></div></div>
+<p>这几个元素只在parent build element里面定义，他们设置多种路径结构，他们并不在profile里，所以不能通过profile来修改</p>
+
+<h5 id="extensions">Extensions</h5>
+
+<p>它们是一系列build过程中要使用的产品，他们会包含在running bulid‘s classpath里面。他们可以开启extensions，也可以通过提供条件来激活plugins。简单来讲，<strong>extensions是在build过程被激活的产品</strong> .</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="nt">&lt;extensions&gt;</span> 
+      <span class="nt">&lt;extension&gt;</span> 
+        <span class="nt">&lt;groupId&gt;</span>org.apache.maven.wagon<span class="nt">&lt;/groupId&gt;</span> 
+        <span class="nt">&lt;artifactId&gt;</span>wagon-ftp<span class="nt">&lt;/artifactId&gt;</span> 
+        <span class="nt">&lt;version&gt;</span>1.0-alpha-3<span class="nt">&lt;/version&gt;</span> 
+      <span class="nt">&lt;/extension&gt;</span> 
+    <span class="nt">&lt;/extensions&gt;</span> 
+</code></pre></div></div>
+
+<h5 id="reporting">reporting</h5>
+
+<p>reporting包含site生成阶段的一些元素，某些maven plugin可以生成reports并且在reporting下配置。例如javadoc,maven site等，在reporting下配置的report plugin的方法与build几乎一样，最不同的是build的plugin goals在executions下设置，而reporting的configures goals在reporttest。</p>
+
+<p><strong>excludeDefaults</strong>:是否排除site generator默认产生的reports</p>
+
+<p><strong>outputDirectory</strong>，默认的dir变成:${basedir}/target/site</p>
+
+<p><strong>reportSets</strong>:设置execution goals,相当于build里面的executions,不同的是不能够bind a report to another phase,只能够是site</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;reporting&gt;</span> 
+    <span class="nt">&lt;plugins&gt;</span> 
+      <span class="nt">&lt;plugin&gt;</span> 
+        ... 
+        <span class="nt">&lt;reportSets&gt;</span> 
+          <span class="nt">&lt;reportSet&gt;</span> 
+            <span class="nt">&lt;id&gt;</span>sunlink<span class="nt">&lt;/id&gt;</span> 
+            <span class="nt">&lt;reports&gt;</span> 
+              <span class="nt">&lt;report&gt;</span>javadoc<span class="nt">&lt;/report&gt;</span> 
+            <span class="nt">&lt;/reports&gt;</span> 
+            <span class="nt">&lt;inherited&gt;</span>true<span class="nt">&lt;/inherited&gt;</span> 
+            <span class="nt">&lt;configuration&gt;</span> 
+              <span class="nt">&lt;links&gt;</span> 
+                <span class="nt">&lt;link&gt;</span>http://java.sun.com/j2se/1.5.0/docs/api/<span class="nt">&lt;/link&gt;</span> 
+              <span class="nt">&lt;/links&gt;</span> 
+            <span class="nt">&lt;/configuration&gt;</span> 
+          <span class="nt">&lt;/reportSet&gt;</span> 
+        <span class="nt">&lt;/reportSets&gt;</span> 
+      <span class="nt">&lt;/plugin&gt;</span> 
+    <span class="nt">&lt;/plugins&gt;</span> 
+  <span class="nt">&lt;/reporting&gt;</span> 
+</code></pre></div></div>
+<p>reporting里面的reportSets和build里面的executions的作用都是控制pom的不同粒度去控制build的过程，我们不单要配置plugins，还要配置那些plugins单独的goals。</p>
+
+<h5 id="maven-shade-plugin">Maven-shade-plugin</h5>
+
+<p>如果是作为使用方可以使用<code class="highlighter-rouge">exclusions</code>来去掉一些依赖包避免冲突，而如果是作为提供方，有时候需要在提供jar包时候避免产生依赖冲突，而<code class="highlighter-rouge">maven-shade-plugin</code>非常适合这个场景.</p>
+
+<p>下面这个例子。</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="nt">&lt;build&gt;</span>
+        <span class="nt">&lt;plugins&gt;</span>
+            <span class="nt">&lt;plugin&gt;</span>
+                <span class="nt">&lt;groupId&gt;</span>org.apache.maven.plugins<span class="nt">&lt;/groupId&gt;</span>
+                <span class="nt">&lt;artifactId&gt;</span>maven-shade-plugin<span class="nt">&lt;/artifactId&gt;</span>
+                <span class="nt">&lt;version&gt;</span>3.1.1<span class="nt">&lt;/version&gt;</span>
+                <span class="nt">&lt;configuration&gt;</span>
+                    <span class="nt">&lt;artifactSet&gt;</span>
+                      	<span class="c">&lt;!-- 把哪些包打进去 --&gt;</span>
+                        <span class="nt">&lt;includes&gt;</span>
+                            <span class="nt">&lt;include&gt;</span>redis.clients:jedis<span class="nt">&lt;/include&gt;</span>
+                            <span class="nt">&lt;include&gt;</span>org.apache.commons:commons-pool2<span class="nt">&lt;/include&gt;</span>
+                        <span class="nt">&lt;/includes&gt;</span>
+                    <span class="nt">&lt;/artifactSet&gt;</span>
+                    <span class="nt">&lt;filters&gt;</span>
+                        <span class="nt">&lt;filter&gt;</span>
+                            <span class="nt">&lt;artifact&gt;</span>*:*<span class="nt">&lt;/artifact&gt;</span>
+                          	<span class="c">&lt;!-- 排除一些文件 --&gt;</span>
+                            <span class="nt">&lt;excludes&gt;</span>
+                                <span class="nt">&lt;exclude&gt;</span>META-INF/*.SF<span class="nt">&lt;/exclude&gt;</span>
+                                <span class="nt">&lt;exclude&gt;</span>META-INF/*.DSA<span class="nt">&lt;/exclude&gt;</span>
+                                <span class="nt">&lt;exclude&gt;</span>META-INF/*.RSA<span class="nt">&lt;/exclude&gt;</span>
+                            <span class="nt">&lt;/excludes&gt;</span>
+                        <span class="nt">&lt;/filter&gt;</span>
+                    <span class="nt">&lt;/filters&gt;</span>
+                    <span class="nt">&lt;relocations&gt;</span>
+                      	<span class="c">&lt;!-- 对一些包名重定位，以解决冲突. --&gt;</span>
+                        <span class="nt">&lt;relocation&gt;</span>
+                            <span class="nt">&lt;pattern&gt;</span>redis<span class="nt">&lt;/pattern&gt;</span>
+                            <span class="nt">&lt;shadedPattern&gt;</span>scyuan.maven.shaded.redis<span class="nt">&lt;/shadedPattern&gt;</span>
+                        <span class="nt">&lt;/relocation&gt;</span>
+                        <span class="nt">&lt;relocation&gt;</span>
+                            <span class="nt">&lt;pattern&gt;</span>org.apache.commons<span class="nt">&lt;/pattern&gt;</span>
+                            <span class="nt">&lt;shadedPattern&gt;</span>scyuan.maven.shaded.org.apache.commons<span class="nt">&lt;/shadedPattern&gt;</span>
+                        <span class="nt">&lt;/relocation&gt;</span>
+                    <span class="nt">&lt;/relocations&gt;</span>
+                <span class="nt">&lt;/configuration&gt;</span>
+                <span class="nt">&lt;executions&gt;</span>
+                    <span class="nt">&lt;execution&gt;</span>
+                        <span class="c">&lt;!-- 在package阶段执行shade goal,这些goal是定好的 --&gt;</span>
+                     		<span class="c">&lt;!-- 可在maven-shade-plugin-${ver}.jar/META-INF/maven/plugin.xml中查看有哪些goal --&gt;</span>
+                        <span class="nt">&lt;phase&gt;</span>package<span class="nt">&lt;/phase&gt;</span>
+                        <span class="nt">&lt;goals&gt;</span>
+                            <span class="nt">&lt;goal&gt;</span>shade<span class="nt">&lt;/goal&gt;</span>
+                        <span class="nt">&lt;/goals&gt;</span>
+                    <span class="nt">&lt;/execution&gt;</span>
+                <span class="nt">&lt;/executions&gt;</span>
+            <span class="nt">&lt;/plugin&gt;</span>
+        <span class="nt">&lt;/plugins&gt;</span>
+    <span class="nt">&lt;/build&gt;</span>
+</code></pre></div></div>
+
+<h4 id="更多项目信息">更多项目信息</h4>
+
+<p>name:项目除了artifactId外，可以定义多个名称
+description: 项目描述
+url: 项目url
+inceptionYear:创始年份</p>
+
+<p><strong>Licenses</strong></p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;licenses&gt;</span>
+  <span class="nt">&lt;license&gt;</span>
+    <span class="nt">&lt;name&gt;</span>Apache 2<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;url&gt;</span>http://www.apache.org/licenses/LICENSE-2.0.txt<span class="nt">&lt;/url&gt;</span>
+    <span class="nt">&lt;distribution&gt;</span>repo<span class="nt">&lt;/distribution&gt;</span>
+    <span class="nt">&lt;comments&gt;</span>A business-friendly OSS license<span class="nt">&lt;/comments&gt;</span>
+  <span class="nt">&lt;/license&gt;</span>
+<span class="nt">&lt;/licenses&gt;</span>
+</code></pre></div></div>
+
+<p>列出本工程直接的licenses，而不要列出dependencies的licenses</p>
+
+<p>配置组织信息:</p>
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="nt">&lt;organization&gt;</span>
+    <span class="nt">&lt;name&gt;</span>Codehaus Mojo<span class="nt">&lt;/name&gt;</span>
+    <span class="nt">&lt;url&gt;</span>http://mojo.codehaus.org<span class="nt">&lt;/url&gt;</span>
+  <span class="nt">&lt;/organization&gt;</span>
+</code></pre></div></div>
+
+<p>很多工程都受到某些组织运行，这里设置基本信息</p>
+
+<p>配置开发者信息:</p>
+
+<p>例如：一个开发者可以有多个roles，properties是 </p>
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;developers&gt;</span>
+    <span class="nt">&lt;developer&gt;</span>
+      <span class="nt">&lt;id&gt;</span>eric<span class="nt">&lt;/id&gt;</span>
+      <span class="nt">&lt;name&gt;</span>Eric<span class="nt">&lt;/name&gt;</span>
+      <span class="nt">&lt;email&gt;</span>eredmond@codehaus.org<span class="nt">&lt;/email&gt;</span>
+      <span class="nt">&lt;url&gt;</span>http://eric.propellors.net<span class="nt">&lt;/url&gt;</span>
+      <span class="nt">&lt;organization&gt;</span>Codehaus<span class="nt">&lt;/organization&gt;</span>
+      <span class="nt">&lt;organizationUrl&gt;</span>http://mojo.codehaus.org<span class="nt">&lt;/organizationUrl&gt;</span>
+      <span class="nt">&lt;roles&gt;</span>
+        <span class="nt">&lt;role&gt;</span>architect<span class="nt">&lt;/role&gt;</span>
+        <span class="nt">&lt;role&gt;</span>developer<span class="nt">&lt;/role&gt;</span>
+      <span class="nt">&lt;/roles&gt;</span>
+      <span class="nt">&lt;timezone&gt;</span>-6<span class="nt">&lt;/timezone&gt;</span>
+      <span class="nt">&lt;properties&gt;</span>
+        <span class="nt">&lt;picUrl&gt;</span>http://tinyurl.com/prv4t<span class="nt">&lt;/picUrl&gt;</span>
+      <span class="nt">&lt;/properties&gt;</span>
+    <span class="nt">&lt;/developer&gt;</span>
+  <span class="nt">&lt;/developers&gt;</span>
+</code></pre></div></div>
+
+<h5 id="环境设置">环境设置</h5>
+
+<h6 id="issuemanagement">issueManagement</h6>
+
+<p>bug跟踪管理系统,定义defect tracking system缺陷跟踪系统，比如有（bugzilla,testtrack,clearquest等）.
+例如:</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="nt">&lt;issueManagement&gt;</span> 
+    <span class="nt">&lt;system&gt;</span>Bugzilla<span class="nt">&lt;/system&gt;</span> 
+    <span class="nt">&lt;url&gt;</span>http://127.0.0.1/bugzilla/<span class="nt">&lt;/url&gt;</span> 
+  <span class="nt">&lt;/issueManagement&gt;</span> 
+</code></pre></div></div>
+
+<h6 id="repositories">Repositories</h6>
+
+<p>pom里面的仓库与setting.xml里的仓库功能是一样的。主要的区别在于，pom里的仓库是个性化的。比如一家大公司里的setting文件是公用 的，所有项目都用一个setting文件，但各个子项目却会引用不同的第三方库，所以就需要在pom里设置自己需要的仓库地址。</p>
+
+<p>repositories：要成为maven2的repository artifact，必须具有pom文件在$BASE_REPO/groupId/artifactId/version/artifactId-version.pom 
+BASE_REPO可以是本地，也可以是远程的。repository元素就是声明那些去查找的repositories 
+默认的central Maven repository在http://repo1.maven.org/maven2/</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">&lt;repositories&gt;</span> 
+    <span class="nt">&lt;repository&gt;</span> 
+      <span class="nt">&lt;releases&gt;</span> 
+        <span class="nt">&lt;enabled&gt;</span>false<span class="nt">&lt;/enabled&gt;</span> 
+        <span class="nt">&lt;updatePolicy&gt;</span>always<span class="nt">&lt;/updatePolicy&gt;</span> 
+        <span class="nt">&lt;checksumPolicy&gt;</span>warn<span class="nt">&lt;/checksumPolicy&gt;</span> 
+      <span class="nt">&lt;/releases&gt;</span> 
+      <span class="nt">&lt;snapshots&gt;</span> 
+        <span class="nt">&lt;enabled&gt;</span>true<span class="nt">&lt;/enabled&gt;</span> 
+        <span class="nt">&lt;updatePolicy&gt;</span>never<span class="nt">&lt;/updatePolicy&gt;</span> 
+        <span class="nt">&lt;checksumPolicy&gt;</span>fail<span class="nt">&lt;/checksumPolicy&gt;</span> 
+      <span class="nt">&lt;/snapshots&gt;</span> 
+      <span class="nt">&lt;id&gt;</span>codehausSnapshots<span class="nt">&lt;/id&gt;</span> 
+      <span class="nt">&lt;name&gt;</span>Codehaus Snapshots<span class="nt">&lt;/name&gt;</span> 
+      <span class="nt">&lt;url&gt;</span>http://snapshots.maven.codehaus.org/maven2<span class="nt">&lt;/url&gt;</span> 
+      <span class="nt">&lt;layout&gt;</span>default<span class="nt">&lt;/layout&gt;</span> 
+    <span class="nt">&lt;/repository&gt;</span> 
+  <span class="nt">&lt;/repositories&gt;</span> 
+</code></pre></div></div>
+<p>release和snapshots：是artifact的两种policies，pom可以选择那种政策有效。 
+enable：本别指定两种类型是否可用，true or false 
+updatePolicy:说明更新发生的频率always 或者 never 或者 daily（默认的）或者 interval:X（X是分钟数）</p>
+
+<p>checksumPolicy：当Maven的部署文件到仓库中，它也部署了相应的校验和文件。您可以选择忽略，失败，或缺少或不正确的校验和警告。</p>
+
+<p>layout：maven1.x与maven2有不同的layout，所以可以声明为default或者是legacy（遗留方式maven1.x）。</p>
+
+<h6 id="pluginrepositories">pluginRepositories</h6>
+
+<p>与Repositories具有类似的结构，只是Repositories是dependencies的home，而这个是plugins 的home。</p>
+
+<h6 id="distributionmanagement">distributionManagement</h6>
+
+<p>管理distribution和supporting files。</p>
+
+<p>downloadUrl：是其他项目为了抓取本项目的pom’s artifact而指定的url，就是说告诉pom upload的地址也就是别人可以下载的地址。 
+status：这里的状态不要受到我们的设置，maven会自动设置project的状态，有效的值：none：没有声明状态，pom默认的；converted：本project是管理员从原先的maven版本convert到maven2的；partner：以前叫做synched，意思是与partner repository已经进行了同步；deployed：至今为止最经常的状态，意思是制品是从maven2 instance部署的，人工在命令行deploy的就会得到这个；verified：本制品已经经过验证，也就是已经定下来了最终版。 
+repository：声明deploy过程中current project会如何变成repository，说明部署到repository的信息。</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="nt">&lt;repository&gt;</span> 
+      <span class="nt">&lt;uniqueVersion&gt;</span>false<span class="nt">&lt;/uniqueVersion&gt;</span> 
+      <span class="nt">&lt;id&gt;</span>corp1<span class="nt">&lt;/id&gt;</span> 
+      <span class="nt">&lt;name&gt;</span>Corporate Repository<span class="nt">&lt;/name&gt;</span> 
+      <span class="nt">&lt;url&gt;</span>scp://repo1/maven2<span class="nt">&lt;/url&gt;</span> 
+      <span class="nt">&lt;layout&gt;</span>default<span class="nt">&lt;/layout&gt;</span> 
+    <span class="nt">&lt;/repository&gt;</span> 
+    <span class="nt">&lt;snapshotRepository&gt;</span> 
+      <span class="nt">&lt;uniqueVersion&gt;</span>true<span class="nt">&lt;/uniqueVersion&gt;</span> 
+      <span class="nt">&lt;id&gt;</span>propSnap<span class="nt">&lt;/id&gt;</span> 
+      <span class="nt">&lt;name&gt;</span>Propellors Snapshots<span class="nt">&lt;/name&gt;</span> 
+      <span class="nt">&lt;url&gt;</span>sftp://propellers.net/maven<span class="nt">&lt;/url&gt;</span> 
+      <span class="nt">&lt;layout&gt;</span>legacy<span class="nt">&lt;/layout&gt;</span> 
+    <span class="nt">&lt;/snapshotRepository&gt;</span> 
+</code></pre></div></div>
+<p>id, name:：唯一性的id，和可读性的name 
+uniqueVersion：指定是否产生一个唯一性的version number还是使用address里的其中version部分。true or false 
+url：说明location和transport protocol 
+layout：default或者legacy</p>
+
+<h6 id="profiles">profiles</h6>
+
+<p>pom4.0的一个新特性就是具有根据environment来修改设置的能力</p>
+
+<p>它包含可选的activation（profile的触发器）和一系列的changes。例如test过程可能会指向不同的数据库（相对最终的deployment）或者不同的dependencies或者不同的repositories，并且是根据不同的JDK来改变的。那么结构如下： </p>
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="nt">&lt;profiles&gt;</span> 
+    <span class="nt">&lt;profile&gt;</span> 
+      <span class="nt">&lt;id&gt;</span>test<span class="nt">&lt;/id&gt;</span> 
+      <span class="nt">&lt;activation&gt;</span>...<span class="nt">&lt;/activation&gt;</span> 
+      <span class="nt">&lt;build&gt;</span>...<span class="nt">&lt;/build&gt;</span> 
+      <span class="nt">&lt;modules&gt;</span>...<span class="nt">&lt;/modules&gt;</span> 
+      <span class="nt">&lt;repositories&gt;</span>...<span class="nt">&lt;/repositories&gt;</span> 
+      <span class="nt">&lt;pluginRepositories&gt;</span>...<span class="nt">&lt;/pluginRepositories&gt;</span> 
+      <span class="nt">&lt;dependencies&gt;</span>...<span class="nt">&lt;/dependencies&gt;</span> 
+      <span class="nt">&lt;reporting&gt;</span>...<span class="nt">&lt;/reporting&gt;</span> 
+      <span class="nt">&lt;dependencyManagement&gt;</span>...<span class="nt">&lt;/dependencyManagement&gt;</span> 
+      <span class="nt">&lt;distributionManagement&gt;</span>...<span class="nt">&lt;/distributionManagement&gt;</span> 
+    <span class="nt">&lt;/profile&gt;</span> 
+  <span class="nt">&lt;/profiles&gt;</span> 
+</code></pre></div></div>
+<p><strong>Activation</strong>
+触发这个profile的条件配置如下例：（只需要其中一个成立就可以激活profile，如果第一个条件满足了，那么后面就不会在进行匹配。 </p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="nt">&lt;profile&gt;</span> 
+      <span class="nt">&lt;id&gt;</span>test<span class="nt">&lt;/id&gt;</span> 
+      <span class="nt">&lt;activation&gt;</span> 
+        <span class="nt">&lt;activeByDefault&gt;</span>false<span class="nt">&lt;/activeByDefault&gt;</span> 
+        <span class="nt">&lt;jdk&gt;</span>1.5<span class="nt">&lt;/jdk&gt;</span> 
+        <span class="nt">&lt;os&gt;</span> 
+          <span class="nt">&lt;name&gt;</span>Windows XP<span class="nt">&lt;/name&gt;</span> 
+          <span class="nt">&lt;family&gt;</span>Windows<span class="nt">&lt;/family&gt;</span> 
+          <span class="nt">&lt;arch&gt;</span>x86<span class="nt">&lt;/arch&gt;</span> 
+          <span class="nt">&lt;version&gt;</span>5.1.2600<span class="nt">&lt;/version&gt;</span> 
+        <span class="nt">&lt;/os&gt;</span> 
+        <span class="nt">&lt;property&gt;</span> 
+          <span class="nt">&lt;name&gt;</span>mavenVersion<span class="nt">&lt;/name&gt;</span> 
+          <span class="nt">&lt;value&gt;</span>2.0.3<span class="nt">&lt;/value&gt;</span> 
+        <span class="nt">&lt;/property&gt;</span> 
+        <span class="nt">&lt;file&gt;</span> 
+          <span class="nt">&lt;exists&gt;</span>${basedir}/file2.properties<span class="nt">&lt;/exists&gt;</span> 
+          <span class="nt">&lt;missing&gt;</span>${basedir}/file1.properties<span class="nt">&lt;/missing&gt;</span> 
+        <span class="nt">&lt;/file&gt;</span> 
+      <span class="nt">&lt;/activation&gt;</span> 
+    <span class="nt">&lt;/profile&gt;</span>
+</code></pre></div></div>
+
+<p>激活profile的方法有多个：setting文件的activeProfile元素明确指定激活的profile的ID，在命令行上明确激活Profile用-P flag 参数</p>
+
+<p>如:</p>
+
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        <span class="nt">&lt;profile&gt;</span>
+            <span class="nt">&lt;id&gt;</span>spark-2.3<span class="nt">&lt;/id&gt;</span>
+            <span class="nt">&lt;properties&gt;</span>
+                <span class="nt">&lt;spark.version&gt;</span>2.3.2<span class="nt">&lt;/spark.version&gt;</span>
+                <span class="nt">&lt;scalatest.version&gt;</span>3.0.3<span class="nt">&lt;/scalatest.version&gt;</span>
+            <span class="nt">&lt;/properties&gt;</span>
+        <span class="nt">&lt;/profile&gt;</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./build/mvn clean install -Pspark-2.3
+</code></pre></div></div>
+
+<p>这里就激活了spark-2.3对应的properties.</p>
+
+<p>查看某个build会激活的profile列表可以用：mvn help:active-profiles</p>
+
+<h3 id="references">References</h3>
+
+<p>http://maven.apache.org/guides/introduction/introduction-to-the-lifecycle.html</p>
+
+<p>https://www.cnblogs.com/qq78292959/p/3711501.html</p>
+:ET

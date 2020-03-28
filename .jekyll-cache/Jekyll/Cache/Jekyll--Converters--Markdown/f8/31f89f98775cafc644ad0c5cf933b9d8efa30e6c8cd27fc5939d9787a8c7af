@@ -1,0 +1,269 @@
+I"�g
+<p>目录</p>
+
+<ul id="markdown-toc">
+  <li><a href="#什么是threadlocal" id="markdown-toc-什么是threadlocal">什么是ThreadLocal</a>    <ul>
+      <li><a href="#case-1" id="markdown-toc-case-1">Case 1</a></li>
+      <li><a href="#case-2" id="markdown-toc-case-2">Case 2</a></li>
+      <li><a href="#case-3" id="markdown-toc-case-3">Case 3</a></li>
+    </ul>
+  </li>
+  <li><a href="#如何正确使用threadlocal" id="markdown-toc-如何正确使用threadlocal">如何正确使用ThreadLocal</a></li>
+  <li><a href="#源码实现" id="markdown-toc-源码实现">源码实现</a>    <ul>
+      <li><a href="#引用类型" id="markdown-toc-引用类型">引用类型</a></li>
+      <li><a href="#threadlocalmap" id="markdown-toc-threadlocalmap">ThreadLocalMap</a></li>
+      <li><a href="#threadlocalinitialvalue" id="markdown-toc-threadlocalinitialvalue">ThreadLocal.initialValue()</a></li>
+      <li><a href="#inheritthreadlocal" id="markdown-toc-inheritthreadlocal">InheritThreadLocal</a></li>
+      <li><a href="#内存角度" id="markdown-toc-内存角度">内存角度</a>        <ul>
+          <li><a href="#jmm" id="markdown-toc-jmm">JMM</a></li>
+          <li><a href="#tlabthread-local-allocation-buffer" id="markdown-toc-tlabthread-local-allocation-buffer">TLAB(Thread Local Allocation Buffer)</a></li>
+        </ul>
+      </li>
+    </ul>
+  </li>
+  <li><a href="#reference" id="markdown-toc-reference">Reference</a></li>
+</ul>
+<p>本文讲ThreadLocal的使用场景，注意事项以及源码实现。</p>
+
+<h3 id="什么是threadlocal">什么是ThreadLocal</h3>
+
+<p>ThreadLocal，顾名思义，是线程本地的，也就是说非多线程共享，是为了解决线程并发时，变量共享的问题。但是在使用时需要注意内存泄露，脏数据等问题。</p>
+
+<p>那么什么时候需要用到ThreadLocal呢？此处举几个例子.</p>
+
+<h4 id="case-1">Case 1</h4>
+
+<p>例如我们定义了一个类，代表一个Student，然后场景是一个考场，每个学生用一个线程进行表示，而每个学生有一个做卷子的进度变量，这个变量必须是对应一个学生，也就是一个线程。这个时候，我们需要定义一个<code class="highlighter-rouge">ThreadLocal</code>类型的state变量来表示每个学生目前的状态，这样每个学生的状态不会互相干扰.</p>
+
+<p>例如下面的这段代码，在同一个线程里面的Student 的ThreadLocal值是一样的。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">java.util.concurrent.atomic.AtomicInteger</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">TestThreadLocal</span> <span class="o">{</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="nc">Student</span> <span class="n">s1</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Student</span><span class="o">();</span>
+    <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Current Thread value:"</span> <span class="o">+</span> <span class="n">s1</span><span class="o">.</span><span class="na">getState</span><span class="o">());</span><span class="c1">// Current Thread value:1</span>
+    <span class="nc">Student</span> <span class="n">s2</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Student</span><span class="o">();</span>
+    <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Current Thread value:"</span> <span class="o">+</span> <span class="n">s2</span><span class="o">.</span><span class="na">getState</span><span class="o">());</span> <span class="c1">// Current Thread value:1</span>
+    <span class="n">s1</span><span class="o">.</span><span class="na">removeState</span><span class="o">();</span>
+    
+    <span class="k">new</span> <span class="nf">Thread</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+      <span class="nc">Student</span> <span class="n">s3</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Student</span><span class="o">();</span>
+      <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"New Thread value:"</span> <span class="o">+</span> <span class="n">s3</span><span class="o">.</span><span class="na">getState</span><span class="o">());</span> <span class="c1">// New Thread value:2</span>
+      <span class="n">s3</span><span class="o">.</span><span class="na">removeState</span><span class="o">();</span>
+    <span class="o">}).</span><span class="na">start</span><span class="o">();</span>
+  <span class="o">}</span>
+
+<span class="o">}</span>
+
+<span class="kd">class</span> <span class="nc">Student</span> <span class="o">{</span>
+  <span class="kd">private</span> <span class="kd">static</span> <span class="nc">AtomicInteger</span> <span class="n">al</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">AtomicInteger</span><span class="o">();</span>
+  <span class="kd">private</span> <span class="kd">static</span> <span class="nc">ThreadLocal</span><span class="o">&lt;</span><span class="nc">Integer</span><span class="o">&gt;</span> <span class="n">state</span> <span class="o">=</span> <span class="nc">ThreadLocal</span><span class="o">.</span><span class="na">withInitial</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="n">al</span><span class="o">.</span><span class="na">incrementAndGet</span><span class="o">());</span>
+  <span class="kd">public</span> <span class="kt">int</span> <span class="nf">getState</span><span class="o">()</span> <span class="o">{</span>
+    <span class="k">return</span> <span class="n">state</span><span class="o">.</span><span class="na">get</span><span class="o">();</span>
+  <span class="o">}</span>
+  <span class="kd">public</span> <span class="kt">void</span> <span class="nf">removeState</span><span class="o">()</span> <span class="o">{</span>
+    <span class="n">state</span><span class="o">.</span><span class="na">remove</span><span class="o">();</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h4 id="case-2">Case 2</h4>
+
+<p>对于一些非线程安全的类，例如SimpleDateFormat，定义为static，会有数据同步风险。SimpleDateFormat内部有一个Calendar对象，在日期转字符串或者字符串转日期的过程中，多线程共享时有非常高的概率产生错误，推荐的方式是使用ThreadLocal，让每个线程单独拥有这个对象.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="nc">ThreadLocal</span><span class="o">&lt;</span><span class="nc">DateFormat</span><span class="o">&gt;</span> <span class="no">DATA_FORMAT_THREADLOCAL</span> <span class="o">=</span> 
+          <span class="nc">ThreadLocal</span><span class="o">.</span><span class="na">withInitial</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="nc">SimpleDateFormat</span><span class="o">(</span><span class="s">"yyyy-mm-dd"</span><span class="o">));</span>
+</code></pre></div></div>
+
+<h4 id="case-3">Case 3</h4>
+
+<p>在父线程和子线程之间传递变量，可以使用ThreadLocal.</p>
+
+<p>ThreadLocal有一个子类是InheritThreadLocal. 使用方式如下:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">java.util.Date</span><span class="o">;</span>
+
+<span class="kd">class</span> <span class="nc">Helper</span> <span class="o">{</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="nc">ThreadLocal</span><span class="o">&lt;</span><span class="nc">Long</span><span class="o">&gt;</span> <span class="n">time</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">InheritableThreadLocal</span><span class="o">&lt;</span><span class="nc">Long</span><span class="o">&gt;()</span> <span class="o">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="nc">Long</span> <span class="nf">initialValue</span><span class="o">()</span> <span class="o">{</span>
+      <span class="k">return</span> <span class="k">new</span> <span class="nf">Date</span><span class="o">().</span><span class="na">getTime</span><span class="o">();</span>
+    <span class="o">}</span>
+  <span class="o">};</span>
+<span class="o">}</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">TestInheritThreadLocal</span> <span class="o">{</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="o">(</span><span class="nc">String</span><span class="o">[]</span> <span class="n">args</span><span class="o">)</span> <span class="o">{</span>
+    <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"ParentThreadTime:"</span> <span class="o">+</span> <span class="nc">Helper</span><span class="o">.</span><span class="na">time</span><span class="o">.</span><span class="na">get</span><span class="o">());</span> <span class="c1">// ParentThreadTime:1561222644968</span>
+    <span class="k">new</span> <span class="nf">Thread</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+      <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"CurrentThreadTime:"</span> <span class="o">+</span> <span class="k">new</span> <span class="nc">Date</span><span class="o">().</span><span class="na">getTime</span><span class="o">());</span> <span class="c1">// CurrentThreadTime:1561222645061</span>
+      <span class="nc">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"InheritTime:"</span> <span class="o">+</span> <span class="nc">Helper</span><span class="o">.</span><span class="na">time</span><span class="o">.</span><span class="na">get</span><span class="o">());</span> <span class="c1">// InheritTime:1561222644968</span>
+    <span class="o">}).</span><span class="na">start</span><span class="o">();</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<h3 id="如何正确使用threadlocal">如何正确使用ThreadLocal</h3>
+
+<p>在使用ThreadLocal时候要注意避免产生脏数据和内存泄露。这两个问题通常是在线程池的线程中使用ThreadLocal引发的，因为线程池中有线程复用和内存常驻两个特点.</p>
+
+<p><strong>脏数据</strong></p>
+
+<p>线程复用可能会产生脏数据，由于线程池会重用Thread对象，那么与Thread绑定的类的静态属性ThreadLocal变量也会被重用。如果在实现的线程<code class="highlighter-rouge">run()</code>方法体重不显示的调用remove()清理与线程相关的ThreadLocal信息，那么倘若下一个线程不调用set()设置初始值，就可能get到重用的线程信息，包括ThreadLocal所关联的线程对象的Value值.</p>
+
+<p><strong>内存泄露</strong></p>
+
+<p>在源码注释中提示使用static关键字来修饰ThreadLocal。在此场景下，寄希望于ThreadLocal对象失去引用后，触发弱引用机制来回收不显示，因此在线程执行完毕之后，需要执行remove()方法，不然其对应ThreadLocal持有的值不会被释放。</p>
+
+<h3 id="源码实现">源码实现</h3>
+
+<h4 id="引用类型">引用类型</h4>
+
+<p>首先介绍一下Java中的四种引用类型.</p>
+
+<ul>
+  <li>强引用。 例如:<code class="highlighter-rouge">Object obj = new Object()</code>。只要对象具有可达性，就不能被回收。</li>
+  <li>软引用。在即将OOM之前，即使有可达性，也可回收。</li>
+  <li>弱引用。在下一次YGC时会被回收。</li>
+  <li>虚引用。一种极弱的引用关系，定义完成后，就无法通过该引用获取指向的对象。为一个对象设置虚引用的唯一目的是希望能在这个对象回收时收到一个系统通知。虚引用必须与引用队列联合使用，当垃圾会收拾，如果发现存在虚引用，就会在回收对象内存前，把这个虚引用加入与之关联的引用队列中。<strong>极少使用。</strong></li>
+</ul>
+
+<p>此处给出软引用和弱引用的使用示例.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">java.lang.ref.SoftReference</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">java.lang.ref.WeakReference</span><span class="o">;</span>
+
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">TestReference</span> <span class="o">{</span>
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">soft</span><span class="o">()</span> <span class="o">{</span>
+    <span class="nc">Integer</span> <span class="n">value</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Integer</span><span class="o">(</span><span class="mi">10086</span><span class="o">);</span>
+    <span class="nc">SoftReference</span><span class="o">&lt;</span><span class="nc">Integer</span><span class="o">&gt;</span> <span class="n">soft</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">SoftReference</span><span class="o">&lt;&gt;(</span><span class="n">value</span><span class="o">);</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span> <span class="c1">// 对象设为空，解除强引用劫持.</span>
+  <span class="o">}</span>
+  
+  <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">weak</span><span class="o">()</span> <span class="o">{</span>
+    <span class="nc">Integer</span> <span class="n">value</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Integer</span><span class="o">(</span><span class="mi">10086</span><span class="o">);</span>
+    <span class="nc">WeakReference</span><span class="o">&lt;</span><span class="nc">Integer</span><span class="o">&gt;</span> <span class="n">soft</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">WeakReference</span><span class="o">&lt;&gt;(</span><span class="n">value</span><span class="o">);</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span> <span class="c1">// 对象设为空，解除强引用劫持.</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div></div>
+
+<p>ThreadLocal的设计中使用了WeakReference， JDK中设计的愿意是在ThreadLocal对象消失后，线程对象再持有这个ThreadLocal对象是没有任何意义的，应该进行回收，从而避免内存泄露，这种设计的出发点很好，但弱引用的设计增加了对ThreadLocal 和Thread体系的理解难度。</p>
+
+<h4 id="threadlocalmap">ThreadLocalMap</h4>
+
+<p>ThreadLocal有个静态内部类叫做<code class="highlighter-rouge">ThreadLocalMap</code>, 它还有一个静态内部类叫<code class="highlighter-rouge">Entry</code>, 而Entry是弱引用类型.</p>
+
+<p>ThreadLocal与ThreadLocalMap有三组对应的方法，<code class="highlighter-rouge">get()</code>,<code class="highlighter-rouge">set()</code>,<code class="highlighter-rouge">remove()</code>。在ThreadLocal中只是做校验和判断，最终的实现会落在ThreadLocalMap中。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Entry</span> <span class="kd">extends</span> <span class="nc">WeakReference</span><span class="o">&lt;</span><span class="nc">ThreadLocal</span><span class="o">&lt;?&gt;&gt;</span> <span class="o">{</span>
+            <span class="cm">/** The value associated with this ThreadLocal. */</span>
+            <span class="nc">Object</span> <span class="n">value</span><span class="o">;</span>
+
+            <span class="nc">Entry</span><span class="o">(</span><span class="nc">ThreadLocal</span><span class="o">&lt;?&gt;</span> <span class="n">k</span><span class="o">,</span> <span class="nc">Object</span> <span class="n">v</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kd">super</span><span class="o">(</span><span class="n">k</span><span class="o">);</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">v</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+</code></pre></div></div>
+
+<p>Entry继承了WeakReference, 只有一个value成员变量，其Key是ThreadLocal对象。</p>
+
+<p><strong>每一个<code class="highlighter-rouge">Thread</code> 中有一个<code class="highlighter-rouge">ThreadLocalMap</code></strong>(因为一个Thread中可能有多个ThreadLocal，所以需要一个Map保存所有的ThreadLocal变量，而key就是ThreadLocal变量，value是对应的值).</p>
+
+<h4 id="threadlocalinitialvalue">ThreadLocal.initialValue()</h4>
+
+<p>虽然说每个Thread有一个ThreadLocalMap，那么这个localMap是如何创建的呢？</p>
+
+<p>首先，ThreadLocal有三个方法，其中get方法就是为了去获取其对应的值，如果没有调用get，那么这个ThreadLocal毫无价值。</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kd">public</span> <span class="no">T</span> <span class="nf">get</span><span class="o">()</span> <span class="o">{</span>
+        <span class="nc">Thread</span> <span class="n">t</span> <span class="o">=</span> <span class="nc">Thread</span><span class="o">.</span><span class="na">currentThread</span><span class="o">();</span>
+        <span class="nc">ThreadLocalMap</span> <span class="n">map</span> <span class="o">=</span> <span class="n">getMap</span><span class="o">(</span><span class="n">t</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">map</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="nc">ThreadLocalMap</span><span class="o">.</span><span class="na">Entry</span> <span class="n">e</span> <span class="o">=</span> <span class="n">map</span><span class="o">.</span><span class="na">getEntry</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">e</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">"unchecked"</span><span class="o">)</span>
+                <span class="no">T</span> <span class="n">result</span> <span class="o">=</span> <span class="o">(</span><span class="no">T</span><span class="o">)</span><span class="n">e</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
+                <span class="k">return</span> <span class="n">result</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="nf">setInitialValue</span><span class="o">();</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>首先，它会去获得这个Thread对应的localMap，如果这个localMap非空，而且可以在这个localMap中找到，那么直接返回找到的值。</p>
+
+<p>如果这个localMap为空，或者说这个localMap没有对应的值。</p>
+
+<ul>
+  <li>如果localMap为空。那么会创建createMap方法，创建对应的ThreadLocalMap,并且初始化的kv是(当前线程，initialValue创建的值).</li>
+  <li>如果localMap非空，那么就像这个localMap中添加值.</li>
+</ul>
+
+<h4 id="inheritthreadlocal">InheritThreadLocal</h4>
+
+<p>这是ThreadLocal的一个子类，上面我们也提到了其用法。其override了ThreadLocal的几个方法，去掉注释如下.</p>
+
+<pre><code class="language-Java">public class InheritableThreadLocal&lt;T&gt; extends ThreadLocal&lt;T&gt; {
+    protected T childValue(T parentValue) {
+        return parentValue;
+    }
+    ThreadLocalMap getMap(Thread t) {
+       return t.inheritableThreadLocals;
+    }
+    void createMap(Thread t, T firstValue) {
+        t.inheritableThreadLocals = new ThreadLocalMap(this, firstValue);
+    }
+</code></pre>
+
+<p>只override了三个方法，其中 childValue 是ThreadLocal不支持的，其调用是只在<code class="highlighter-rouge">createInheritedMap</code>时进行调用。而其他两个getMap 和 createMap是在从Thread中获取localMap时的改写，以及在创建localMap的改写。</p>
+
+<p>那么对应的 线程本地变量是如何传递进来的呢？</p>
+
+<p>看下面的方法调用.</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="kd">public</span> <span class="nf">Thread</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">init</span><span class="o">(</span><span class="kc">null</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="s">"Thread-"</span> <span class="o">+</span> <span class="n">nextThreadNum</span><span class="o">(),</span> <span class="mi">0</span><span class="o">);</span>
+    <span class="o">}</span>
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">init</span><span class="o">(</span><span class="nc">ThreadGroup</span> <span class="n">g</span><span class="o">,</span> <span class="nc">Runnable</span> <span class="n">target</span><span class="o">,</span> <span class="nc">String</span> <span class="n">name</span><span class="o">,</span>
+                      <span class="kt">long</span> <span class="n">stackSize</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">init</span><span class="o">(</span><span class="n">g</span><span class="o">,</span> <span class="n">target</span><span class="o">,</span> <span class="n">name</span><span class="o">,</span> <span class="n">stackSize</span><span class="o">,</span> <span class="kc">null</span><span class="o">,</span> <span class="kc">true</span><span class="o">);</span>
+    <span class="o">}</span>
+		<span class="c1">// 此处 inheritThreadLocals = true</span>
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">init</span><span class="o">(</span><span class="nc">ThreadGroup</span> <span class="n">g</span><span class="o">,</span> <span class="nc">Runnable</span> <span class="n">target</span><span class="o">,</span> <span class="nc">String</span> <span class="n">name</span><span class="o">,</span>
+                      <span class="kt">long</span> <span class="n">stackSize</span><span class="o">,</span> <span class="nc">AccessControlContext</span> <span class="n">acc</span><span class="o">,</span>
+                      <span class="kt">boolean</span> <span class="n">inheritThreadLocals</span><span class="o">)</span> <span class="o">{</span>
+  		<span class="o">......</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">inheritThreadLocals</span> <span class="o">&amp;&amp;</span> <span class="n">parent</span><span class="o">.</span><span class="na">inheritableThreadLocals</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span>
+            <span class="k">this</span><span class="o">.</span><span class="na">inheritableThreadLocals</span> <span class="o">=</span>
+                <span class="nc">ThreadLocal</span><span class="o">.</span><span class="na">createInheritedMap</span><span class="o">(</span><span class="n">parent</span><span class="o">.</span><span class="na">inheritableThreadLocals</span><span class="o">);</span>
+   		<span class="o">......</span>
+    <span class="o">}</span>
+</code></pre></div></div>
+
+<p>可以看到，默认使用<code class="highlighter-rouge">new  Thread()</code>创建线程就会继承父线程的ThreadLocals.</p>
+
+<h4 id="内存角度">内存角度</h4>
+
+<h5 id="jmm">JMM</h5>
+
+<p>首先介绍下Java的内存模型。</p>
+
+<p><img src="/imgs/thread-local/jmm.png" alt="" /></p>
+
+<p>从抽象的角度看，JMM定义了线程和主内存之间的抽象关系:线程之间的共享变量存储在主内存中，每个线程都有一个私有的本地内存，本地内存存储了该线程以读/写共享变量的副本。</p>
+
+<p><strong>本地内存是JMM的一个抽象概念，并不真实存在。</strong>它涵盖了缓存，写缓冲区，寄存器以及其他的硬件和编译器优化。</p>
+
+<h5 id="tlabthread-local-allocation-buffer">TLAB(Thread Local Allocation Buffer)</h5>
+
+<p>TLAB代表线程本地变量分配缓冲区，这是Eden内部的一个region, 是被划分为一个Thread的区域,属于非线程共享区域。换句话说，只有一个线程可以在一个TLAB里面分配对象。每个Thread都有对应的TLAB.</p>
+
+<p>所以针对TLAB里面的对象，不需要设置同步操作。</p>
+
+<h3 id="reference">Reference</h3>
+
+<p><a href="https://dzone.com/articles/thread-local-allocation-buffers">What is Thread Local Allocation Buffer</a></p>
+:ET
