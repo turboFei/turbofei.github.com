@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2020-03-29T03:40:21+08:00</lastBuildDate>
-        <pubDate>2020-03-29T03:40:21+08:00</pubDate>
+        <lastBuildDate>2020-03-29T03:59:01+08:00</lastBuildDate>
+        <pubDate>2020-03-29T03:59:01+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -256,7 +256,7 @@ res0: Boolean &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quo
 
 &lt;p&gt;在跑完之后去查看表下面的文件，文件名格式:&lt;/p&gt;
 
-&lt;p&gt;part-{partitionId}-bdc018dc-38ad-4233-91ff-16f777ad812e_{bucketId}.c000.json&lt;/p&gt;
+&lt;p&gt;part-{partId}-{UUID}_{bucketId}.c000.json&lt;/p&gt;
 
 &lt;p&gt;我们只需对比两张表同样bucketId 文件下面的内容不同即可得出结论。&lt;/p&gt;
 

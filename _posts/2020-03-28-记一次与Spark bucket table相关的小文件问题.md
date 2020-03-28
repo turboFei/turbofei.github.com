@@ -245,7 +245,7 @@ insert overwrite table ta partition(p1=1) select cast(c1 as Decimal(38, 18)) as 
 
 在跑完之后去查看表下面的文件，文件名格式:
 
-part-{partitionId}-bdc018dc-38ad-4233-91ff-16f777ad812e_{bucketId}.c000.json
+part-{partId}-{UUID}_{bucketId}.c000.json
 
 我们只需对比两张表同样bucketId 文件下面的内容不同即可得出结论。
 
