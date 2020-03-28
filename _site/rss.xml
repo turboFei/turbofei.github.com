@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2020-03-29T04:47:05+08:00</lastBuildDate>
-        <pubDate>2020-03-29T04:47:05+08:00</pubDate>
+        <lastBuildDate>2020-03-29T05:41:40+08:00</lastBuildDate>
+        <pubDate>2020-03-29T05:41:40+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -44,7 +44,7 @@
 
 &lt;p&gt;场景如下:&lt;/p&gt;
 
-&lt;p&gt;存在一张bucket table, bucket column 是 c1, bucket数量是1000，用户在对这张bucket 表进行insert overwrite的时候，已经将spark.sql.shuffle.partitions 设置成了1000，而且对bucket column那列进行了distribute by 操作，理想情况下，这次overwrite操作将生成1000个小文件，但是出人意料的是，这次操作生成了 1000*1000=100万个小文件!!!&lt;/p&gt;
+&lt;p&gt;存在一张bucket table, bucket column 是 c1, bucket数量是1000，用户在对这张bucket 表进行insert overwrite的时候，已经将spark.sql.shuffle.partitions 设置成了1000，而且对bucket column那列进行了distribute by 操作，理想情况下，这次overwrite操作将生成1000个文件，但是出人意料的是，这次操作生成了 1000*1000=100万个小文件!!!&lt;/p&gt;
 
 &lt;p&gt;这么多小文件必定需要很多次create 请求和rename请求，因此必然的触发了Hadoop集群报警机制。&lt;/p&gt;
 

@@ -1,4 +1,4 @@
-I";j
+I"8j
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
@@ -30,7 +30,7 @@
 
 <p>场景如下:</p>
 
-<p>存在一张bucket table, bucket column 是 c1, bucket数量是1000，用户在对这张bucket 表进行insert overwrite的时候，已经将spark.sql.shuffle.partitions 设置成了1000，而且对bucket column那列进行了distribute by 操作，理想情况下，这次overwrite操作将生成1000个小文件，但是出人意料的是，这次操作生成了 1000*1000=100万个小文件!!!</p>
+<p>存在一张bucket table, bucket column 是 c1, bucket数量是1000，用户在对这张bucket 表进行insert overwrite的时候，已经将spark.sql.shuffle.partitions 设置成了1000，而且对bucket column那列进行了distribute by 操作，理想情况下，这次overwrite操作将生成1000个文件，但是出人意料的是，这次操作生成了 1000*1000=100万个小文件!!!</p>
 
 <p>这么多小文件必定需要很多次create 请求和rename请求，因此必然的触发了Hadoop集群报警机制。</p>
 
