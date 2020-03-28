@@ -1,4 +1,4 @@
-I"�i
+I";j
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
@@ -16,6 +16,7 @@
       <li><a href="#平台侧可以做什么" id="markdown-toc-平台侧可以做什么">平台侧可以做什么</a></li>
     </ul>
   </li>
+  <li><a href="#后记" id="markdown-toc-后记">后记</a></li>
   <li><a href="#附录" id="markdown-toc-附录">附录</a>    <ul>
       <li><a href="#验证double-和decimal-类型的bucket-id-是否不同" id="markdown-toc-验证double-和decimal-类型的bucket-id-是否不同">验证double 和Decimal 类型的bucket Id 是否不同</a></li>
     </ul>
@@ -234,6 +235,10 @@ res0: Boolean <span class="o">=</span> <span class="nb">true</span>
 
 <p>所以，平台是否可以针对insert bucket table这种case，做类似于谓词下推的把CAST下推到 distribute/cluster by 之前？</p>
 
+<h3 id="后记">后记</h3>
+
+<p>如果是一万个bucket 的bucket表，那岂不是小文件要破亿了？</p>
+
 <h3 id="附录">附录</h3>
 
 <h4 id="验证double-和decimal-类型的bucket-id-是否不同">验证double 和Decimal 类型的bucket Id 是否不同</h4>
@@ -242,7 +247,7 @@ res0: Boolean <span class="o">=</span> <span class="nb">true</span>
 
 <p>在跑完之后去查看表下面的文件，文件名格式:</p>
 
-<p>part-{partitionId}-bdc018dc-38ad-4233-91ff-16f777ad812e_{bucketId}.c000.json</p>
+<p>part-{partId}-{UUID}_{bucketId}.c000.json</p>
 
 <p>我们只需对比两张表同样bucketId 文件下面的内容不同即可得出结论。</p>
 

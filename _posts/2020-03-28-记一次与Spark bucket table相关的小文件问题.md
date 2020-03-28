@@ -237,6 +237,12 @@ insert overwrite table ta partition(p1=1) select cast(c1 as Decimal(38, 18)) as 
 
 
 
+### 后记
+
+如果是一万个bucket 的bucket表，那岂不是小文件要破亿了？
+
+
+
 ### 附录
 
 #### 验证double 和Decimal 类型的bucket Id 是否不同

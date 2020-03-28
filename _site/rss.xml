@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2020-03-29T03:59:01+08:00</lastBuildDate>
-        <pubDate>2020-03-29T03:59:01+08:00</pubDate>
+        <lastBuildDate>2020-03-29T04:47:05+08:00</lastBuildDate>
+        <pubDate>2020-03-29T04:47:05+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -30,6 +30,7 @@
       &lt;li&gt;&lt;a href=&quot;#平台侧可以做什么&quot; id=&quot;markdown-toc-平台侧可以做什么&quot;&gt;平台侧可以做什么&lt;/a&gt;&lt;/li&gt;
     &lt;/ul&gt;
   &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#后记&quot; id=&quot;markdown-toc-后记&quot;&gt;后记&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#附录&quot; id=&quot;markdown-toc-附录&quot;&gt;附录&lt;/a&gt;    &lt;ul&gt;
       &lt;li&gt;&lt;a href=&quot;#验证double-和decimal-类型的bucket-id-是否不同&quot; id=&quot;markdown-toc-验证double-和decimal-类型的bucket-id-是否不同&quot;&gt;验证double 和Decimal 类型的bucket Id 是否不同&lt;/a&gt;&lt;/li&gt;
     &lt;/ul&gt;
@@ -247,6 +248,10 @@ res0: Boolean &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quo
 &lt;p&gt;在上面我们提到了我们的distribute/cluster是针对 union子查询的数据进行的，而在此之后要插入bucket表，又进行了类型转换。&lt;/p&gt;
 
 &lt;p&gt;所以，平台是否可以针对insert bucket table这种case，做类似于谓词下推的把CAST下推到 distribute/cluster by 之前？&lt;/p&gt;
+
+&lt;h3 id=&quot;后记&quot;&gt;后记&lt;/h3&gt;
+
+&lt;p&gt;如果是一万个bucket 的bucket表，那岂不是小文件要破亿了？&lt;/p&gt;
 
 &lt;h3 id=&quot;附录&quot;&gt;附录&lt;/h3&gt;
 
