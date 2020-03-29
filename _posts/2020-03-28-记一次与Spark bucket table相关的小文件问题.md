@@ -160,7 +160,40 @@ Schema: root
     }
 ```
 
-而double类型和Decimal类型getBucketId的算法是不同的，附录中提供了验证方法。
+而double类型和Decimal类型getBucketId的算法是不同的。
+
+具体的实现涉及到`org.apache.spark.sql.catalyst.expressions.InterpretedHashFunction`类中的hash方法。可以看到double类型和decimal类型有不同的实现。
+
+所以对double类型值其计算得到值和转化为Decimal再计算时不同的，附录中也提供了实践的验证方法。
+
+```scala
+  /**
+   * Computes hash of a given `value` of type `dataType`. The caller needs to check the validity
+   * of input `value`.
+   */
+  def hash(value: Any, dataType: DataType, seed: Long): Long = {
+    value match {
+      case null => seed
+      case b: Boolean => hashInt(if (b) 1 else 0, seed)
+      case b: Byte => hashInt(b, seed)
+      case s: Short => hashInt(s, seed)
+      case i: Int => hashInt(i, seed)
+      case l: Long => hashLong(l, seed)
+      case f: Float => hashInt(java.lang.Float.floatToIntBits(f), seed)
+      case d: Double => hashLong(java.lang.Double.doubleToLongBits(d), seed)
+      case d: Decimal =>
+        val precision = dataType.asInstanceOf[DecimalType].precision
+        if (precision <= Decimal.MAX_LONG_DIGITS) {
+          hashLong(d.toUnscaledLong, seed)
+        } else {
+          val bytes = d.toJavaBigDecimal.unscaledValue().toByteArray
+          hashUnsafeBytes(bytes, Platform.BYTE_ARRAY_OFFSET, bytes.length, seed)
+        }
+      ...
+    }
+```
+
+
 
 因此，hash后的double类型数据，在转为Decimal之后，虽然其partitionValue获取是一致的，但是bucketId获取方法存在差异，因此一个task依然生成了十个bucket文件，造成了小文件的爆炸。
 
