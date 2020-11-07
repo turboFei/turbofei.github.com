@@ -1,4 +1,4 @@
-I"�
+I"��
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -80,7 +80,7 @@
   <span class="o">}</span>
 </code></pre></div></div>
 
-<p>代码中显示，其会根据NAMENODE_LEASE_RECHECK_INTERVAL(2000ms)定时的调用<code class="highlighter-rouge">checkLeases</code>方法。</p>
+<p>代码中显示，其会根据NAMENODE_LEASE_RECHECK_INTERVAL(2000ms)定时的调用<code class="language-plaintext highlighter-rouge">checkLeases</code>方法。</p>
 
 <p>代码可以分为三部分：</p>
 
@@ -159,9 +159,9 @@
     <span class="o">}</span>
 </code></pre></div></div>
 
-<p>通过查看代码，我们看到有一个<code class="highlighter-rouge">expiredSoftLimit</code>方法， 其调用是发生在<code class="highlighter-rouge">FSNameSystem</code>中，对应方法为<code class="highlighter-rouge">recoverLeaseInternal</code>，调用部分如下，如果当前的持有者已经在上个softLimit周期没有刷新这个lease,</p>
+<p>通过查看代码，我们看到有一个<code class="language-plaintext highlighter-rouge">expiredSoftLimit</code>方法， 其调用是发生在<code class="language-plaintext highlighter-rouge">FSNameSystem</code>中，对应方法为<code class="language-plaintext highlighter-rouge">recoverLeaseInternal</code>，调用部分如下，如果当前的持有者已经在上个softLimit周期没有刷新这个lease,</p>
 
-<p>那么调用<code class="highlighter-rouge">internalReleaseLease</code>， 顾名思义，释放internalLease, 其注释为 <code class="highlighter-rouge">Move a file that is being written to be immutable.</code>, 也就是说把一个正在被写的文件变为不可改变的状态.</p>
+<p>那么调用<code class="language-plaintext highlighter-rouge">internalReleaseLease</code>， 顾名思义，释放internalLease, 其注释为 <code class="language-plaintext highlighter-rouge">Move a file that is being written to be immutable.</code>, 也就是说把一个正在被写的文件变为不可改变的状态.</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        <span class="c1">// If the original holder has not renewed in the last SOFTLIMIT </span>
         <span class="c1">// period, then start lease recovery.</span>

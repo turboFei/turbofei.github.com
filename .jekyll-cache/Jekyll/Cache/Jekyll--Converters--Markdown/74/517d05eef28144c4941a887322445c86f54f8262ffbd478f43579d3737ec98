@@ -1,4 +1,4 @@
-I"zf
+I"�h
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -22,19 +22,19 @@
 
 <p>shuffle是Mapreduce框架中一个特定的phase，介于Map和Reduce之间。shuffle的英文意思是混洗，包含两个部分，shuffle write 和shuffle read。这里有一篇文章:<a href="http://jerryshao.me/architecture/2014/01/04/spark-shuffle-detail-investigation/">详细探究Spark的shuffle实现</a>，这篇文章写于2014年，讲的是早期版本的shuffle实现。随着源码的更新，shuffle机制也做出了相应的优化，下面分析spark-2.0的shuffle机制。</p>
 
-<p><code class="highlighter-rouge">shuffleWriter</code>是一个抽象类，具体实现有三种，<code class="highlighter-rouge">BypassMergeSortShuffleWriter</code>,<code class="highlighter-rouge">sortShuffleWriter</code>,<code class="highlighter-rouge">UnsafeShuffleWriter</code>.</p>
+<p><code class="language-plaintext highlighter-rouge">shuffleWriter</code>是一个抽象类，具体实现有三种，<code class="language-plaintext highlighter-rouge">BypassMergeSortShuffleWriter</code>,<code class="language-plaintext highlighter-rouge">sortShuffleWriter</code>,<code class="language-plaintext highlighter-rouge">UnsafeShuffleWriter</code>.</p>
 
 <h3 id="bypassmergesortshufflewriter">BypassMergeSortShuffleWriter###</h3>
 
 <p>-_-,我先翻译下这个类开头给的注释，注释是很好的全局理解代码的工具，要好好理解。如下：</p>
 
-<p>这个类实现了基于sort-shuffle的hash风格的shuffle fallback path（回退路径？怎么翻）。这个write路径把数据写到不同的文件里，每个文件对应一个reduce分区，然后把这些文件整合到一个单独的文件，这个文件的不同区域服务不同的reducer。数据不是缓存在内存中。这个类本质上和之前的<code class="highlighter-rouge">HashShuffleReader</code>，除了这个类的输出格式可以通过<code class="highlighter-rouge">org.apache.spark.shuffle.IndexShuffleBlockResolver</code>来调用。这个写路径对于有许多reduce分区的shuffle来说是不高效的，因为他同时打开很多serializers和文件流。因此只有在以下情况下才会选择这个路径：</p>
+<p>这个类实现了基于sort-shuffle的hash风格的shuffle fallback path（回退路径？怎么翻）。这个write路径把数据写到不同的文件里，每个文件对应一个reduce分区，然后把这些文件整合到一个单独的文件，这个文件的不同区域服务不同的reducer。数据不是缓存在内存中。这个类本质上和之前的<code class="language-plaintext highlighter-rouge">HashShuffleReader</code>，除了这个类的输出格式可以通过<code class="language-plaintext highlighter-rouge">org.apache.spark.shuffle.IndexShuffleBlockResolver</code>来调用。这个写路径对于有许多reduce分区的shuffle来说是不高效的，因为他同时打开很多serializers和文件流。因此只有在以下情况下才会选择这个路径：</p>
 
 <p>1、没有排序  2、没有聚合操作  3、partition的数量小于bypassMergeThreshold</p>
 
 <p>这个代码曾经是ExternalSorter的一部分，但是为了减少代码复杂度就独立了出来。好，翻译结束。-_-</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Override
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Override
 public void write(Iterator&lt;Product2&lt;K, V&gt;&gt; records) throws IOException {
   assert (partitionWriters == null);
   if (!records.hasNext()) {
@@ -83,9 +83,9 @@ public void write(Iterator&lt;Product2&lt;K, V&gt;&gt; records) throws IOExcepti
 }
 </code></pre></div></div>
 
-<p>前面都很好理解，就是根据key的哈希值写到不同的文件里面，然后就是<code class="highlighter-rouge">writePartitionedFile</code>和<code class="highlighter-rouge">writeIndexFileAndCommit</code>。</p>
+<p>前面都很好理解，就是根据key的哈希值写到不同的文件里面，然后就是<code class="language-plaintext highlighter-rouge">writePartitionedFile</code>和<code class="language-plaintext highlighter-rouge">writeIndexFileAndCommit</code>。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Concatenate all of the per-partition files into a single combined file.
  *
  * @return array of lengths, in bytes, of each partition of the file (used by map output tracker).
@@ -130,7 +130,7 @@ private long[] writePartitionedFile(File outputFile) throws IOException {
 
 <p>这个就是按顺序把之前写的分区文件里的数据合并到一个大文件里面，然后返回每个分区文件的长度。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Write an index file with the offsets of each block, plus a final offset at the end for the
  * end of the output file. This will be used by getBlockData to figure out where each block
  * begins and ends.
@@ -203,15 +203,15 @@ def writeIndexFileAndCommit(
 
 <p>如果是第一次执行到这里，那么就把之前的indexTmp重命名为indexFile，dataTmp重命名为dataFile然后返回。</p>
 
-<p>这里要注意下，每个executor上面只有一个<code class="highlighter-rouge">IndexShuffleBlockResolver</code>，这个管理这个executor上所有的indexFile.</p>
+<p>这里要注意下，每个executor上面只有一个<code class="language-plaintext highlighter-rouge">IndexShuffleBlockResolver</code>，这个管理这个executor上所有的indexFile.</p>
 
-<p>等这个indexFile也写好之后，就返回<code class="highlighter-rouge">mapStatus</code>。shuffleWrite就结束了。</p>
+<p>等这个indexFile也写好之后，就返回<code class="language-plaintext highlighter-rouge">mapStatus</code>。shuffleWrite就结束了。</p>
 
 <h3 id="sortshufflewriter">SortShuffleWriter</h3>
 
-<p>首先描述下大概。因为是sort，所以要排序，这里就用到了ExternalSoter这个数据结构。然后把要处理的数据全部插入到ExternalSorter里面，在插入的过程中是不排序的，就是插入，插入数据是(partitionId,key,value)。然后是调用<code class="highlighter-rouge"> sorter.writePartitionedFile</code>,在这里会排序，会按照partitionId和key（或者key的hashcode）进行排序，其他的就和上面bypassShuffleWriter的差不多了，最后也是写到一个indexFile里面。返回mapStatus。</p>
+<p>首先描述下大概。因为是sort，所以要排序，这里就用到了ExternalSoter这个数据结构。然后把要处理的数据全部插入到ExternalSorter里面，在插入的过程中是不排序的，就是插入，插入数据是(partitionId,key,value)。然后是调用<code class="language-plaintext highlighter-rouge"> sorter.writePartitionedFile</code>,在这里会排序，会按照partitionId和key（或者key的hashcode）进行排序，其他的就和上面bypassShuffleWriter的差不多了，最后也是写到一个indexFile里面。返回mapStatus。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/** Write a bunch of records to this task's output */
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/** Write a bunch of records to this task's output */
 override def write(records: Iterator[Product2[K, V]]): Unit = {
   sorter = if (dep.mapSideCombine) {
     require(dep.aggregator.isDefined, "Map-side combine without Aggregator specified!")
@@ -244,15 +244,15 @@ override def write(records: Iterator[Product2[K, V]]): Unit = {
 }
 </code></pre></div></div>
 
-<p>这里面ExternalSorter是核心。看它的源码，它存数据是使用的两种数据结构。<code class="highlighter-rouge">PartitionedAppendOnlyMap</code>、<code class="highlighter-rouge">PartitionedPairBuffer</code>，其中有聚合操作使用map，没有聚合操作使用buffer。PartitionedAppendOnlyMap 继承了SizeTrackingAppendOnlyMap 和WritablePartitionedPairCollection 。 其中SizeTrackingAppendOnlyMap是用于预测空间（SizeTracker），然后加存储数据（AppendOnlyMap）,然后WritablePartitionedPairCollection是用于插入数据时候插入partitionId（insert(partition: Int, key: K, value: V)）加上里面实现了对数据按照partitionId和Key排序的方法。</p>
+<p>这里面ExternalSorter是核心。看它的源码，它存数据是使用的两种数据结构。<code class="language-plaintext highlighter-rouge">PartitionedAppendOnlyMap</code>、<code class="language-plaintext highlighter-rouge">PartitionedPairBuffer</code>，其中有聚合操作使用map，没有聚合操作使用buffer。PartitionedAppendOnlyMap 继承了SizeTrackingAppendOnlyMap 和WritablePartitionedPairCollection 。 其中SizeTrackingAppendOnlyMap是用于预测空间（SizeTracker），然后加存储数据（AppendOnlyMap）,然后WritablePartitionedPairCollection是用于插入数据时候插入partitionId（insert(partition: Int, key: K, value: V)）加上里面实现了对数据按照partitionId和Key排序的方法。</p>
 
 <p>我主要是对AppendOnlyMap怎么存储数据比较感兴趣。看下AppendOnlyMap。</p>
 
-<p>看源码，它存储数据是<code class="highlighter-rouge">private var data = new Array[AnyRef](2 * capacity)</code>,是使用数组存储的，key和value挨着，这样做是为了节省空间。</p>
+<p>看源码，它存储数据是<code class="language-plaintext highlighter-rouge">private var data = new Array[AnyRef](2 * capacity)</code>,是使用数组存储的，key和value挨着，这样做是为了节省空间。</p>
 
 <p>然后map的Update和changeValue函数是差不多的，只不过后者的changeValue是由计算函数计算的value，所以我们就看update方法。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/** Set the value for a key */
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/** Set the value for a key */
 def update(key: K, value: V): Unit = {
   assert(!destroyed, destructionMessage)
   val k = key.asInstanceOf[AnyRef]
@@ -289,13 +289,13 @@ def update(key: K, value: V): Unit = {
 
 <p>然后这个AppendOnlyMap会在growMap的时候重新hash。在sorter.insertall时候是不排序的。</p>
 
-<p>然后writePartitionedFile 里面调用<code class="highlighter-rouge">collection.destructiveSortedWritablePartitionedIterator(comparator)	</code>会对数据排序，之后就跟上一小节里面的writePartitionedFile差不多了，无非就是把内存里面的数据和spill的数据合并之后写入大文件里面，之后的writeIndexFile是一样的，就不细说。</p>
+<p>然后writePartitionedFile 里面调用<code class="language-plaintext highlighter-rouge">collection.destructiveSortedWritablePartitionedIterator(comparator)	</code>会对数据排序，之后就跟上一小节里面的writePartitionedFile差不多了，无非就是把内存里面的数据和spill的数据合并之后写入大文件里面，之后的writeIndexFile是一样的，就不细说。</p>
 
 <h3 id="unsafeshufflewriter">unsafeShuffleWriter</h3>
 
 <p>这里之所以叫作unsafe，是因为要操纵堆外内存，把数据写到堆外，堆外内存是不受jvm控制的，需要手动进行申请内存与释放内存空间，所以是unsafe的。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Override
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>@Override
 public void write(scala.collection.Iterator&lt;Product2&lt;K, V&gt;&gt; records) throws IOException {
   // Keep track of success so we know if we encountered an exception
   // We do this rather than a standard try/catch/re-throw to handle
@@ -332,7 +332,7 @@ public void write(scala.collection.Iterator&lt;Product2&lt;K, V&gt;&gt; records)
 
 <p>前面三个shuffleWriter，shuffle分为shuffleWriter和shuffleReader。shuffleReadr只有一个具体实现类就是BlockStoreShuffleReader。看开头注释为：读取（startPartition和endPartition）之间的partition的数据，从其他节点。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/** Read the combined key-values for this reduce task */
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/** Read the combined key-values for this reduce task */
 override def read(): Iterator[Product2[K, C]] = {
   val blockFetcherItr = new ShuffleBlockFetcherIterator(
     context,
@@ -405,11 +405,11 @@ override def read(): Iterator[Product2[K, C]] = {
 }
 </code></pre></div></div>
 
-<p>首先是建立一个<code class="highlighter-rouge">ShuffleBlockFetcherIterator</code>，传入的参数有<code class="highlighter-rouge">mapOutputTracker.getMapSizesByExecutorId(handle.shuffleId, startPartition, endPartition)</code>,这个是必须的，只取需要的partition的数据。</p>
+<p>首先是建立一个<code class="language-plaintext highlighter-rouge">ShuffleBlockFetcherIterator</code>，传入的参数有<code class="language-plaintext highlighter-rouge">mapOutputTracker.getMapSizesByExecutorId(handle.shuffleId, startPartition, endPartition)</code>,这个是必须的，只取需要的partition的数据。</p>
 
 <p>点进去ShuffleBlockFetcherIterator这个类，发现这个类会自动调用initialize()方法。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private[this] def initialize(): Unit = {
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private[this] def initialize(): Unit = {
   // Add a task completion callback (called in both success case and failure case) to cleanup.
   context.addTaskCompletionListener(_ =&gt; cleanup())
 
@@ -433,9 +433,9 @@ override def read(): Iterator[Product2[K, C]] = {
 }
 </code></pre></div></div>
 
-<p>这个方法里面会<code class="highlighter-rouge">fetchUpToMaxBytes()</code>和<code class="highlighter-rouge">fetchLocalBlocks()</code>,一个是取远程数据一个是取本地数据。</p>
+<p>这个方法里面会<code class="language-plaintext highlighter-rouge">fetchUpToMaxBytes()</code>和<code class="language-plaintext highlighter-rouge">fetchLocalBlocks()</code>,一个是取远程数据一个是取本地数据。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def fetchUpToMaxBytes(): Unit = {
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def fetchUpToMaxBytes(): Unit = {
   // Send fetch requests up to maxBytesInFlight
   while (fetchRequests.nonEmpty &amp;&amp;
     (bytesInFlight == 0 ||
@@ -446,9 +446,9 @@ override def read(): Iterator[Product2[K, C]] = {
 }
 </code></pre></div></div>
 
-<p>这里会设置一个阈值，避免过度负载的。<code class="highlighter-rouge">sendRequest</code>来请求数据。</p>
+<p>这里会设置一个阈值，避免过度负载的。<code class="language-plaintext highlighter-rouge">sendRequest</code>来请求数据。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private[this] def sendRequest(req: FetchRequest) {
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private[this] def sendRequest(req: FetchRequest) {
   logDebug("Sending request for %d blocks (%s) from %s".format(
     req.blocks.size, Utils.bytesToString(req.size), req.address.hostPort))
   bytesInFlight += req.size

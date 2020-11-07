@@ -1,4 +1,4 @@
-I"�g
+I"Mh
 <ul id="markdown-toc">
   <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
   <li><a href="#寻找一种易于理解的一致性算法扩展版" id="markdown-toc-寻找一种易于理解的一致性算法扩展版">寻找一种易于理解的一致性算法（扩展版）</a>    <ul>
@@ -267,11 +267,11 @@
 <p>接收者实现：</p>
 
 <ol>
-  <li>如果 <code class="highlighter-rouge">term &lt; currentTerm</code> 就返回 false （5.1 节）</li>
+  <li>如果 <code class="language-plaintext highlighter-rouge">term &lt; currentTerm</code> 就返回 false （5.1 节）</li>
   <li>如果日志在 prevLogIndex 位置处的日志条目的任期号和 prevLogTerm 不匹配，则返回 false （5.3 节）</li>
   <li>如果已经存在的日志条目和新的产生冲突（索引值相同但是任期号不同），删除这一条和之后所有的 （5.3 节）</li>
   <li>附加任何在已有的日志中不存在的条目</li>
-  <li>如果 <code class="highlighter-rouge">leaderCommit &gt; commitIndex</code>，令 commitIndex 等于 leaderCommit 和 新日志条目索引值中较小的一个</li>
+  <li>如果 <code class="language-plaintext highlighter-rouge">leaderCommit &gt; commitIndex</code>，令 commitIndex 等于 leaderCommit 和 新日志条目索引值中较小的一个</li>
 </ol>
 
 <p><strong>请求投票 RPC</strong>：</p>
@@ -327,7 +327,7 @@
 <p>接收者实现：</p>
 
 <ol>
-  <li>如果<code class="highlighter-rouge">term &lt; currentTerm</code>返回 false （5.2 节）</li>
+  <li>如果<code class="language-plaintext highlighter-rouge">term &lt; currentTerm</code>返回 false （5.2 节）</li>
   <li>如果 votedFor 为空或者就是 candidateId，并且候选人的日志至少和自己一样新，那么就投票给他（5.2 节，5.4 节）</li>
 </ol>
 
@@ -336,8 +336,8 @@
 <p>所有服务器：</p>
 
 <ul>
-  <li>如果<code class="highlighter-rouge">commitIndex &gt; lastApplied</code>，那么就 lastApplied 加一，并把<code class="highlighter-rouge">log[lastApplied]</code>应用到状态机中（5.3 节）</li>
-  <li>如果接收到的 RPC 请求或响应中，任期号<code class="highlighter-rouge">T &gt; currentTerm</code>，那么就令 currentTerm 等于 T，并切换状态为跟随者（5.1 节）</li>
+  <li>如果<code class="language-plaintext highlighter-rouge">commitIndex &gt; lastApplied</code>，那么就 lastApplied 加一，并把<code class="language-plaintext highlighter-rouge">log[lastApplied]</code>应用到状态机中（5.3 节）</li>
+  <li>如果接收到的 RPC 请求或响应中，任期号<code class="language-plaintext highlighter-rouge">T &gt; currentTerm</code>，那么就令 currentTerm 等于 T，并切换状态为跟随者（5.1 节）</li>
 </ul>
 
 <p>跟随者（5.2 节）：</p>
@@ -374,7 +374,7 @@
       <li>如果因为日志不一致而失败，减少 nextIndex 重试</li>
     </ul>
   </li>
-  <li>如果存在一个满足<code class="highlighter-rouge">N &gt; commitIndex</code>的 N，并且大多数的<code class="highlighter-rouge">matchIndex[i] ≥ N</code>成立，并且<code class="highlighter-rouge">log[N].term == currentTerm</code>成立，那么令 commitIndex 等于这个 N （5.3 和 5.4 节）</li>
+  <li>如果存在一个满足<code class="language-plaintext highlighter-rouge">N &gt; commitIndex</code>的 N，并且大多数的<code class="language-plaintext highlighter-rouge">matchIndex[i] ≥ N</code>成立，并且<code class="language-plaintext highlighter-rouge">log[N].term == currentTerm</code>成立，那么令 commitIndex 等于这个 N （5.3 和 5.4 节）</li>
 </ul>
 
 <p><img src="/imgs/raft/raft-%E5%9B%BE2.png" alt="图 2 " /></p>
@@ -690,7 +690,7 @@
 <p><strong>接收者实现</strong>：</p>
 
 <ol>
-  <li>如果<code class="highlighter-rouge">term &lt; currentTerm</code>就立即回复</li>
+  <li>如果<code class="language-plaintext highlighter-rouge">term &lt; currentTerm</code>就立即回复</li>
   <li>如果是第一个分块（offset 为 0）就创建一个新的快照</li>
   <li>在指定偏移量写入数据</li>
   <li>如果 done 是 false，则继续等待更多的数据</li>

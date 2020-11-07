@@ -1,4 +1,4 @@
-I"*
+I"� 
 <p><strong>Overview</strong></p>
 
 <p>最近帮大菠萝安装ganglia，记录下，方便以后安装。</p>
@@ -7,12 +7,12 @@
 
 <p>I configured our nodes with the following hostnames using these steps. Our server is:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>3.buhpc.com
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>3.buhpc.com
 </code></pre></div></div>
 
 <p>The clients are:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.buhpc.com
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1.buhpc.com
 2.buhpc.com
 4.buhpc.com
 5.buhpc.com
@@ -24,12 +24,12 @@
 
 <p>On the server, inside the shared folder of our cluster, we will first download the latest version of ganglia. For our cluster, /nfs is the folder with our network file system.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd /nfs
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd /nfs
 wget http://downloads.sourceforge.net/project/ganglia/ganglia%20monitoring%20core/3.7.2/ganglia-3.7.2.tar.gz
 </code></pre></div></div>
 <p>On the server, we will install dependencies and libconfuse.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>yum install freetype-devel rpm-build php httpd libpng-devel libart_lgpl-devel python-devel pcre-devel autoconf automake libtool expat-devel rrdtool-devel apr-devel gcc-c++ make pkgconfig -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
 
@@ -40,16 +40,16 @@ chown nobody:nobody -R /var/lib/ganglia/rrds/
 
 <p>Now, we will build the rpms from ganglia-3.7.2 on the server.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rpmbuild -tb ganglia-3.7.2.tar.gz
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>rpmbuild -tb ganglia-3.7.2.tar.gz
 </code></pre></div></div>
 <p>After running rpmbuild, /root/rpmbuild/RPMS/x86_64 contains the generated rpms:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd /root/rpmbuild/RPMS/x86_64/
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd /root/rpmbuild/RPMS/x86_64/
 yum install *ganglia*.rpm -y
 </code></pre></div></div>
 <p>We will remove gmetad because we do not need it on the clients. Send the rest of the rpms to all the clients’ /tmp folder:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd /root/rpmbuild/RPMS/x86_64/
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd /root/rpmbuild/RPMS/x86_64/
 rm -rf ganglia-gmetad*.rpm
 scp *.rpm root@1.buhpc.com:/tmp
 scp *.rpm root@2.buhpc.com:/tmp
@@ -59,27 +59,27 @@ scp *.rpm root@6.buhpc.com:/tmp
 </code></pre></div></div>
 <p>SSH onto every client and install the rpms that we will need:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ssh root@#.buhpc.com
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ssh root@#.buhpc.com
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-2.7-7.el7.x86_64.rpm -y
 yum install https://dl.fedoraproject.org/pub/epel/7/x86_64/l/libconfuse-devel-2.7-7.el7.x86_64.rpm -y
 yum install /tmp/*ganglia*.rpm - y
 </code></pre></div></div>
 <p>Back on the server, we will adjust the gmetad configuration file:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd /etc/ganglia
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd /etc/ganglia
 vim gmetad.conf
 </code></pre></div></div>
 <p>buhpc will be the name of  our cluster. Find the following line and add the name of your cluster and ip address. I am using the subdomain instead of the ip address.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>data_source "buhpc" 1 3.buhpc.com
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>data_source "buhpc" 1 3.buhpc.com
 </code></pre></div></div>
 <p>Now, we edit the server’s gmond configuration file.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/ganglia/gmond.conf
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/ganglia/gmond.conf
 </code></pre></div></div>
 <p>Make sure that these sections have the following and comment any extra lines you see that are within each section.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cluster {
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cluster {
   name = "buhpc"
   owner = "unspecified"
   latlong = "unspecified"
@@ -128,11 +128,11 @@ udp_recv_channel {
 </code></pre></div></div>
 <p>Now, SSH into each of the clients and do the following individually. On every client:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/ganglia/gmond.conf
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/ganglia/gmond.conf
 </code></pre></div></div>
 <p>We will change the clients’ gmond.conf in the same way as the server’s.  Make sure that these sections have the following lines and comment any extra lines you see that are within each section.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cluster {
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cluster {
   name = "buhpc"
   owner = "unspecified"
   latlong = "unspecified"
@@ -181,12 +181,12 @@ udp_recv_channel {
 </code></pre></div></div>
 <p>We will start gmond on the clients for monitoring.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>chkconfig gmond on
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>chkconfig gmond on
 systemctl start gmond
 </code></pre></div></div>
 <p>然后，安装ganglia-web 3.7.1</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>wget http://superb-sea2.dl.sourceforge.net/project/ganglia/ganglia-web/3.7.1/ganglia-web-3.7.1.tar.gz
 tar zxvf  ganglia-web-3.7.1.tar.gz
 cd  ganglia-web-3.7.1
 vim Makefile
@@ -207,7 +207,7 @@ vim Makefile
 
 <p>Next, we will want to disable SELinux. Change SELINUX inside /etc/sysconfig/selinux from enforcing to disabled. Then, restart the server node.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/sysconfig/selinux
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vim /etc/sysconfig/selinux
 SELINUX=disabled
 #如果 SELINUX本就是disable，不必reboot
 reboot
@@ -223,7 +223,7 @@ firewall-cmd --reload
 </code></pre></div></div>
 <p>On the server, we will now start httpd, gmetad, and gmond.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>chkconfig httpd
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>chkconfig httpd
 chkconfig gmetad on
 chkconfig gmond on
 systemctl start httpd

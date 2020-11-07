@@ -1,4 +1,4 @@
-I"
+I"�
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
@@ -20,7 +20,7 @@
 
 <p>bucket table是一种Spark常见的优化查询的建表方式。</p>
 
-<p>创建方式是使用<code class="highlighter-rouge">clustered by </code>语法进行创建，会根据<code class="highlighter-rouge">spark.sql.shuffle.partitions</code>的值创建若干个bucket。</p>
+<p>创建方式是使用<code class="language-plaintext highlighter-rouge">clustered by </code>语法进行创建，会根据<code class="language-plaintext highlighter-rouge">spark.sql.shuffle.partitions</code>的值创建若干个bucket。</p>
 
 <p>Spark中对于两个大表的join，采用的方式是SortMergeJoin.</p>
 
@@ -32,7 +32,7 @@
 
 <p>如果只是单纯的对这个bucket表进行一些处理操作，例如就是一个单纯的shuffle操作。而这个bucket表的每个bucket都特别大，例如大于1个G，而在shuffle write阶段要生成3G的数据。那么这时候对每个bucket分配一个task来处理就会非常吃力。</p>
 
-<p>其实spark sql中有一个参数 <code class="highlighter-rouge">spark.sql.sources.bucketing.enabled</code>,默认是true。如果我们将这个参数设置为false，那么spark就会将一个bucket table看做一个普通的table。</p>
+<p>其实spark sql中有一个参数 <code class="language-plaintext highlighter-rouge">spark.sql.sources.bucketing.enabled</code>,默认是true。如果我们将这个参数设置为false，那么spark就会将一个bucket table看做一个普通的table。</p>
 
 <p>这意味着什么呢？</p>
 
@@ -52,7 +52,7 @@
 
 <p>答案当然是Ok的，一条sql语句进行解析器之后都会成为一个抽象语法树，每个TreeNode都有自己的类型，我们可以根据这些类型拿到自己想要的信息，比如table name， function name, location等等信息(table 根据TableIdentifier类型节点获得，function根据FunctionIdentifier, location信息从LoadDataCommand或者CreateTableCommand中获取)。</p>
 
-<p>如下图所以，一条SQL语句<code class="highlighter-rouge">INSERT INTO TRABLE tb SELECT ta.id FROM ta JOIN tb on ta.id=tb.id</code>会被大概转化为下面一个AST.</p>
+<p>如下图所以，一条SQL语句<code class="language-plaintext highlighter-rouge">INSERT INTO TRABLE tb SELECT ta.id FROM ta JOIN tb on ta.id=tb.id</code>会被大概转化为下面一个AST.</p>
 
 <p><img src="/imgs/spark-sth/ast.png" alt="" /></p>
 
@@ -65,7 +65,7 @@
 <ul>
   <li>Spark使用antlr v4进行sql解析</li>
   <li>每个sql最开始解析为一个原始的AST(parsedPlan，未经过analyze/optimize)</li>
-  <li>这个sql也对应一个<code class="highlighter-rouge">ParserRuleContext</code>(package <code class="highlighter-rouge">org.antlr.v4.runtime</code>)</li>
+  <li>这个sql也对应一个<code class="language-plaintext highlighter-rouge">ParserRuleContext</code>(package <code class="language-plaintext highlighter-rouge">org.antlr.v4.runtime</code>)</li>
 </ul>
 
 <p>ParserRuleContext其实也是一棵树，类似于AST，但是它的每个叶子节点会对应一段text,也就是说对应一部分原始的sql语句(table对应TableIdentifierContext，function对应QualifiedNameContext, location对应LocationSpecContext)。</p>

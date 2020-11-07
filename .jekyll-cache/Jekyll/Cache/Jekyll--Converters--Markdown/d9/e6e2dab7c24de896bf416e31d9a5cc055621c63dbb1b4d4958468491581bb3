@@ -1,4 +1,4 @@
-I"��
+I"�
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -25,7 +25,7 @@
 <h3 id="broadcastjoin">BroadcastJoin</h3>
 <p>前面提到BroadcastJoin是在一个极小表和一个大表进行Join时候选择的join方式，由于BroadcastJoin不需要进行shuffle，所以大家比较喜欢这种Join方式。但是由于Broadcast是需要将数据拉取到driver然后分发到各个executor，因此driver内存是一个瓶颈。前面也提到是极小表，那么是多小的表才会使用这种Join呢？</p>
 
-<p>Spark中有一个参数称之为<code class="highlighter-rouge">spark.sql.autoBroadcastJoinThreshold</code>, 其代表当这个表在磁盘上size小于这个值时，会使用BroadcastJoin，而如果我们将其设为-1，代表disable BroadcastJoin（官方文档的解释)。</p>
+<p>Spark中有一个参数称之为<code class="language-plaintext highlighter-rouge">spark.sql.autoBroadcastJoinThreshold</code>, 其代表当这个表在磁盘上size小于这个值时，会使用BroadcastJoin，而如果我们将其设为-1，代表disable BroadcastJoin（官方文档的解释)。</p>
 
 <p>除了该threshold之外，Broadcast还有一个限制，就是广播的表的行数不能超过512 milions行，也就是5亿多行，这个值是hard code的, 因为BroadcastJoin是要基于小表构建hashMap, 行数就对应其构建hashMap的元素数量，因此必须对小表的行数有限制。也就是说即使表的磁盘物理size小于threshold，条数超过这个行数也不能进行BroadcastJoin。</p>
 
@@ -41,11 +41,11 @@
 	at org.apache.spark.sql.execution.exchange.BroadcastExchangeExec<span class="nv">$$</span>anonfun<span class="nv">$relationFuture$1</span>.apply<span class="o">(</span>BroadcastExchangeExec.scala:72<span class="o">)</span>
 </code></pre></div></div>
 
-<p>看到这个异常的第一反应就是去查询<code class="highlighter-rouge">spark.sql.autoBroadcastJoinThreshold</code>的值，然后查到的结果100m。当时的想法是，为什么这个表在磁盘上不到100m大小，而其有6亿行数据，难道是列数十分少，并且压缩的特别的严重，不像是生产环境中的表。</p>
+<p>看到这个异常的第一反应就是去查询<code class="language-plaintext highlighter-rouge">spark.sql.autoBroadcastJoinThreshold</code>的值，然后查到的结果100m。当时的想法是，为什么这个表在磁盘上不到100m大小，而其有6亿行数据，难道是列数十分少，并且压缩的特别的严重，不像是生产环境中的表。</p>
 
 <p>然后查询了一下表的信息，果然这个表只有一列，类型为Decimal类型，然后使用的压缩方式是snappy，而表的大小只有3.5m，想必是由于列是数值类型，所以压缩十分恐怖。</p>
 
-<p>当时没有产生其他怀疑，就建议用户将<code class="highlighter-rouge">spark.sql.autoBroadcastJoinThreshold</code>设置为-1，禁用掉BroadcastJoin。</p>
+<p>当时没有产生其他怀疑，就建议用户将<code class="language-plaintext highlighter-rouge">spark.sql.autoBroadcastJoinThreshold</code>设置为-1，禁用掉BroadcastJoin。</p>
 
 <p>过了段时间，用户回复说设置了之后仍然报上面的异常。</p>
 
@@ -60,11 +60,11 @@
 
 <h3 id="问题排查">问题排查</h3>
 
-<p>首先，就是自己把用户的sql语句拿过来，使用 <code class="highlighter-rouge">setspark.sql.autoBroadcastJoinThreshold=-1</code> 命令设置参数，使用<code class="highlighter-rouge">explain</code>命令进行查询执行计划。</p>
+<p>首先，就是自己把用户的sql语句拿过来，使用 <code class="language-plaintext highlighter-rouge">setspark.sql.autoBroadcastJoinThreshold=-1</code> 命令设置参数，使用<code class="language-plaintext highlighter-rouge">explain</code>命令进行查询执行计划。</p>
 
-<p>发现执行计划中有一个<code class="highlighter-rouge">BroadcastNestedLoopJoin</code>.</p>
+<p>发现执行计划中有一个<code class="language-plaintext highlighter-rouge">BroadcastNestedLoopJoin</code>.</p>
 
-<p>然后去查看源码。发现其只有在<code class="highlighter-rouge">JoinSelection</code>这个将执行计划转换为物理执行计划的规则<code class="highlighter-rouge">apply</code>的时候才进行调用。</p>
+<p>然后去查看源码。发现其只有在<code class="language-plaintext highlighter-rouge">JoinSelection</code>这个将执行计划转换为物理执行计划的规则<code class="language-plaintext highlighter-rouge">apply</code>的时候才进行调用。</p>
 
 <p>这个规则就是选择使用Join的方式，优先BroadcastJoin，其次ShuffleHashJoin，最次SortMergeJoin。</p>
 
@@ -86,7 +86,7 @@
 <span class="o">}</span>
 </code></pre></div></div>
 
-<p>发现这个<code class="highlighter-rouge">BroadcastNestedLoopJoinExec</code>只有在不能提取出equal的join key 的left/right Join 时才会调用，而且是一定会调用。</p>
+<p>发现这个<code class="language-plaintext highlighter-rouge">BroadcastNestedLoopJoinExec</code>只有在不能提取出equal的join key 的left/right Join 时才会调用，而且是一定会调用。</p>
 
 <p>什么是equal Join key的Join。举个例子.</p>
 
@@ -101,9 +101,9 @@
 
 <h3 id="解决方案">解决方案</h3>
 
-<p>因此，问题就是用户在使用进行 left/right join时，表a 和表b的join key是空的，所以一定会调用<code class="highlighter-rouge">BroadcastNestedLoopJoinExec</code>,即使我们将BroadcastJoinThreshold设为-1.</p>
+<p>因此，问题就是用户在使用进行 left/right join时，表a 和表b的join key是空的，所以一定会调用<code class="language-plaintext highlighter-rouge">BroadcastNestedLoopJoinExec</code>,即使我们将BroadcastJoinThreshold设为-1.</p>
 
-<p>所以解决方案就是更改用户的sql语句，其实用户之前的sql在<code class="highlighter-rouge">a left join b</code>的时候没有添加join 条件，所以就相当于一个cross join，所以如果我们将原来语句中a b之间的left  join 改成cross join 就可以绕过BroadcastJoin，而去使用Cross join。但是，Cross join 是一个很重的join，其会产生M*R个task(M为 mapTask数量,R为reduceTask数量)。</p>
+<p>所以解决方案就是更改用户的sql语句，其实用户之前的sql在<code class="language-plaintext highlighter-rouge">a left join b</code>的时候没有添加join 条件，所以就相当于一个cross join，所以如果我们将原来语句中a b之间的left  join 改成cross join 就可以绕过BroadcastJoin，而去使用Cross join。但是，Cross join 是一个很重的join，其会产生M*R个task(M为 mapTask数量,R为reduceTask数量)。</p>
 
 <p>PS: 此处看起来，如果你要进行一个大表和小表的cross join，而且小表的条数又不会超过Broadcast的条数上限，那么将cross join 替换为无join条件的left join，走Broadcast是一个不错的选择。</p>
 
@@ -176,7 +176,7 @@
   <span class="o">}</span>
 </code></pre></div></div>
 
-<p>第一条select语句的执行计划如下，由于其a 与b的 joinKey为空，所以其包含<code class="highlighter-rouge">BroadcastNestedLoopJoinExec</code>。</p>
+<p>第一条select语句的执行计划如下，由于其a 与b的 joinKey为空，所以其包含<code class="language-plaintext highlighter-rouge">BroadcastNestedLoopJoinExec</code>。</p>
 
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">==</span> <span class="n">Physical</span> <span class="n">Plan</span> <span class="o">==</span>
 <span class="n">SortMergeJoin</span> <span class="p">[</span><span class="n">bid2</span><span class="o">#</span><span class="mi">177</span><span class="p">],</span> <span class="p">[</span><span class="n">cid</span><span class="o">#</span><span class="mi">178</span><span class="p">],</span> <span class="n">LeftOuter</span><span class="p">,</span> <span class="p">(</span><span class="n">aid</span><span class="o">#</span><span class="mi">175</span> <span class="o">=</span> <span class="n">bid</span><span class="o">#</span><span class="mi">176</span><span class="p">)</span>
@@ -191,7 +191,7 @@
       <span class="o">+-</span> <span class="o">*</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="n">FileScan</span> <span class="n">parquet</span> <span class="k">default</span><span class="p">.</span><span class="n">tc</span><span class="p">[</span><span class="n">cid</span><span class="o">#</span><span class="mi">178</span><span class="p">]</span> <span class="n">Batched</span><span class="p">:</span> <span class="k">true</span><span class="p">,</span> <span class="n">Format</span><span class="p">:</span> <span class="n">Parquet</span><span class="p">,</span> <span class="k">Location</span><span class="p">:</span> <span class="n">InMemoryFileIndex</span><span class="p">[</span><span class="n">file</span><span class="p">:</span><span class="o">/</span><span class="n">Users</span><span class="o">/</span><span class="n">fwang12</span><span class="o">/</span><span class="n">ebay</span><span class="o">/</span><span class="n">spark</span><span class="o">-</span><span class="n">longwing</span><span class="o">/</span><span class="n">launcher</span><span class="o">/</span><span class="n">spark</span><span class="o">-</span><span class="n">warehouse</span><span class="o">/</span><span class="n">tc</span><span class="p">],</span> <span class="n">PartitionFilters</span><span class="p">:</span> <span class="p">[],</span> <span class="n">PushedFilters</span><span class="p">:</span> <span class="p">[],</span> <span class="n">ReadSchema</span><span class="p">:</span> <span class="n">struct</span><span class="o">&lt;</span><span class="n">cid</span><span class="p">:</span><span class="nb">int</span><span class="o">&gt;</span>
 </code></pre></div></div>
 
-<p>第二条select语句执行计划如下，由于a 和b是cross join，而且b c之间有equi join key，所以其不会有<code class="highlighter-rouge">BroadcastNestedLoopJoinExec</code>.</p>
+<p>第二条select语句执行计划如下，由于a 和b是cross join，而且b c之间有equi join key，所以其不会有<code class="language-plaintext highlighter-rouge">BroadcastNestedLoopJoinExec</code>.</p>
 
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">==</span> <span class="n">Physical</span> <span class="n">Plan</span> <span class="o">==</span>
 <span class="n">SortMergeJoin</span> <span class="p">[</span><span class="n">bid2</span><span class="o">#</span><span class="mi">177</span><span class="p">],</span> <span class="p">[</span><span class="n">cid</span><span class="o">#</span><span class="mi">178</span><span class="p">],</span> <span class="n">LeftOuter</span><span class="p">,</span> <span class="p">(</span><span class="n">aid</span><span class="o">#</span><span class="mi">175</span> <span class="o">=</span> <span class="n">bid</span><span class="o">#</span><span class="mi">176</span><span class="p">)</span>
@@ -206,7 +206,7 @@
 
 </code></pre></div></div>
 
-<p>第三条语句由于a b 和 b c之间都有equi join key，所以其不会触发<code class="highlighter-rouge">BroadcastNestedLoopJoinExec</code>。</p>
+<p>第三条语句由于a b 和 b c之间都有equi join key，所以其不会触发<code class="language-plaintext highlighter-rouge">BroadcastNestedLoopJoinExec</code>。</p>
 
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">==</span> <span class="n">Physical</span> <span class="n">Plan</span> <span class="o">==</span>
 <span class="n">SortMergeJoin</span> <span class="p">[</span><span class="n">bid2</span><span class="o">#</span><span class="mi">177</span><span class="p">],</span> <span class="p">[</span><span class="n">cid</span><span class="o">#</span><span class="mi">178</span><span class="p">],</span> <span class="n">LeftOuter</span>
@@ -225,7 +225,7 @@
 
 </code></pre></div></div>
 
-<p>第四条语句由于a b之间虽然有 join key， 但是是非 equi的join key <code class="highlighter-rouge">ta.aid != tb.bid</code>，所以其会触发<code class="highlighter-rouge">BroadcastNestedLoopJoinExec</code>。</p>
+<p>第四条语句由于a b之间虽然有 join key， 但是是非 equi的join key <code class="language-plaintext highlighter-rouge">ta.aid != tb.bid</code>，所以其会触发<code class="language-plaintext highlighter-rouge">BroadcastNestedLoopJoinExec</code>。</p>
 
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">==</span> <span class="n">Physical</span> <span class="n">Plan</span> <span class="o">==</span>
 <span class="n">SortMergeJoin</span> <span class="p">[</span><span class="n">bid2</span><span class="o">#</span><span class="mi">177</span><span class="p">],</span> <span class="p">[</span><span class="n">cid</span><span class="o">#</span><span class="mi">178</span><span class="p">],</span> <span class="n">LeftOuter</span>

@@ -1,4 +1,4 @@
-I"�g
+I"�h
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -33,7 +33,7 @@
 
 <h4 id="case-1">Case 1</h4>
 
-<p>例如我们定义了一个类，代表一个Student，然后场景是一个考场，每个学生用一个线程进行表示，而每个学生有一个做卷子的进度变量，这个变量必须是对应一个学生，也就是一个线程。这个时候，我们需要定义一个<code class="highlighter-rouge">ThreadLocal</code>类型的state变量来表示每个学生目前的状态，这样每个学生的状态不会互相干扰.</p>
+<p>例如我们定义了一个类，代表一个Student，然后场景是一个考场，每个学生用一个线程进行表示，而每个学生有一个做卷子的进度变量，这个变量必须是对应一个学生，也就是一个线程。这个时候，我们需要定义一个<code class="language-plaintext highlighter-rouge">ThreadLocal</code>类型的state变量来表示每个学生目前的状态，这样每个学生的状态不会互相干扰.</p>
 
 <p>例如下面的这段代码，在同一个线程里面的Student 的ThreadLocal值是一样的。</p>
 
@@ -110,7 +110,7 @@
 
 <p><strong>脏数据</strong></p>
 
-<p>线程复用可能会产生脏数据，由于线程池会重用Thread对象，那么与Thread绑定的类的静态属性ThreadLocal变量也会被重用。如果在实现的线程<code class="highlighter-rouge">run()</code>方法体重不显示的调用remove()清理与线程相关的ThreadLocal信息，那么倘若下一个线程不调用set()设置初始值，就可能get到重用的线程信息，包括ThreadLocal所关联的线程对象的Value值.</p>
+<p>线程复用可能会产生脏数据，由于线程池会重用Thread对象，那么与Thread绑定的类的静态属性ThreadLocal变量也会被重用。如果在实现的线程<code class="language-plaintext highlighter-rouge">run()</code>方法体重不显示的调用remove()清理与线程相关的ThreadLocal信息，那么倘若下一个线程不调用set()设置初始值，就可能get到重用的线程信息，包括ThreadLocal所关联的线程对象的Value值.</p>
 
 <p><strong>内存泄露</strong></p>
 
@@ -123,7 +123,7 @@
 <p>首先介绍一下Java中的四种引用类型.</p>
 
 <ul>
-  <li>强引用。 例如:<code class="highlighter-rouge">Object obj = new Object()</code>。只要对象具有可达性，就不能被回收。</li>
+  <li>强引用。 例如:<code class="language-plaintext highlighter-rouge">Object obj = new Object()</code>。只要对象具有可达性，就不能被回收。</li>
   <li>软引用。在即将OOM之前，即使有可达性，也可回收。</li>
   <li>弱引用。在下一次YGC时会被回收。</li>
   <li>虚引用。一种极弱的引用关系，定义完成后，就无法通过该引用获取指向的对象。为一个对象设置虚引用的唯一目的是希望能在这个对象回收时收到一个系统通知。虚引用必须与引用队列联合使用，当垃圾会收拾，如果发现存在虚引用，就会在回收对象内存前，把这个虚引用加入与之关联的引用队列中。<strong>极少使用。</strong></li>
@@ -153,9 +153,9 @@
 
 <h4 id="threadlocalmap">ThreadLocalMap</h4>
 
-<p>ThreadLocal有个静态内部类叫做<code class="highlighter-rouge">ThreadLocalMap</code>, 它还有一个静态内部类叫<code class="highlighter-rouge">Entry</code>, 而Entry是弱引用类型.</p>
+<p>ThreadLocal有个静态内部类叫做<code class="language-plaintext highlighter-rouge">ThreadLocalMap</code>, 它还有一个静态内部类叫<code class="language-plaintext highlighter-rouge">Entry</code>, 而Entry是弱引用类型.</p>
 
-<p>ThreadLocal与ThreadLocalMap有三组对应的方法，<code class="highlighter-rouge">get()</code>,<code class="highlighter-rouge">set()</code>,<code class="highlighter-rouge">remove()</code>。在ThreadLocal中只是做校验和判断，最终的实现会落在ThreadLocalMap中。</p>
+<p>ThreadLocal与ThreadLocalMap有三组对应的方法，<code class="language-plaintext highlighter-rouge">get()</code>,<code class="language-plaintext highlighter-rouge">set()</code>,<code class="language-plaintext highlighter-rouge">remove()</code>。在ThreadLocal中只是做校验和判断，最终的实现会落在ThreadLocalMap中。</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        <span class="kd">static</span> <span class="kd">class</span> <span class="nc">Entry</span> <span class="kd">extends</span> <span class="nc">WeakReference</span><span class="o">&lt;</span><span class="nc">ThreadLocal</span><span class="o">&lt;?&gt;&gt;</span> <span class="o">{</span>
             <span class="cm">/** The value associated with this ThreadLocal. */</span>
@@ -170,7 +170,7 @@
 
 <p>Entry继承了WeakReference, 只有一个value成员变量，其Key是ThreadLocal对象。</p>
 
-<p><strong>每一个<code class="highlighter-rouge">Thread</code> 中有一个<code class="highlighter-rouge">ThreadLocalMap</code></strong>(因为一个Thread中可能有多个ThreadLocal，所以需要一个Map保存所有的ThreadLocal变量，而key就是ThreadLocal变量，value是对应的值).</p>
+<p><strong>每一个<code class="language-plaintext highlighter-rouge">Thread</code> 中有一个<code class="language-plaintext highlighter-rouge">ThreadLocalMap</code></strong>(因为一个Thread中可能有多个ThreadLocal，所以需要一个Map保存所有的ThreadLocal变量，而key就是ThreadLocal变量，value是对应的值).</p>
 
 <h4 id="threadlocalinitialvalue">ThreadLocal.initialValue()</h4>
 
@@ -218,7 +218,7 @@
     }
 </code></pre>
 
-<p>只override了三个方法，其中 childValue 是ThreadLocal不支持的，其调用是只在<code class="highlighter-rouge">createInheritedMap</code>时进行调用。而其他两个getMap 和 createMap是在从Thread中获取localMap时的改写，以及在创建localMap的改写。</p>
+<p>只override了三个方法，其中 childValue 是ThreadLocal不支持的，其调用是只在<code class="language-plaintext highlighter-rouge">createInheritedMap</code>时进行调用。而其他两个getMap 和 createMap是在从Thread中获取localMap时的改写，以及在创建localMap的改写。</p>
 
 <p>那么对应的 线程本地变量是如何传递进来的呢？</p>
 
@@ -243,7 +243,7 @@
     <span class="o">}</span>
 </code></pre></div></div>
 
-<p>可以看到，默认使用<code class="highlighter-rouge">new  Thread()</code>创建线程就会继承父线程的ThreadLocals.</p>
+<p>可以看到，默认使用<code class="language-plaintext highlighter-rouge">new  Thread()</code>创建线程就会继承父线程的ThreadLocals.</p>
 
 <h4 id="内存角度">内存角度</h4>
 

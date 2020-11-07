@@ -1,4 +1,4 @@
-I"X
+I"�
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#background" id="markdown-toc-background">Background</a></li>
@@ -31,7 +31,7 @@
 
 <p>在注册executor时，使用appId, execId和ExecutorShuffleInfo(localDirs, shuffleManager类型).所以说ESS维护的是一个索引，这些shuffle数据会在application运行结束之后，清除这些localDirs来删除。</p>
 
-<p>针对每个App， 都会有一个LoadingCache来保存Shuffle 的IndexFile，默认是100m, 由<code class="highlighter-rouge">spark.shuffle.service.index.cache.size</code>控制。因此这个参数不能设置太大， 如果太大，在nodemanager上有多个应用运行，势必造成ESS的压力。</p>
+<p>针对每个App， 都会有一个LoadingCache来保存Shuffle 的IndexFile，默认是100m, 由<code class="language-plaintext highlighter-rouge">spark.shuffle.service.index.cache.size</code>控制。因此这个参数不能设置太大， 如果太大，在nodemanager上有多个应用运行，势必造成ESS的压力。</p>
 
 <h2 id="why-need-external-shuffle-service">Why need external shuffle service?</h2>
 
@@ -50,24 +50,24 @@
 <table>
   <thead>
     <tr>
-      <th><code class="highlighter-rouge">spark.shuffle.service.enabled</code></th>
+      <th><code class="language-plaintext highlighter-rouge">spark.shuffle.service.enabled</code></th>
       <th>false</th>
-      <th>Enables the external shuffle service. This service preserves the shuffle files written by executors so the executors can be safely removed. This must be enabled if <code class="highlighter-rouge">spark.dynamicAllocation.enabled</code> is “true”. The external shuffle service must be set up in order to enable it. See<a href="http://spark.apache.org/docs/latest/job-scheduling.html#configuration-and-setup">dynamic allocation configuration and setup documentation</a> for more information.</th>
+      <th>Enables the external shuffle service. This service preserves the shuffle files written by executors so the executors can be safely removed. This must be enabled if <code class="language-plaintext highlighter-rouge">spark.dynamicAllocation.enabled</code> is “true”. The external shuffle service must be set up in order to enable it. See<a href="http://spark.apache.org/docs/latest/job-scheduling.html#configuration-and-setup">dynamic allocation configuration and setup documentation</a> for more information.</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td><code class="highlighter-rouge">spark.shuffle.service.port</code></td>
+      <td><code class="language-plaintext highlighter-rouge">spark.shuffle.service.port</code></td>
       <td>7337</td>
       <td>Port on which the external shuffle service will run.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">spark.shuffle.registration.timeout</code></td>
+      <td><code class="language-plaintext highlighter-rouge">spark.shuffle.registration.timeout</code></td>
       <td>5000</td>
       <td>Timeout in milliseconds for registration to the external shuffle service.</td>
     </tr>
     <tr>
-      <td><code class="highlighter-rouge">spark.shuffle.registration.maxAttempts</code></td>
+      <td><code class="language-plaintext highlighter-rouge">spark.shuffle.registration.maxAttempts</code></td>
       <td>3</td>
       <td>When we fail to register to the external shuffle service, we will retry for maxAttempts times.</td>
     </tr>

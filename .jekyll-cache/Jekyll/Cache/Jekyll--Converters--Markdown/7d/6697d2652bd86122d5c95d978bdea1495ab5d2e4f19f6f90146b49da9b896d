@@ -1,4 +1,4 @@
-I"�k
+I"�l
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#background" id="markdown-toc-background">Background</a></li>
@@ -18,7 +18,7 @@
 
 <p>CBO是基于Cost来优化plan。</p>
 
-<p>要计算cost就需要统计一些参与计算的表的相关信息，因此spark添加了<code class="highlighter-rouge">Statistics和ColumnStat</code>类来统计相关信息。</p>
+<p>要计算cost就需要统计一些参与计算的表的相关信息，因此spark添加了<code class="language-plaintext highlighter-rouge">Statistics和ColumnStat</code>类来统计相关信息。</p>
 
 <p>CBO主要是针对join来计算cost,目前spark-2.3 版本中与CBO相关的参数如下：</p>
 
@@ -89,7 +89,7 @@ case class ColumnStat(
 
 <p>对于logicalRelation，它的Statistics代表其对应表中schema相关数据的大小，行数，attributeStats。</p>
 
-<p><code class="highlighter-rouge">CatalogStatistics</code>这个类表示存储在外部catalog(例如hive metastore）中的表的信息.</p>
+<p><code class="language-plaintext highlighter-rouge">CatalogStatistics</code>这个类表示存储在外部catalog(例如hive metastore）中的表的信息.</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">case</span> <span class="k">class</span> <span class="nc">CatalogStatistics</span><span class="o">(</span>
     <span class="n">sizeInBytes</span><span class="k">:</span> <span class="kt">BigInt</span><span class="o">,</span>
@@ -97,7 +97,7 @@ case class ColumnStat(
     <span class="n">colStats</span><span class="k">:</span> <span class="kt">Map</span><span class="o">[</span><span class="kt">String</span>, <span class="kt">ColumnStat</span><span class="o">]</span> <span class="k">=</span> <span class="nv">Map</span><span class="o">.</span><span class="py">empty</span><span class="o">)</span>
 </code></pre></div></div>
 
-<p>这些表的信息需要使用 <code class="highlighter-rouge">analyze table</code>命令来计算，然后存储到catalog里。</p>
+<p>这些表的信息需要使用 <code class="language-plaintext highlighter-rouge">analyze table</code>命令来计算，然后存储到catalog里。</p>
 
 <p>每种LogicalPlan计算Statistics的方法是不同的。</p>
 
@@ -216,7 +216,7 @@ case class ColumnStat(
 
 <p>这是一个使用plan的stats信息，来选择合适的join顺序的类。</p>
 
-<p>类<code class="highlighter-rouge">Optimizer</code>中有两个跟join 顺序有关的rule，一个是reoderJoin，另外一个是CostBasedJoinRecorder。reorderjoin是没有cbo也会触发的rule，这个不会使用统计的信息，只是负责将filter下推，这样最底层的join至少会有一个filter。如果这些join已经每个都有一条condition，那么这些plan就不会变化，因此reorder join不涉及基于代价的优化。</p>
+<p>类<code class="language-plaintext highlighter-rouge">Optimizer</code>中有两个跟join 顺序有关的rule，一个是reoderJoin，另外一个是CostBasedJoinRecorder。reorderjoin是没有cbo也会触发的rule，这个不会使用统计的信息，只是负责将filter下推，这样最底层的join至少会有一个filter。如果这些join已经每个都有一条condition，那么这些plan就不会变化，因此reorder join不涉及基于代价的优化。</p>
 
 <p>首先看下对cost的定义。cost是有一个基数，是rowCount，然后一个sizeInBytes。</p>
 
@@ -238,7 +238,7 @@ case class ColumnStat(
 
 <p>(ac/bc)*joinReorderCardWeight +(as/bs)*(1-joinReorderCardWeight)&lt;1，</p>
 
-<p>则认为A比B好。<code class="highlighter-rouge">spark.sql.cbo.joinReorder.card.weight</code>默认为0.7。代码如下：</p>
+<p>则认为A比B好。<code class="language-plaintext highlighter-rouge">spark.sql.cbo.joinReorder.card.weight</code>默认为0.7。代码如下：</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">betterThan</span><span class="o">(</span><span class="n">other</span><span class="k">:</span> <span class="kt">JoinPlan</span><span class="o">,</span> <span class="n">conf</span><span class="k">:</span> <span class="kt">SQLConf</span><span class="o">)</span><span class="k">:</span> <span class="kt">Boolean</span> <span class="o">=</span> <span class="o">{</span>
   <span class="nf">if</span> <span class="o">(</span><span class="nv">other</span><span class="o">.</span><span class="py">planCost</span><span class="o">.</span><span class="py">card</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">||</span> <span class="nv">other</span><span class="o">.</span><span class="py">planCost</span><span class="o">.</span><span class="py">size</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
@@ -297,7 +297,7 @@ level 3: p({A, B, C, D})</p>
 
 <p>这个参数是在reorderJoin中触发，而且只在</p>
 
-<p><code class="highlighter-rouge">spark.sql.cbo.starSchemaDetection=true spark.sql.cbo.enabled=false</code>时才触发，很奇怪，这个参数以cbo命名，但是却在cbo.enable=false才触发。</p>
+<p><code class="language-plaintext highlighter-rouge">spark.sql.cbo.starSchemaDetection=true spark.sql.cbo.enabled=false</code>时才触发，很奇怪，这个参数以cbo命名，但是却在cbo.enable=false才触发。</p>
 
 <p>这个是用来观察是否存在starJoin。</p>
 
@@ -328,13 +328,13 @@ level 3: p({A, B, C, D})</p>
 
 <p>里面有一个JoinSelection方法，这个方法是主要是用来判断是否可以使用broadcastjoin，然后决定是使用broadcastJoin，还是shuffledHashJoin还是sortMergeJoin。</p>
 
-<p>broadcastjoin可以避免shuffle，如果使用得当，可以提升程序的性能。<code class="highlighter-rouge">这是针对一个大表和一个极小表</code>在spark中有一个参数是，<code class="highlighter-rouge">spark.sql.autoBroadcastJoinThreshold</code>，这个参数是一个数字，单位字节，代表如果一个表的szie小于这个数值，就可以进行broadcastjoin。但是这里只使用size作为估计是不准确的，还应该使用rowCount作为参考，因为在join中，join的结果是与两个表的条数强相关，只使用size做判断是不准确的。</p>
+<p>broadcastjoin可以避免shuffle，如果使用得当，可以提升程序的性能。<code class="language-plaintext highlighter-rouge">这是针对一个大表和一个极小表</code>在spark中有一个参数是，<code class="language-plaintext highlighter-rouge">spark.sql.autoBroadcastJoinThreshold</code>，这个参数是一个数字，单位字节，代表如果一个表的szie小于这个数值，就可以进行broadcastjoin。但是这里只使用size作为估计是不准确的，还应该使用rowCount作为参考，因为在join中，join的结果是与两个表的条数强相关，只使用size做判断是不准确的。</p>
 
 <p>在spark中，有BroadCastHint，前面也提到过，如果没有开启cbo，那么如果判断join类型是非leftAntiJoin和leftSemiJoin，则会觉得join之后的大小无法估测，可能会爆炸式增长，因此会关掉BroadcastHint。</p>
 
-<p>对于shuffledHashJoin，<code class="highlighter-rouge">这是针对一个大表和一个小表（判断标准为a.stats.sizeInBytes * 3 &lt;= b.stats.sizeInBytes)</code>，简单描述一下过程就是两个表A和B，首先，选择一个表进行shuffle write操作，即针对每个分区，按照key的hash值进行排序，将相同hash值的key放在一起，形成一个partitionFile，然后在read端拉取write端所有相应key的数据，作为localhashMap和另外一个标的分区进行join。</p>
+<p>对于shuffledHashJoin，<code class="language-plaintext highlighter-rouge">这是针对一个大表和一个小表（判断标准为a.stats.sizeInBytes * 3 &lt;= b.stats.sizeInBytes)</code>，简单描述一下过程就是两个表A和B，首先，选择一个表进行shuffle write操作，即针对每个分区，按照key的hash值进行排序，将相同hash值的key放在一起，形成一个partitionFile，然后在read端拉取write端所有相应key的数据，作为localhashMap和另外一个标的分区进行join。</p>
 
-<p>这里也使用stats进行判断，如果<code class="highlighter-rouge">plan.stats.sizeInBytes &lt; conf.autoBroadcastJoinThreshold * conf.numShufflePartitions</code>，则判断该表的size可以满足每个分区构建localhashMap的可能，可以看到这里也是以<code class="highlighter-rouge">autoBroadcastJoinThreshold</code>作为衡量标准。</p>
+<p>这里也使用stats进行判断，如果<code class="language-plaintext highlighter-rouge">plan.stats.sizeInBytes &lt; conf.autoBroadcastJoinThreshold * conf.numShufflePartitions</code>，则判断该表的size可以满足每个分区构建localhashMap的可能，可以看到这里也是以<code class="language-plaintext highlighter-rouge">autoBroadcastJoinThreshold</code>作为衡量标准。</p>
 
 <p>如果是两张大表，则需要使用sortmergeJoin，类似于先排序，即按照keypair排序，然后进行归并。</p>
 
@@ -342,7 +342,7 @@ level 3: p({A, B, C, D})</p>
 
 <p>上述的这些估测，都是基于size信息。但是即使是基于size信息，如果没有开启cbo，这些信息也是粗糙的，没有CBO那种更细致的估计，因此可能会造成Join种类选择不合适。</p>
 
-<p>上述的判断，很多是基于<code class="highlighter-rouge">spark.sql.autoBroadcastJoinThreshold</code>，因此在运行环境中，一定要结合集群环境设置合适的值。</p>
+<p>上述的判断，很多是基于<code class="language-plaintext highlighter-rouge">spark.sql.autoBroadcastJoinThreshold</code>，因此在运行环境中，一定要结合集群环境设置合适的值。</p>
 
 <p>而且，在joinSelection中，也应该基于rowCount来判断join的种类。</p>
 :ET

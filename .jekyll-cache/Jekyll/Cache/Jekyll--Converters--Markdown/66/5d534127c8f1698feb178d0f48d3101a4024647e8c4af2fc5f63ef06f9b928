@@ -1,4 +1,4 @@
-I""$
+I"n$
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
@@ -14,7 +14,7 @@
 
 <h3 id="前言">前言</h3>
 
-<p>计算机中由二进制表示数据，所以一切数字都是表示为:<code class="highlighter-rouge">p10 * 2^0 + p11* 2^1 + p12 * 2^2 + ... + p1n * 2^n + p01 * 2^(-1) + p02 * 2^(-2) + ... + p0n * 2^(-n)， 其中p0k p1k 都是0或者1 。</code></p>
+<p>计算机中由二进制表示数据，所以一切数字都是表示为:<code class="language-plaintext highlighter-rouge">p10 * 2^0 + p11* 2^1 + p12 * 2^2 + ... + p1n * 2^n + p01 * 2^(-1) + p02 * 2^(-2) + ... + p0n * 2^(-n)， 其中p0k p1k 都是0或者1 。</code></p>
 
 <p>因此，对于1.5 来说，其可以拆分为: 1*2^0 + 1 * 2^(-1)是可以准确表示的。</p>
 
@@ -43,7 +43,7 @@
 <p>摘自百度百科，</p>
 
 <blockquote>
-  <p>浮点数从逻辑上用三元组{S, E, M}表示一个数v <code class="highlighter-rouge">|S|       E   |   M      |</code></p>
+  <p>浮点数从逻辑上用三元组{S, E, M}表示一个数v <code class="language-plaintext highlighter-rouge">|S|       E   |   M      |</code></p>
 
   <ul>
     <li>其中S表示符号位，是正数还是负数</li>
@@ -51,14 +51,14 @@
     <li>M位于尾部。</li>
   </ul>
 
-  <p>表达式为:<code class="highlighter-rouge">v=(-1)^s  * 2 ^e *m</code></p>
+  <p>表达式为:<code class="language-plaintext highlighter-rouge">v=(-1)^s  * 2 ^e *m</code></p>
 
   <p>现在大部分平台的浮点数遵循IEEE 754标准，float通常是32位，double 通常是64位。</p>
 </blockquote>
 
 <p>浮点数采用科学计数法，32位的float的小数部分有效位是8位,精确表示应该是7位， 而64位的double的小数部分有效位是16位, 精确表示位数应该是15位。</p>
 
-<p>例如: 112345678901234567d 被表示为 <code class="highlighter-rouge">1.1234567890123456E17</code>.</p>
+<p>例如: 112345678901234567d 被表示为 <code class="language-plaintext highlighter-rouge">1.1234567890123456E17</code>.</p>
 
 <p>所以，当两个大于10^15的double/大于10^7次方的float进行比较是一件很危险的事情。</p>
 

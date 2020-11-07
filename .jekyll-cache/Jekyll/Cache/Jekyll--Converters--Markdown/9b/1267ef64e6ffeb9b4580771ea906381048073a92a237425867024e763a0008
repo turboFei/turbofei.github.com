@@ -1,5 +1,4 @@
-I"
-�
+I"�
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
@@ -57,15 +56,15 @@
   <span class="p">[</span><span class="k">AS</span> <span class="n">select_statement</span><span class="p">]</span>
 </code></pre></div></div>
 
-<p>PS: 创建bucket表时候用到的<code class="highlighter-rouge">clustered by (key)</code> 和 <code class="highlighter-rouge">sorted by (key)</code>，和在select 数据时候用的<code class="highlighter-rouge">cluster by key</code> 和<code class="highlighter-rouge">sort by key</code> 很相似，但是用法是不同的。</p>
+<p>PS: 创建bucket表时候用到的<code class="language-plaintext highlighter-rouge">clustered by (key)</code> 和 <code class="language-plaintext highlighter-rouge">sorted by (key)</code>，和在select 数据时候用的<code class="language-plaintext highlighter-rouge">cluster by key</code> 和<code class="language-plaintext highlighter-rouge">sort by key</code> 很相似，但是用法是不同的。</p>
 
-<p>另外在select 时候有<code class="highlighter-rouge">distribute by</code> 和 <code class="highlighter-rouge">cluster by</code>两种语法，<code class="highlighter-rouge">cluster by key</code> = <code class="highlighter-rouge">distribute by key sort by key</code>. <code class="highlighter-rouge">distribute by key</code> = <code class="highlighter-rouge">hash shuffle by key</code>.</p>
+<p>另外在select 时候有<code class="language-plaintext highlighter-rouge">distribute by</code> 和 <code class="language-plaintext highlighter-rouge">cluster by</code>两种语法，<code class="language-plaintext highlighter-rouge">cluster by key</code> = <code class="language-plaintext highlighter-rouge">distribute by key sort by key</code>. <code class="language-plaintext highlighter-rouge">distribute by key</code> = <code class="language-plaintext highlighter-rouge">hash shuffle by key</code>.</p>
 
 <h4 id="bucket表参数">Bucket表参数</h4>
 
 <p>Spark中有两个bucket表相关参数：</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>spark.sql.sources.bucketing.enabled  是否将bucekt表看成是bucekt表
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>spark.sql.sources.bucketing.enabled  是否将bucekt表看成是bucekt表
 spark.sql.sources.bucketing.maxBuckets 允许的最大bucekt 数量，默认是100000
 </code></pre></div></div>
 
@@ -145,7 +144,7 @@ Schema: root
 
 </code></pre></div></div>
 
-<p>原来虽然表tb 和tc中都有名为c1的列，但是一个是Decimal类型，一个是double类型。在做union的时候，取 double 和Decimal的公共类型double，因此对表tb中的c1 进行了cast(c1 as double)，但是在insert overwrite bucket table的时候，由于bucket column c1的类型是Decimal，所以我们可以看到在进行<code class="highlighter-rouge">Exchange hashpartitioning</code> 之后进行了<code class="highlighter-rouge">Project [ansi_cast(c1#250 as decimal(38,18)) AS c1#254, c2#247, 1 AS p1#255]</code>  操作，又把double转成了Decimal.</p>
+<p>原来虽然表tb 和tc中都有名为c1的列，但是一个是Decimal类型，一个是double类型。在做union的时候，取 double 和Decimal的公共类型double，因此对表tb中的c1 进行了cast(c1 as double)，但是在insert overwrite bucket table的时候，由于bucket column c1的类型是Decimal，所以我们可以看到在进行<code class="language-plaintext highlighter-rouge">Exchange hashpartitioning</code> 之后进行了<code class="language-plaintext highlighter-rouge">Project [ansi_cast(c1#250 as decimal(38,18)) AS c1#254, c2#247, 1 AS p1#255]</code>  操作，又把double转成了Decimal.</p>
 
 <p>因此，我们前面hash 后的数据是基于double类型的hash，而bucket column类型是Decimal类型。</p>
 
@@ -171,7 +170,7 @@ Schema: root
 
 <p>而double类型和Decimal类型getBucketId的算法是不同的。</p>
 
-<p>具体的实现涉及到<code class="highlighter-rouge">org.apache.spark.sql.catalyst.expressions.InterpretedHashFunction</code>类中的hash方法。可以看到double类型和decimal类型有不同的实现。</p>
+<p>具体的实现涉及到<code class="language-plaintext highlighter-rouge">org.apache.spark.sql.catalyst.expressions.InterpretedHashFunction</code>类中的hash方法。可以看到double类型和decimal类型有不同的实现。</p>
 
 <p>所以对double类型值其计算得到值和转化为Decimal再计算时不同的，附录中也提供了实践的验证方法。</p>
 

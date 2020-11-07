@@ -1,4 +1,4 @@
-I"?,
+I".
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -12,11 +12,11 @@
 
 <h2 id="sizetracker">sizeTracker</h2>
 
-<p>spark里面内存预测有一个trait，叫做<code class="highlighter-rouge"> SizeTracker</code>，然后有一些类实现了它，比如PartitionedAppendOnlyMap、SizeTrackingAppendOnlyMap。</p>
+<p>spark里面内存预测有一个trait，叫做<code class="language-plaintext highlighter-rouge"> SizeTracker</code>，然后有一些类实现了它，比如PartitionedAppendOnlyMap、SizeTrackingAppendOnlyMap。</p>
 
 <p>SizeTracker的estimateSize方法就是预测当前集合的size。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Estimate the current size of the collection in bytes. O(1) time.
  */
 def estimateSize(): Long = {
@@ -26,11 +26,11 @@ def estimateSize(): Long = {
 }
 </code></pre></div></div>
 
-<p>其实这个sizeTracker类有四个方法，其他三个方法分别是<code class="highlighter-rouge">resetSamples</code>,<code class="highlighter-rouge">afterUpdate</code>,<code class="highlighter-rouge">takeSample</code>.看了下SizeTrackingAppendOnlyMap的流程，afterUpdata方法是在update或者changeValue之后会调用，其实updata和changeValue没有什么区别，只不过一个是直接更新k-v，另一个是使用一个函数计算后更新k-v。然后resetSamples是在growTable之后调用（SizeTrackingAppendOnlyMap的growTable就是空间翻一倍）。</p>
+<p>其实这个sizeTracker类有四个方法，其他三个方法分别是<code class="language-plaintext highlighter-rouge">resetSamples</code>,<code class="language-plaintext highlighter-rouge">afterUpdate</code>,<code class="language-plaintext highlighter-rouge">takeSample</code>.看了下SizeTrackingAppendOnlyMap的流程，afterUpdata方法是在update或者changeValue之后会调用，其实updata和changeValue没有什么区别，只不过一个是直接更新k-v，另一个是使用一个函数计算后更新k-v。然后resetSamples是在growTable之后调用（SizeTrackingAppendOnlyMap的growTable就是空间翻一倍）。</p>
 
 <p>看下sizeTracker里面的参数。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Controls the base of the exponential which governs the rate of sampling.
  * E.g., a value of 2 would mean we sample at 1, 2, 4, 8, ... elements.
  */
@@ -49,9 +49,9 @@ private var numUpdates: Long = _
 private var nextSampleNum: Long = _
 </code></pre></div></div>
 
-<p><code class="highlighter-rouge">SAMPLE_GROWTH_RATE</code>是一个斜率，代表下次抽样时候更新的次数应该是这次抽样更新次数的1.1倍，比如上次是更新10000次时候抽样，下次抽样就得是更新11000次时候再抽样，可以避免每次更新都抽样，减少抽样花销。<code class="highlighter-rouge">samples</code>是一个队列， 里面的类型是样例类<code class="highlighter-rouge">sample</code>。然后<code class="highlighter-rouge">bytesPerUpdate</code>是抽样之后得到区间增长量/个数增长量，就是一个斜率。然后<code class="highlighter-rouge">numUpdates</code>就是代表抽样集合里面元素个数，<code class="highlighter-rouge">nextSampleNum</code>代表下次要抽样的时候集合的个数，前面说过，就是此次抽样时候的个数*1.1.</p>
+<p><code class="language-plaintext highlighter-rouge">SAMPLE_GROWTH_RATE</code>是一个斜率，代表下次抽样时候更新的次数应该是这次抽样更新次数的1.1倍，比如上次是更新10000次时候抽样，下次抽样就得是更新11000次时候再抽样，可以避免每次更新都抽样，减少抽样花销。<code class="language-plaintext highlighter-rouge">samples</code>是一个队列， 里面的类型是样例类<code class="language-plaintext highlighter-rouge">sample</code>。然后<code class="language-plaintext highlighter-rouge">bytesPerUpdate</code>是抽样之后得到区间增长量/个数增长量，就是一个斜率。然后<code class="language-plaintext highlighter-rouge">numUpdates</code>就是代表抽样集合里面元素个数，<code class="language-plaintext highlighter-rouge">nextSampleNum</code>代表下次要抽样的时候集合的个数，前面说过，就是此次抽样时候的个数*1.1.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Reset samples collected so far.
  * This should be called after the collection undergoes a dramatic change in size.
  */
@@ -65,7 +65,7 @@ protected def resetSamples(): Unit = {
 
 <p>resetSamples会在每次翻倍增长后，重置抽样参数，没啥好说的。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Callback to be invoked after every update.
  */
 protected def afterUpdate(): Unit = {
@@ -78,7 +78,7 @@ protected def afterUpdate(): Unit = {
 
 <p>这个是每次更新后，都更新次数+1，然后当他等于下次抽样次数时候就进行抽样。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Take a new sample of the current collection's size.
  */
 private def takeSample(): Unit = {
@@ -100,7 +100,7 @@ private def takeSample(): Unit = {
 
 <p>抽样就是找出最近的两个sample，然后计算增长斜率，size增长量/num增长量，然后把下次抽样的次数*1.1更新下。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>/**
  * Estimate the current size of the collection in bytes. O(1) time.
  */
 def estimateSize(): Long = {
@@ -112,13 +112,13 @@ def estimateSize(): Long = {
 
 <p>然后这个estimateSize 就是上次的size+增长率*增长量。增长率和size就是上次抽样得到的。</p>
 
-<p>可以看到在takeSample方法里面加入队列时候size的预测用到了<code class="highlighter-rouge">SizeEstimator.estimate</code>.看下这个SizeEstimator类。</p>
+<p>可以看到在takeSample方法里面加入队列时候size的预测用到了<code class="language-plaintext highlighter-rouge">SizeEstimator.estimate</code>.看下这个SizeEstimator类。</p>
 
 <h2 id="sizeestimator">SizeEstimator</h2>
 
 <p>看下这类的estimate方法。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def estimate(obj: AnyRef, visited: IdentityHashMap[AnyRef, AnyRef]): Long = {
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def estimate(obj: AnyRef, visited: IdentityHashMap[AnyRef, AnyRef]): Long = {
   val state = new SearchState(visited)
   state.enqueue(obj)
   while (!state.isFinished) {
@@ -130,7 +130,7 @@ def estimateSize(): Long = {
 
 <p>这里主要是调用visitSingleObject。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def visitSingleObject(obj: AnyRef, state: SearchState) {
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def visitSingleObject(obj: AnyRef, state: SearchState) {
   val cls = obj.getClass
   if (cls.isArray) {
     visitArray(obj, cls, state)
@@ -160,7 +160,7 @@ def estimateSize(): Long = {
 
 <p>接下来看看visitArray.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Estimate the size of arrays larger than ARRAY_SIZE_FOR_SAMPLING by sampling.
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Estimate the size of arrays larger than ARRAY_SIZE_FOR_SAMPLING by sampling.
 private val ARRAY_SIZE_FOR_SAMPLING = 400
 private val ARRAY_SAMPLE_SIZE = 100 // should be lower than ARRAY_SIZE_FOR_SAMPLING
 
@@ -200,16 +200,16 @@ private def visitArray(array: AnyRef, arrayClass: Class[_], state: SearchState) 
 }
 </code></pre></div></div>
 
-<p>这段代码，首先要把<code class="highlighter-rouge">Array 的object 头部,长度 filed</code>算进去，然后如果array里面的元素是基本类型，那么长度就固定，就可以直接算出来。</p>
+<p>这段代码，首先要把<code class="language-plaintext highlighter-rouge">Array 的object 头部,长度 filed</code>算进去，然后如果array里面的元素是基本类型，那么长度就固定，就可以直接算出来。</p>
 
-<p>如果不是基本类型，<code class="highlighter-rouge">就有指向对象的引用？</code>所以代码里面先把length个指针占用的空间加上。</p>
+<p>如果不是基本类型，<code class="language-plaintext highlighter-rouge">就有指向对象的引用？</code>所以代码里面先把length个指针占用的空间加上。</p>
 
 <p>如果这时候数组长度，小于采样时候数组长度那个界限，就把数组里面引用指向的对象加入state队列，也就是小于界限就全部计算size。</p>
 
-<p>如果数组长度大于采样时候数组长度的界限，就准备采样。然后采样两组，两组采样数据都是不重复的。计算公式如下:<code class="highlighter-rouge">math.max(s1, s2) + (math.min(s1, s2) * ((length - ARRAY_SAMPLE_SIZE) / (ARRAY_SAMPLE_SIZE)))</code>.</p>
+<p>如果数组长度大于采样时候数组长度的界限，就准备采样。然后采样两组，两组采样数据都是不重复的。计算公式如下:<code class="language-plaintext highlighter-rouge">math.max(s1, s2) + (math.min(s1, s2) * ((length - ARRAY_SAMPLE_SIZE) / (ARRAY_SAMPLE_SIZE)))</code>.</p>
 
 <p>这个计算公式不知道有什么合理的地方，反正spark用这个公式，应该是有一定道理。</p>
 
-<p>就是  <code class="highlighter-rouge">math.min(s1,s2)*(length-ARRAY_SAMPLE_SIZE)+abs(s1-s2)</code>，这应该是为了不让内存预估过大，以免占用太多，同时用一个小的增量对这个偏小的预估进行补偿。</p>
+<p>就是  <code class="language-plaintext highlighter-rouge">math.min(s1,s2)*(length-ARRAY_SAMPLE_SIZE)+abs(s1-s2)</code>，这应该是为了不让内存预估过大，以免占用太多，同时用一个小的增量对这个偏小的预估进行补偿。</p>
 
 :ET

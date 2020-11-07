@@ -1,4 +1,4 @@
-I"C
+I"
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -157,7 +157,7 @@
 
 <p>jstat用法如下:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jstat -&lt;option&gt; [-t] [-h&lt;lines&gt;] &lt;vmid&gt; [&lt;interval&gt; [&lt;count&gt;]]
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jstat -&lt;option&gt; [-t] [-h&lt;lines&gt;] &lt;vmid&gt; [&lt;interval&gt; [&lt;count&gt;]]
 </code></pre></div></div>
 
 <ul>
@@ -227,7 +227,7 @@
 
     <ul>
       <li>
-        <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hadoop@spark6:~$ jstat -gc 131649
+        <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>hadoop@spark6:~$ jstat -gc 131649
 Warning: Unresolved Symbol: sun.gc.generation.2.space.0.capacity substituted NaN
 Warning: Unresolved Symbol: sun.gc.generation.2.space.0.used substituted NaN
  S0C    S1C    S0U    S1U      EC       EU        OC         OU       PC     PU    YGC     YGCT    FGC    FGCT     GCT
@@ -288,15 +288,15 @@ Timestamp        S0C    S1C    S0U    S1U      EC       EU        OC         OU 
     <span class="o">-</span><span class="no">J</span><span class="o">&lt;</span><span class="n">flag</span><span class="o">&gt;</span>             <span class="n">to</span> <span class="n">pass</span> <span class="o">&lt;</span><span class="n">flag</span><span class="o">&gt;</span> <span class="n">directly</span> <span class="n">to</span> <span class="n">the</span> <span class="n">runtime</span> <span class="n">system</span>
 </code></pre></div></div>
 
-<p>​	首先介绍一下core dump。当程序运行的过程中异常终止或崩溃，操作系统会将程序当时的内存状态记录下来，保存在一个文件中，这种行为就叫做Core Dump。我们可以认为 core dump 是“内存快照”，但实际上，除了内存信息之外，还有些关键的程序运行状态也会同时 dump 下来，例如寄存器信息（包括程序指针、栈指针等）、内存管理信息、其他处理器和操作系统状态和信息。core dump 对于编程人员诊断和调试程序是非常有帮助的，因为对于有些程序错误是很难重现的，例如指针异常，而 core dump 文件可以再现程序出错时的情景。在linux中可以使用 <code class="highlighter-rouge">ulimit -c</code>查看目前是否打开core dump 功能，如果显示为0则代表未打开，可以使用<code class="highlighter-rouge">ulimit -c unlimited</code>打开core dump功能，当core dump是打开时，才会在程序崩溃时保存内存快照。</p>
+<p>​	首先介绍一下core dump。当程序运行的过程中异常终止或崩溃，操作系统会将程序当时的内存状态记录下来，保存在一个文件中，这种行为就叫做Core Dump。我们可以认为 core dump 是“内存快照”，但实际上，除了内存信息之外，还有些关键的程序运行状态也会同时 dump 下来，例如寄存器信息（包括程序指针、栈指针等）、内存管理信息、其他处理器和操作系统状态和信息。core dump 对于编程人员诊断和调试程序是非常有帮助的，因为对于有些程序错误是很难重现的，例如指针异常，而 core dump 文件可以再现程序出错时的情景。在linux中可以使用 <code class="language-plaintext highlighter-rouge">ulimit -c</code>查看目前是否打开core dump 功能，如果显示为0则代表未打开，可以使用<code class="language-plaintext highlighter-rouge">ulimit -c unlimited</code>打开core dump功能，当core dump是打开时，才会在程序崩溃时保存内存快照。</p>
 
 <h5 id="mat">mat</h5>
 
-<p>在实际生产中，我们通常使用 <code class="highlighter-rouge">jmap -dump:live,format=b,file=heap.bin &lt;pid&gt;</code>命令来将core  dump到文件中，然后使用 mat(eclipse memory analyzer)来分析这个dump文件，会生成一些html文件，然后将这些文件下载下来，点击其index.html来查看分析结果。</p>
+<p>在实际生产中，我们通常使用 <code class="language-plaintext highlighter-rouge">jmap -dump:live,format=b,file=heap.bin &lt;pid&gt;</code>命令来将core  dump到文件中，然后使用 mat(eclipse memory analyzer)来分析这个dump文件，会生成一些html文件，然后将这些文件下载下来，点击其index.html来查看分析结果。</p>
 
 <p>mat的下载地址为:https://www.eclipse.org/mat/downloads.php。</p>
 
-<p>解压之后是一个<code class="highlighter-rouge">mat</code>文件夹，进入这个文件夹.</p>
+<p>解压之后是一个<code class="language-plaintext highlighter-rouge">mat</code>文件夹，进入这个文件夹.</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code> <span class="o">./</span><span class="nc">ParseHeapDump</span><span class="o">.</span><span class="na">sh</span> <span class="n">jmap</span><span class="o">.</span><span class="na">info</span>  <span class="n">org</span><span class="o">.</span><span class="na">eclipse</span><span class="o">.</span><span class="na">mat</span><span class="o">.</span><span class="na">api</span><span class="o">:</span><span class="n">suspects</span> <span class="n">org</span><span class="o">.</span><span class="na">eclipse</span><span class="o">.</span><span class="na">mat</span><span class="o">.</span><span class="na">api</span><span class="o">:</span><span class="n">overview</span> <span class="n">org</span><span class="o">.</span><span class="na">eclipse</span><span class="o">.</span><span class="na">mat</span><span class="o">.</span><span class="na">api</span><span class="o">:</span><span class="n">top_components</span>
 
@@ -304,7 +304,7 @@ Timestamp        S0C    S1C    S0U    S1U      EC       EU        OC         OU 
 
 <p>结果会生产如下三个zip文件，很小可以直接拷贝到本机.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jmap_Leak_Suspects.zip
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>jmap_Leak_Suspects.zip
 jmap_System_Overview.zip
 jmap_Top_Components.zip
 </code></pre></div></div>
@@ -336,9 +336,9 @@ jmap_Top_Components.zip
 
 <p>看到上面可以更改一些参数，那么哪些参数是可以动态更改?</p>
 
-<p>JVM官方文档说明如下，也就是说，标记为manageable的参数或者通过<code class="highlighter-rouge">com.sun.management.HotSpotDiagnosticMXBean</code>这个类的接口得到；</p>
+<p>JVM官方文档说明如下，也就是说，标记为manageable的参数或者通过<code class="language-plaintext highlighter-rouge">com.sun.management.HotSpotDiagnosticMXBean</code>这个类的接口得到；</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Flags marked as manageable are dynamically writeable through the JDK management interface (com.sun.management.HotSpotDiagnosticMXBean API) and also through JConsole.
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Flags marked as manageable are dynamically writeable through the JDK management interface (com.sun.management.HotSpotDiagnosticMXBean API) and also through JConsole.
 </code></pre></div></div>
 
 <p>通过manageable方法更加方便，命令如下:</p>
@@ -362,7 +362,7 @@ jmap_Top_Components.zip
      <span class="n">bool</span> <span class="nc">PrintGCTimeStamps</span>                         <span class="o">=</span> <span class="kc">false</span>           <span class="o">{</span><span class="n">manageable</span><span class="o">}</span>
 </code></pre></div></div>
 
-<p>所以只有这几个参数是可以通过 <code class="highlighter-rouge">jinfo -flag  [+|-]&lt;name&gt;  pid</code>或者<code class="highlighter-rouge">jinfo -flag &lt;name&gt;=&lt;value&gt; pid</code>动态更改的.</p>
+<p>所以只有这几个参数是可以通过 <code class="language-plaintext highlighter-rouge">jinfo -flag  [+|-]&lt;name&gt;  pid</code>或者<code class="language-plaintext highlighter-rouge">jinfo -flag &lt;name&gt;=&lt;value&gt; pid</code>动态更改的.</p>
 
 <h3 id="references">References</h3>
 

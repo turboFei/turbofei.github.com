@@ -1,4 +1,4 @@
-I"�g
+I"�h
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#background" id="markdown-toc-background">Background</a></li>
@@ -28,7 +28,7 @@
 
 <h3 id="spark-streaming">Spark Streaming</h3>
 
-<p>首先讲一下微批的streaming。这种streaming 使用<code class="highlighter-rouge">DStream</code>进行操作，其API与RDD编程类似。其对应的Context为StreamingContext.</p>
+<p>首先讲一下微批的streaming。这种streaming 使用<code class="language-plaintext highlighter-rouge">DStream</code>进行操作，其API与RDD编程类似。其对应的Context为StreamingContext.</p>
 
 <h4 id="streamingcontext">StreamingContext</h4>
 
@@ -59,7 +59,7 @@
 
 <p>下面是start方法的核心代码：</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ThreadUtils.runInNewThread("streaming-start") {
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>ThreadUtils.runInNewThread("streaming-start") {
  sparkContext.setCallSite(startSite.get)
  sparkContext.clearJobGroup()
  sparkContext.setLocalProperty(SparkContext.SPARK_JOB_INTERRUPT_ON_CANCEL, "false")
@@ -127,7 +127,7 @@
 
 <h5 id="executorallocationmanager">ExecutorAllocationManager</h5>
 
-<p>是否打开由<code class="highlighter-rouge">spark.streaming.dynamicAllocation.enabled</code>控制。可以看出和spark core中的参数很像。也新加了几个参数.</p>
+<p>是否打开由<code class="language-plaintext highlighter-rouge">spark.streaming.dynamicAllocation.enabled</code>控制。可以看出和spark core中的参数很像。也新加了几个参数.</p>
 
 <table>
   <thead>
@@ -244,7 +244,7 @@
 
 <p>介绍下Epoch, waterMark</p>
 
-<p>EpochTracker是使用一个AtomicLong来计算EpochID，而其<code class="highlighter-rouge">incrementCurrentEpoch</code>方法只有在<code class="highlighter-rouge">ContinuousCoalesceRDD</code>和<code class="highlighter-rouge">ContinuousWriteRDD</code>中被调用。也就是说只有在进行类似于shuffle 和action的时候才被调用，所以<strong>Epoch</strong>类似于RDD执行中的StageId。</p>
+<p>EpochTracker是使用一个AtomicLong来计算EpochID，而其<code class="language-plaintext highlighter-rouge">incrementCurrentEpoch</code>方法只有在<code class="language-plaintext highlighter-rouge">ContinuousCoalesceRDD</code>和<code class="language-plaintext highlighter-rouge">ContinuousWriteRDD</code>中被调用。也就是说只有在进行类似于shuffle 和action的时候才被调用，所以<strong>Epoch</strong>类似于RDD执行中的StageId。</p>
 
 <p>而<strong>waterMark</strong>是一个标记，代表在这个时间点之前的数据全部都已经完成。</p>
 
@@ -295,7 +295,7 @@
 
 <p>可以看到这个写法就像是DataSource一样。</p>
 
-<p>readStream 和 writeStream 对应的是<code class="highlighter-rouge">DataStreamReader</code>和<code class="highlighter-rouge">DataStreamWriter</code>.</p>
+<p>readStream 和 writeStream 对应的是<code class="language-plaintext highlighter-rouge">DataStreamReader</code>和<code class="language-plaintext highlighter-rouge">DataStreamWriter</code>.</p>
 
 <h4 id="to-be-continued">To Be Continued</h4>
 :ET

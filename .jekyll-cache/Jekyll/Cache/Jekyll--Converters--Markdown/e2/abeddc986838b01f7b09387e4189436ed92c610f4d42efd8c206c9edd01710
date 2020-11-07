@@ -1,4 +1,4 @@
-I"�|
+I"~
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
@@ -9,7 +9,7 @@
   </li>
   <li><a href="#sparksessionextensions" id="markdown-toc-sparksessionextensions">SparkSessionExtensions</a>    <ul>
       <li><a href="#在analysis阶段的resolution子阶段添加rule" id="markdown-toc-在analysis阶段的resolution子阶段添加rule">在Analysis阶段的Resolution子阶段添加Rule</a></li>
-      <li><a href="#在analysis阶段的post-hoc-resolution子阶段添加rule" id="markdown-toc-在analysis阶段的post-hoc-resolution子阶段添加rule">在Analysis阶段的<code class="highlighter-rouge">Post-Hoc Resolution</code>子阶段添加Rule</a></li>
+      <li><a href="#在analysis阶段的post-hoc-resolution子阶段添加rule" id="markdown-toc-在analysis阶段的post-hoc-resolution子阶段添加rule">在Analysis阶段的<code class="language-plaintext highlighter-rouge">Post-Hoc Resolution</code>子阶段添加Rule</a></li>
       <li><a href="#在analysis阶段之后对logicalplan进行check" id="markdown-toc-在analysis阶段之后对logicalplan进行check">在Analysis阶段之后对LogicalPlan进行check</a></li>
       <li><a href="#注入自己的optimizer-rule" id="markdown-toc-注入自己的optimizer-rule">注入自己的Optimizer Rule</a></li>
       <li><a href="#注入自己的strategy" id="markdown-toc-注入自己的strategy">注入自己的Strategy</a></li>
@@ -37,16 +37,16 @@
   <li>首先会通过解析器，将其解析为一个抽象语法树(AST)，这叫做unresolvedRelation LogicalPlan。</li>
   <li>之后进入analysis阶段，可以将其分为几个子阶段
     <ul>
-      <li><code class="highlighter-rouge">Hints</code>  比如BroadcastJoinHints处理</li>
-      <li><code class="highlighter-rouge">Simple Sanity Check</code> 简单check，比如检查sql 中的Function是否存在</li>
-      <li><code class="highlighter-rouge">Substitution</code> 对sql中的一些进行替换，比如如果union 只有一个child，则取消union</li>
-      <li><code class="highlighter-rouge">Resolution</code> 对sql中的一些信息进行绑定，这样就是Resolved LogicalPlan</li>
-      <li><code class="highlighter-rouge">Post-Hoc Resolution</code> resolution之后的操作，默认是空，用户可以自己注入</li>
+      <li><code class="language-plaintext highlighter-rouge">Hints</code>  比如BroadcastJoinHints处理</li>
+      <li><code class="language-plaintext highlighter-rouge">Simple Sanity Check</code> 简单check，比如检查sql 中的Function是否存在</li>
+      <li><code class="language-plaintext highlighter-rouge">Substitution</code> 对sql中的一些进行替换，比如如果union 只有一个child，则取消union</li>
+      <li><code class="language-plaintext highlighter-rouge">Resolution</code> 对sql中的一些信息进行绑定，这样就是Resolved LogicalPlan</li>
+      <li><code class="language-plaintext highlighter-rouge">Post-Hoc Resolution</code> resolution之后的操作，默认是空，用户可以自己注入</li>
       <li>之后还有其他阶段，所以analysis阶段，不止resolution.</li>
     </ul>
   </li>
-  <li>接下来进行optimization阶段，使用<code class="highlighter-rouge">Rule</code>对LogicalPlan 进行优化，得到Optimized LogicalPlan</li>
-  <li>之后是通过使用<code class="highlighter-rouge">SparkStrategy</code>和<code class="highlighter-rouge">Rule</code>来将<code class="highlighter-rouge">LogicalPlan</code>转换为可执行的物理计划<code class="highlighter-rouge">SparkPlan</code>。</li>
+  <li>接下来进行optimization阶段，使用<code class="language-plaintext highlighter-rouge">Rule</code>对LogicalPlan 进行优化，得到Optimized LogicalPlan</li>
+  <li>之后是通过使用<code class="language-plaintext highlighter-rouge">SparkStrategy</code>和<code class="language-plaintext highlighter-rouge">Rule</code>来将<code class="language-plaintext highlighter-rouge">LogicalPlan</code>转换为可执行的物理计划<code class="language-plaintext highlighter-rouge">SparkPlan</code>。</li>
   <li>之后进行codeGen</li>
 </ul>
 
@@ -95,7 +95,7 @@
 
 <h3 id="sparksessionextensions">SparkSessionExtensions</h3>
 
-<p><code class="highlighter-rouge">SparkSessionExtensions</code>是用来让用户自己扩展Catalyst 中的Rule, Strategy，甚至自己定义解析规则等等。用户只需要实现自己的Extensions，例如<code class="highlighter-rouge">class MyExtensions extends (SparkSessionExtensions =&gt; Unit)</code>,然后配置<code class="highlighter-rouge">spark.sql.extensions=MyExtensions</code>.</p>
+<p><code class="language-plaintext highlighter-rouge">SparkSessionExtensions</code>是用来让用户自己扩展Catalyst 中的Rule, Strategy，甚至自己定义解析规则等等。用户只需要实现自己的Extensions，例如<code class="language-plaintext highlighter-rouge">class MyExtensions extends (SparkSessionExtensions =&gt; Unit)</code>,然后配置<code class="language-plaintext highlighter-rouge">spark.sql.extensions=MyExtensions</code>.</p>
 
 <p>首先介绍里面定义的几种type.</p>
 
@@ -120,7 +120,7 @@
 
 <p>这个方法是添加一个Rule用于resolve unResolvedLogicalPlan。 只需要自己实现一个Rule，然后使用这个方法进行Rule注入。</p>
 
-<h4 id="在analysis阶段的post-hoc-resolution子阶段添加rule">在Analysis阶段的<code class="highlighter-rouge">Post-Hoc Resolution</code>子阶段添加Rule</h4>
+<h4 id="在analysis阶段的post-hoc-resolution子阶段添加rule">在Analysis阶段的<code class="language-plaintext highlighter-rouge">Post-Hoc Resolution</code>子阶段添加Rule</h4>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="k">def</span> <span class="nf">injectPostHocResolutionRule</span><span class="o">(</span><span class="n">builder</span><span class="k">:</span> <span class="kt">RuleBuilder</span><span class="o">)</span><span class="k">:</span> <span class="kt">Unit</span> 
 </code></pre></div></div>
@@ -211,7 +211,7 @@
 
 <p>其使用PostgreSql的COPY命令进行数据写入，相对于JDBC DataSource(通用的操作数据库的DataSource)的分批insert数据性能提升可观。</p>
 
-<p>而在spark-greenplum中，如果我们 使用先建立<code class="highlighter-rouge">TEMPORARY TABLE</code>然后<code class="highlighter-rouge">Insert</code>数据的方法操作gp.</p>
+<p>而在spark-greenplum中，如果我们 使用先建立<code class="language-plaintext highlighter-rouge">TEMPORARY TABLE</code>然后<code class="language-plaintext highlighter-rouge">Insert</code>数据的方法操作gp.</p>
 
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">CREATE</span> <span class="k">TEMPORARY</span> <span class="k">TABLE</span> <span class="n">tbl</span>
 <span class="k">USING</span> <span class="n">greenplum</span>
@@ -231,9 +231,9 @@
 
 <p>之后，我们使用Insert语句将子查询中的列插入到这个临时表，也就是写入到对应的gp表中。</p>
 
-<p>这时候我们通常需要判断<code class="highlighter-rouge">SELECT SUB Query</code>中拿到的列是否和临时表中的列对应一致。</p>
+<p>这时候我们通常需要判断<code class="language-plaintext highlighter-rouge">SELECT SUB Query</code>中拿到的列是否和临时表中的列对应一致。</p>
 
-<p>所以我们选择添加一条CheckRule来实现，也就是调用<code class="highlighter-rouge">injectCheckRule</code>方法。</p>
+<p>所以我们选择添加一条CheckRule来实现，也就是调用<code class="language-plaintext highlighter-rouge">injectCheckRule</code>方法。</p>
 
 <p>实现如下:</p>
 

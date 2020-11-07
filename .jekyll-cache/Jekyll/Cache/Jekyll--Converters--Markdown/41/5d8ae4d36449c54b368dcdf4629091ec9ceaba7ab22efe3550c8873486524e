@@ -1,4 +1,4 @@
-I"w%
+I"�%
 <h3 id="background">Background</h3>
 
 <p>spark-greenplum是一个spark DataSource为greenplum的实现。通过使用postgresql copy命令的方式从dataframe分区向greenplum拷贝数据，相较于spark sql本身jbdc DataSource的速度提升了上百倍。本文讲解关于实现从spark sql向gp拷贝数据事务的实现。</p>
@@ -49,7 +49,7 @@
 
 <p>在讲解事务实现之前，先讲下在针对文件中一些特殊字符的处理.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Backslash characters (\) can be used in the COPY data to quote data characters that might otherwise be taken as row or column delimiters. In particular, the following characters must be preceded by a backslash if they appear as part of a column value: backslash itself, newline, carriage return, and the current delimiter character.
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Backslash characters (\) can be used in the COPY data to quote data characters that might otherwise be taken as row or column delimiters. In particular, the following characters must be preceded by a backslash if they appear as part of a column value: backslash itself, newline, carriage return, and the current delimiter character.
 </code></pre></div></div>
 
 <p>从sparksql 写数据到文件的过程是将每个Row写到文件中的一行，而且各个column之间使用指定的delimiter间隔。因此，在写文件时需要对于一些特殊字符进行处理，比如换行符合回车符，这些肯定是需要特殊处理的，因此不处理，就会导致一个row写了多行，之后copy命令就无法正确识别，其次就是 row中如果有column的值包含和delimiter相同的字符也要进行转义，不然copy命令就无法通过delimiter识别出列的值，除此之外还有’\‘需要特殊处理，因为对delimiter的处理是在demiter前加’\‘因此，也要针对’\‘进行处理避免与delimiter的处理方式混淆。</p>
@@ -103,7 +103,7 @@
 
 <p>关于coalesce操作，它与reparation操作不同。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> def coalesce(numPartitions: Int, shuffle: Boolean = false,
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code> def coalesce(numPartitions: Int, shuffle: Boolean = false,
                partitionCoalescer: Option[PartitionCoalescer] = Option.empty)
 </code></pre></div></div>
 

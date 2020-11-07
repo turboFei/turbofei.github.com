@@ -1,4 +1,4 @@
-I"x
+I"4y
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -30,7 +30,7 @@
 
 <h3 id="treenode-and-rule">TreeNode And Rule</h3>
 
-<p><code class="highlighter-rouge">TreeNode</code>和<code class="highlighter-rouge">Rule</code>是Catalyst重要的两种类型。</p>
+<p><code class="language-plaintext highlighter-rouge">TreeNode</code>和<code class="language-plaintext highlighter-rouge">Rule</code>是Catalyst重要的两种类型。</p>
 
 <h4 id="treenode">TreeNode</h4>
 
@@ -53,7 +53,7 @@
 
 <p>它会解析为一个AST。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Parsed Logical Plan ==
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Parsed Logical Plan ==
 'Project [unresolvedalias('sum('v), None)]
 +- 'SubqueryAlias tmp
    +- 'Project ['ta.key, ((1 + 2) + 'ta.value) AS v#12]
@@ -115,7 +115,7 @@
 
 <p>Analysis阶段的输入是一个AST(抽象语法树)或者是一个DataFrame，称之为unresolved logic plan。因为这些plan中的元素属性都是未知的。比如上面举例的sql语句，是否存在ta这个表，ta这个表有没有key 和 value字段，以及这些字段的类型都是未知的。</p>
 
-<p><code class="highlighter-rouge">org.apache.spark.sql.catalyst.analysisAnalyzer</code>是一个用于执行analysis的类，这个类继承RuleExecutor，其中定义了一系列的解析规则顺序执行来解析这些字段和函数等里面的属性。</p>
+<p><code class="language-plaintext highlighter-rouge">org.apache.spark.sql.catalyst.analysisAnalyzer</code>是一个用于执行analysis的类，这个类继承RuleExecutor，其中定义了一系列的解析规则顺序执行来解析这些字段和函数等里面的属性。</p>
 
 <p>Spark sql使用Catalyst规则和catalog来查询这些表是否存在，并来获得查询需要的具体属性。</p>
 
@@ -130,7 +130,7 @@
 
 <p>下面就是resolved logical plan：</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Analyzed Logical Plan ==
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Analyzed Logical Plan ==
 sum(v): bigint
 Aggregate [sum(v#12L) AS sum(v)#28L]
 +- SubqueryAlias tmp
@@ -149,9 +149,9 @@ Aggregate [sum(v#12L) AS sum(v)#28L]
 
 <p>在获得resolved logical plan之后，就对这个plan进行优化。</p>
 
-<p>这个其实类似analyzer，<code class="highlighter-rouge">org.apache.spark.sql.catalyst.optimizer.Optimizer</code>同样是继承RuleExecutor，然后里面包含了一系列的优化策略。然后每个策略对Tree进行transform。主要的优化策略列表如下：</p>
+<p>这个其实类似analyzer，<code class="language-plaintext highlighter-rouge">org.apache.spark.sql.catalyst.optimizer.Optimizer</code>同样是继承RuleExecutor，然后里面包含了一系列的优化策略。然后每个策略对Tree进行transform。主要的优化策略列表如下：</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PushProjectionThroughUnion,
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>PushProjectionThroughUnion,
 ReorderJoin,
 EliminateOuterJoin,
 PushPredicateThroughJoin,
@@ -193,9 +193,9 @@ RemoveRedundantProject
 
 <p>我们可以看到在resolved logical plan中，filter条件在join之上，在优化之后，filter条件下推，这样可以提早过滤掉一部分数据，减小join部分的压力。</p>
 
-<p>还有就是之前的<code class="highlighter-rouge">1+2</code>在这里已经转化为3，还有就是在filter里面都加了 <code class="highlighter-rouge">isNotNull</code>判断。</p>
+<p>还有就是之前的<code class="language-plaintext highlighter-rouge">1+2</code>在这里已经转化为3，还有就是在filter里面都加了 <code class="language-plaintext highlighter-rouge">isNotNull</code>判断。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Optimized Logical Plan ==
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Optimized Logical Plan ==
 Aggregate [sum(v#12L) AS sum(v)#28L]
 +- Project [(3 + value#1L) AS v#12L]
    +- Join Inner, (key#0 = key#6)
@@ -212,7 +212,7 @@ Aggregate [sum(v#12L) AS sum(v)#28L]
 
 <p>同前面几个阶段相同，这个阶段也是一系列的策略：</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def strategies: Seq[Strategy] =
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def strategies: Seq[Strategy] =
     extraStrategies ++ (
     FileSourceStrategy ::
     DataSourceStrategy ::
@@ -243,7 +243,7 @@ Aggregate [sum(v#12L) AS sum(v)#28L]
 
 <h4 id="code-generation">Code Generation</h4>
 
-<p>上面的物理计划阶段得到的只是一个中间阶段的物理计划，要想物理计划阶段得以运行还要进行一系列操作，这部分体现在<code class="highlighter-rouge">org.apache.spark.sql.execution.QueryExecution类的preparations方法中</code>.</p>
+<p>上面的物理计划阶段得到的只是一个中间阶段的物理计划，要想物理计划阶段得以运行还要进行一系列操作，这部分体现在<code class="language-plaintext highlighter-rouge">org.apache.spark.sql.execution.QueryExecution类的preparations方法中</code>.</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="cm">/** A sequence of rules that will be applied in order to the physical plan before execution. */</span>
 <span class="k">protected</span> <span class="k">def</span> <span class="nf">preparations</span><span class="k">:</span> <span class="kt">Seq</span><span class="o">[</span><span class="kt">Rule</span><span class="o">[</span><span class="kt">SparkPlan</span><span class="o">]]</span> <span class="k">=</span> <span class="nc">Seq</span><span class="o">(</span>
@@ -297,7 +297,7 @@ Aggregate [sum(v#12L) AS sum(v)#28L]
 
 <p>最终得到可执行的物理计划，如下所示。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Physical Plan ==
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Physical Plan ==
 *HashAggregate(keys=[], functions=[sum(v#12L)], output=[sum(v)#28L])
 +- Exchange SinglePartition
    +- *HashAggregate(keys=[], functions=[partial_sum(v#12L)], output=[sum#30L])
@@ -331,7 +331,7 @@ Aggregate [sum(v#12L) AS sum(v)#28L]
 
 <p>物理计划如下，耗时33秒：</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Physical Plan ==
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Physical Plan ==
 *HashAggregate(keys=[], functions=[count(1)])
 +- Exchange SinglePartition
    +- *HashAggregate(keys=[], functions=[partial_count(1)])
@@ -392,7 +392,7 @@ Aggregate [sum(v#12L) AS sum(v)#28L]
 
 <p>物理计划如下，耗时0.5s:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Physical Plan ==
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>== Physical Plan ==
 *HashAggregate(keys=[], functions=[count(1)])
 +- Exchange SinglePartition
    +- *HashAggregate(keys=[], functions=[partial_count(1)])

@@ -1,12 +1,12 @@
-I"
+I"�
 <h3 id="background">Background</h3>
 <p>spark统一内存管理是spark1.6.0的新特性，是对shuffle memory 和 storage memory 进行统一的管理，打破了以往的参数限制。</p>
 
 <h2 id="非统一内存管理">非统一内存管理</h2>
 
-<p>spark在1.6 之前都是非统一内存管理，通过设置<code class="highlighter-rouge">spark.shuffle.memoryFraction</code> 和 <code class="highlighter-rouge">spark.storage.memoryFraction</code>来设置shuffle 和storage的memory 大小。看下<code class="highlighter-rouge">StaticMemoryManager</code>的获得最大shuffle和storage memory的函数。</p>
+<p>spark在1.6 之前都是非统一内存管理，通过设置<code class="language-plaintext highlighter-rouge">spark.shuffle.memoryFraction</code> 和 <code class="language-plaintext highlighter-rouge">spark.storage.memoryFraction</code>来设置shuffle 和storage的memory 大小。看下<code class="language-plaintext highlighter-rouge">StaticMemoryManager</code>的获得最大shuffle和storage memory的函数。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def getMaxStorageMemory(conf: SparkConf): Long = {
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def getMaxStorageMemory(conf: SparkConf): Long = {
   val systemMaxMemory = conf.getLong("spark.testing.memory", Runtime.getRuntime.maxMemory)
   val memoryFraction = conf.getDouble("spark.storage.memoryFraction", 0.6)
   val safetyFraction = conf.getDouble("spark.storage.safetyFraction", 0.9)
@@ -24,13 +24,13 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
   (systemMaxMemory * memoryFraction * safetyFraction).toLong
 }
 </code></pre></div></div>
-<p>可以看出，<code class="highlighter-rouge">systemMaxMemory</code>是通过参数<code class="highlighter-rouge">spark.testing.memory</code>来获得，如果这个参数没有设置，就取虚拟机内存，然后shuffle 和 storage都有安全系数，最后可用的最大内存都是：系统最大内存*比例系数*安全系数。</p>
+<p>可以看出，<code class="language-plaintext highlighter-rouge">systemMaxMemory</code>是通过参数<code class="language-plaintext highlighter-rouge">spark.testing.memory</code>来获得，如果这个参数没有设置，就取虚拟机内存，然后shuffle 和 storage都有安全系数，最后可用的最大内存都是：系统最大内存*比例系数*安全系数。</p>
 
 <h2 id="统一内存管理">统一内存管理</h2>
 
-<p>spark 1.6.0 出现了统一内存管理，是打破了shuffle 内存和storage内存的静态限制。通俗的描述，就是如果storage内存不够，而shuffle内存剩余就能借内存，如果shuffle内存不足，此时如果storage已经超出了<code class="highlighter-rouge">storageRegionSize</code>，那么就驱逐当前使用storage内存-<code class="highlighter-rouge">storageRegionSize</code>，如果storage 使用没有超过<code class="highlighter-rouge">storageRegionSize</code>，那么则把它剩余的都可以借给shuffle使用。</p>
+<p>spark 1.6.0 出现了统一内存管理，是打破了shuffle 内存和storage内存的静态限制。通俗的描述，就是如果storage内存不够，而shuffle内存剩余就能借内存，如果shuffle内存不足，此时如果storage已经超出了<code class="language-plaintext highlighter-rouge">storageRegionSize</code>，那么就驱逐当前使用storage内存-<code class="language-plaintext highlighter-rouge">storageRegionSize</code>，如果storage 使用没有超过<code class="language-plaintext highlighter-rouge">storageRegionSize</code>，那么则把它剩余的都可以借给shuffle使用。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  private def getMaxMemory(conf: SparkConf): Long = {
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  private def getMaxMemory(conf: SparkConf): Long = {
     val systemMemory = conf.getLong("spark.testing.memory", Runtime.getRuntime.maxMemory)
     val reservedMemory = conf.getLong("spark.testing.reservedMemory",
       if (conf.contains("spark.testing")) 0 else RESERVED_SYSTEM_MEMORY_BYTES)
@@ -54,15 +54,15 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
     (usableMemory * memoryFraction).toLong
   }
 </code></pre></div></div>
-<p>这个是统一内存管理的获得最大内存的函数，因为shuffle和storage是统一管理的，所以只有一个获得统一最大内存的函数。<code class="highlighter-rouge">usableMemory = systemMemory - reservedMemory</code>.</p>
+<p>这个是统一内存管理的获得最大内存的函数，因为shuffle和storage是统一管理的，所以只有一个获得统一最大内存的函数。<code class="language-plaintext highlighter-rouge">usableMemory = systemMemory - reservedMemory</code>.</p>
 
-<p>最大内存=<code class="highlighter-rouge">usableMemory * memoryFraction</code>.</p>
+<p>最大内存=<code class="language-plaintext highlighter-rouge">usableMemory * memoryFraction</code>.</p>
 
 <h2 id="统一内存管理的使用">统一内存管理的使用##</h2>
 
-<p><code class="highlighter-rouge">UnifiedMemoryManager</code>是在一个静态类里面的<code class="highlighter-rouge">apply</code>方法调用的。</p>
+<p><code class="language-plaintext highlighter-rouge">UnifiedMemoryManager</code>是在一个静态类里面的<code class="language-plaintext highlighter-rouge">apply</code>方法调用的。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def apply(conf: SparkConf, numCores: Int): UnifiedMemoryManager = {
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def apply(conf: SparkConf, numCores: Int): UnifiedMemoryManager = {
   val maxMemory = getMaxMemory(conf)
   new UnifiedMemoryManager(
     conf,
@@ -73,9 +73,9 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 }
 </code></pre></div></div>
 
-<p>然后通过 find Uages 找到是在 <code class="highlighter-rouge">sparkEnv</code>里面调用。</p>
+<p>然后通过 find Uages 找到是在 <code class="language-plaintext highlighter-rouge">sparkEnv</code>里面调用。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>val memoryManager: MemoryManager =
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>val memoryManager: MemoryManager =
   if (useLegacyMemoryManager) {
     new StaticMemoryManager(conf, numUsableCores)
   } else {
@@ -85,5 +85,5 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 
 <p>是通过判断参数，判断是使用统一内存管理还是非内存管理。</p>
 
-<p>然后通过查看usages 发现是在 <code class="highlighter-rouge">CoarseGrainedExecutorBackEnd</code> 和 <code class="highlighter-rouge">MesosExecutorBackEnd</code>里面调用的，所以是每个executor都有一个统一内存管理的实例(…很显然，逻辑也是这样)。</p>
+<p>然后通过查看usages 发现是在 <code class="language-plaintext highlighter-rouge">CoarseGrainedExecutorBackEnd</code> 和 <code class="language-plaintext highlighter-rouge">MesosExecutorBackEnd</code>里面调用的，所以是每个executor都有一个统一内存管理的实例(…很显然，逻辑也是这样)。</p>
 :ET

@@ -1,4 +1,4 @@
-I" #
+I"*$
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#background" id="markdown-toc-background">Background</a></li>
@@ -77,7 +77,7 @@
 
 <p>Exchange分为两种，一种是BroadcastExchange另外一种是ShuffleExchange。Broadcast就是将数据发送至driver，然后由driver广播，这适合于数据量较小时候的shuffle。另一种ShuffleExchange就比较常见了，就是多对多的分发。</p>
 
-<p>如果开启了<code class="highlighter-rouge">spark.sql.adaptive.enabled</code>，也就是自适应执行，</p>
+<p>如果开启了<code class="language-plaintext highlighter-rouge">spark.sql.adaptive.enabled</code>，也就是自适应执行，</p>
 
 <p>那么在使用ShuffleExchange的时候有对应的ExchangeCoordinator；如果没开启ae，那就不需要协调器。</p>
 
@@ -93,17 +93,17 @@
 
 <p>第一个参数是用于表示有多少个ShuffleExchangeExec需要注册到这个coordinator里面。因此，当我们要开始真正执行时，我们需要知道到底有多少个ShuffleExchangeExec。</p>
 
-<p>第二个参数是表示后面shuffle阶段每个partition的输入数据大小，这是用于adaptive-execution的，用于推测后面的shuffle阶段需要多少个partition。可以通过<code class="highlighter-rouge">spark.sql.adaptive.shuffle.targetPostShuffleInputSize</code>来配置。</p>
+<p>第二个参数是表示后面shuffle阶段每个partition的输入数据大小，这是用于adaptive-execution的，用于推测后面的shuffle阶段需要多少个partition。可以通过<code class="language-plaintext highlighter-rouge">spark.sql.adaptive.shuffle.targetPostShuffleInputSize</code>来配置。</p>
 
 <p>第三个参数是一个可选参数，表示之后shuffle阶段最小的partition数量。如果这个参数被定义，那么之后的shuffle阶段的partition数量不能小于这个值。</p>
 
 <p>Coordinator的流程如下：</p>
 
 <ul>
-  <li>在一个<code class="highlighter-rouge">SparkPlan</code>执行之前，对于一个<code class="highlighter-rouge">ShuffleExchangeExec</code>操作，如果它被指定了一个<code class="highlighter-rouge">coorinator</code>，那么它将会注册到这个协调器，这发生在<code class="highlighter-rouge">doPrepare</code>方法里.</li>
-  <li>当开始执行<code class="highlighter-rouge">SparkPlan</code>，注册到这个协调器里面的ShuffleExchangeExec将会调用<code class="highlighter-rouge">postShuffleRDD</code>方法来相应的 post-shuffle <code class="highlighter-rouge">ShuffledRowRDD</code>.如果这个协调器已经决定了如何去shuffle data，那么这个Exec会马上获得它对应的<code class="highlighter-rouge">ShuffledRowRDD</code>.</li>
-  <li>如果这个coordinator已经决定了如何shuffle data，它会让注册到自己的<code class="highlighter-rouge">ShuffleExchangeExec</code>s来提交pos-shuffle stage。然后基于pre-shuffle阶段partition的统计信息，来决定post-shuffle的partition数量，如果post-shuffle需要，它也会将一些需要的连续的partitions放在一起发送给post-shuffle.</li>
-  <li>最后，这个coordinator会为所有注册的<code class="highlighter-rouge">ShuffleExchangeExec</code>创建post-shuffle <code class="highlighter-rouge">ShuffledRowRDD</code>。</li>
+  <li>在一个<code class="language-plaintext highlighter-rouge">SparkPlan</code>执行之前，对于一个<code class="language-plaintext highlighter-rouge">ShuffleExchangeExec</code>操作，如果它被指定了一个<code class="language-plaintext highlighter-rouge">coorinator</code>，那么它将会注册到这个协调器，这发生在<code class="language-plaintext highlighter-rouge">doPrepare</code>方法里.</li>
+  <li>当开始执行<code class="language-plaintext highlighter-rouge">SparkPlan</code>，注册到这个协调器里面的ShuffleExchangeExec将会调用<code class="language-plaintext highlighter-rouge">postShuffleRDD</code>方法来相应的 post-shuffle <code class="language-plaintext highlighter-rouge">ShuffledRowRDD</code>.如果这个协调器已经决定了如何去shuffle data，那么这个Exec会马上获得它对应的<code class="language-plaintext highlighter-rouge">ShuffledRowRDD</code>.</li>
+  <li>如果这个coordinator已经决定了如何shuffle data，它会让注册到自己的<code class="language-plaintext highlighter-rouge">ShuffleExchangeExec</code>s来提交pos-shuffle stage。然后基于pre-shuffle阶段partition的统计信息，来决定post-shuffle的partition数量，如果post-shuffle需要，它也会将一些需要的连续的partitions放在一起发送给post-shuffle.</li>
+  <li>最后，这个coordinator会为所有注册的<code class="language-plaintext highlighter-rouge">ShuffleExchangeExec</code>创建post-shuffle <code class="language-plaintext highlighter-rouge">ShuffledRowRDD</code>。</li>
 </ul>
 
 <p>目前的ae是比较老版本的ae，intel有一个ae项目，相信会在spark-3.0之后会合入，可以了解一下新的ae。</p>
@@ -138,7 +138,7 @@
 
 <p>join包括BroadcastHashJoinExec, ShuffledHashJoinExec以及SortMergeSortMergeJoinExec。</p>
 
-<p>join策略的选择<code class="highlighter-rouge">SparkStrategies</code>类里面，面临join，首先会尝试BroadcastJoin，然后是ShuffledHashJoin最后才是SortMergeHashJoin,只要能满足前面的条件就会优先使用前面的join。</p>
+<p>join策略的选择<code class="language-plaintext highlighter-rouge">SparkStrategies</code>类里面，面临join，首先会尝试BroadcastJoin，然后是ShuffledHashJoin最后才是SortMergeHashJoin,只要能满足前面的条件就会优先使用前面的join。</p>
 
 <p>而这些JoinExec是在前面构建物理之前进行构建，在之后真正执行物理计划的时候执行。</p>
 

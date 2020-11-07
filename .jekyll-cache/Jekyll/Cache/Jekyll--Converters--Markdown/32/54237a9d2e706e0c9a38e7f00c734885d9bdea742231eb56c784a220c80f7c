@@ -1,4 +1,4 @@
-I"�
+I"7�
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -123,7 +123,7 @@
 
 <p>顾名思义，Nonfatal代表非致命的，方法体也很短.</p>
 
-<p>可以看出致命的错误有，虚拟机Error，ThreadDeath，中断异常，链接Error，以及<code class="highlighter-rouge">ControlThrowable</code>。除了这几种，其他都是非致命的。</p>
+<p>可以看出致命的错误有，虚拟机Error，ThreadDeath，中断异常，链接Error，以及<code class="language-plaintext highlighter-rouge">ControlThrowable</code>。除了这几种，其他都是非致命的。</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">object</span> <span class="nc">NonFatal</span> <span class="o">{</span>
    <span class="cm">/**
@@ -143,7 +143,7 @@
 
 <p>一般在程序中，都是对Nonfatal进行catch处理， 而致命的就不catch了。</p>
 
-<p>那么什么是<code class="highlighter-rouge">ControlThrowable</code>呢？</p>
+<p>那么什么是<code class="language-plaintext highlighter-rouge">ControlThrowable</code>呢？</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">trait</span> <span class="nc">ControlThrowable</span> <span class="k">extends</span> <span class="nc">Throwable</span> <span class="k">with</span> <span class="nc">NoStackTrace</span>
 </code></pre></div></div>

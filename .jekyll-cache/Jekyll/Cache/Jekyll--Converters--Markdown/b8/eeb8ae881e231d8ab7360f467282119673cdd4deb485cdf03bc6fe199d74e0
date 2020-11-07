@@ -1,4 +1,4 @@
-I"�]
+I"^
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -151,7 +151,7 @@
 
 <p>一种是继承Thread类，overwrite run方法，然后start。</p>
 
-<p>另一种是继承<code class="highlighter-rouge">Runnable</code>类，实现run方法，然后 <code class="highlighter-rouge">new Thread(runnable).start.</code></p>
+<p>另一种是继承<code class="language-plaintext highlighter-rouge">Runnable</code>类，实现run方法，然后 <code class="language-plaintext highlighter-rouge">new Thread(runnable).start.</code></p>
 
 <p>线程的优先级分为1，5，10。1是所允许的最低优先级，5是默认分配，10是能够拥有的最高优先级。</p>
 
@@ -214,9 +214,9 @@
 
 <p>如果此时该线程被 wait, join, sleep, 那么这个interrupted标志位会被清除然后抛出InterruptedException.</p>
 
-<p>如果线程被<code class="highlighter-rouge">java.nio.channels.InterruptibleChannel</code>的I/O操作阻塞，那么这个channel将被关闭，然后set interrupted标志位，这个线程会收到一个<code class="highlighter-rouge">ClosedByInterruptException</code>.</p>
+<p>如果线程被<code class="language-plaintext highlighter-rouge">java.nio.channels.InterruptibleChannel</code>的I/O操作阻塞，那么这个channel将被关闭，然后set interrupted标志位，这个线程会收到一个<code class="language-plaintext highlighter-rouge">ClosedByInterruptException</code>.</p>
 
-<p>如果线程被<code class="highlighter-rouge">java.nio.channels.Selector</code>阻塞，那么将会设置interrupted标志位，并马上从selection操作返回。</p>
+<p>如果线程被<code class="language-plaintext highlighter-rouge">java.nio.channels.Selector</code>阻塞，那么将会设置interrupted标志位，并马上从selection操作返回。</p>
 
 <p>如果上述情况都没发生，那么这个线程设置interrup状态标志位.</p>
 
@@ -248,7 +248,7 @@
 
 <p><strong>join(time)</strong></p>
 
-<p>等待线程结束，如果join(0)代表一直等待。如果该线程被其他thread interrupt，那么这个线程的interrupted标志位被清除，然后抛出<code class="highlighter-rouge">InterruptedException</code>.</p>
+<p>等待线程结束，如果join(0)代表一直等待。如果该线程被其他thread interrupt，那么这个线程的interrupted标志位被清除，然后抛出<code class="language-plaintext highlighter-rouge">InterruptedException</code>.</p>
 
 <p><strong>dumpStack</strong></p>
 
@@ -258,7 +258,7 @@
 
 <p>设为守护线程或者用户线程。JVM会在所有用户线程都挂掉之后退出。</p>
 
-<p>必须在线程启动之前设置，如果线程已经是alive，会抛<code class="highlighter-rouge">IllegalThreadStateException</code>.同样也会检查SecurityManager当前线程是否有权限去设置。</p>
+<p>必须在线程启动之前设置，如果线程已经是alive，会抛<code class="language-plaintext highlighter-rouge">IllegalThreadStateException</code>.同样也会检查SecurityManager当前线程是否有权限去设置。</p>
 
 <p><strong>isDaemon</strong></p>
 

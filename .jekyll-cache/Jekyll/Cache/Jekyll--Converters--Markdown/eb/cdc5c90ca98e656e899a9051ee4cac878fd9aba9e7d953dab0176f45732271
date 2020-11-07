@@ -1,4 +1,4 @@
-I"H
+I"hJ
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
@@ -34,7 +34,7 @@
 
 <p>多线程并发时，需要对线程进行同步，保证各个线程协调有序的进行。</p>
 
-<p>在java中，有一个<code class="highlighter-rouge">synchronized</code>关键字，这个关键字可以用于修饰方法，修饰代码块。在java中，每个object都有一个隐藏的<code class="highlighter-rouge">monitor</code>, 因此可以对象都可以通过调用<code class="highlighter-rouge">Object.wait</code>, <code class="highlighter-rouge">object.notify</code>方法进行同步操作。而synchronized的实现也是基于monitor来实现，伪代码如下:</p>
+<p>在java中，有一个<code class="language-plaintext highlighter-rouge">synchronized</code>关键字，这个关键字可以用于修饰方法，修饰代码块。在java中，每个object都有一个隐藏的<code class="language-plaintext highlighter-rouge">monitor</code>, 因此可以对象都可以通过调用<code class="language-plaintext highlighter-rouge">Object.wait</code>, <code class="language-plaintext highlighter-rouge">object.notify</code>方法进行同步操作。而synchronized的实现也是基于monitor来实现，伪代码如下:</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">monitorenter</span>
 <span class="o">...</span>
@@ -49,12 +49,12 @@
 
 <ul>
   <li>如果 x 和 y在同一个线程中，且在程序中顺序 x 先于 y，那么hb(x, y)</li>
-  <li>一个object的构造方法 happens-before <code class="highlighter-rouge">finalizer</code>方法</li>
+  <li>一个object的构造方法 happens-before <code class="language-plaintext highlighter-rouge">finalizer</code>方法</li>
   <li>在一个synchronized代码块中，x 先于y，那么hb(x, y)</li>
   <li>如果hb(a, b)且hb(b, c)，那么能够推导出hb(a, c)</li>
   <li>对于一个field的默认值构造happends-before其访问</li>
   <li>一个monitor的unlock happens-before 于该monitor后续的lock操作</li>
-  <li>对于一个<code class="highlighter-rouge">volatile</code>的写hb与其读操作，后续会讲</li>
+  <li>对于一个<code class="language-plaintext highlighter-rouge">volatile</code>的写hb与其读操作，后续会讲</li>
   <li>一个thread的start操作hb于其线程中的方法调用</li>
   <li>一个调用join方法的剩余所有操作，hb于被join中的其他执行操作</li>
   <li>一个对象的默认初始化操作hb于其他访问该对象的操作</li>
@@ -90,7 +90,7 @@
 <span class="o">}</span>
 </code></pre></div></div>
 
-<p>上面代码中的一个操作, <code class="highlighter-rouge">instance = new Instance()</code>会被分解为下面三行伪代码，如下:</p>
+<p>上面代码中的一个操作, <code class="language-plaintext highlighter-rouge">instance = new Instance()</code>会被分解为下面三行伪代码，如下:</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">memory</span> <span class="o">=</span> <span class="n">allocate</span><span class="o">();</span>    <span class="c1">// 1、分配对象的内存空间</span>
 <span class="n">ctorInstance</span><span class="o">(</span><span class="n">memory</span><span class="o">);</span>   <span class="c1">// 2、初始化对象</span>
@@ -99,7 +99,7 @@
 
 <p>上面的三行代码的2，3步可能会被重排序，也就是说可能instance已经指向了分配的内存，但是该对象仍在初始化中。对于多线程来说，如果线程1，调用该单例构造，但是仍在构造中，而此时已经instance已经指向了内存地址，这样另一个线程2就会获得到一个还没有初始化完成的对象，这会造成错误。</p>
 
-<p>而如果我们对instance使用volatile修饰<code class="highlighter-rouge">private static volatile Instance instance;</code>，禁止指令重排就可以避免这种情况的发生.</p>
+<p>而如果我们对instance使用volatile修饰<code class="language-plaintext highlighter-rouge">private static volatile Instance instance;</code>，禁止指令重排就可以避免这种情况的发生.</p>
 
 <p><strong>volatile解决的是多线程共享变量的可见性问题，类似于synchronized，但是不具备synchronized的互斥性。</strong>所以对volatile变量的操作并非都具有原子性。</p>
 
@@ -120,8 +120,8 @@
 <p>此处简单描述一下。JVM中以下几种ClassLoader</p>
 
 <ul>
-  <li>启动类加载器（Bootstrap ClassLoader）：这个类加载器负责将存放在<code class="highlighter-rouge">$JAVA_HOME/lib</code>目录中的。启动类加载器无法被Java程序直接引用，用户在编写自定义类加载器时，如果需要把加载请求委派给引导类加载器，那直接使用null代替即可。</li>
-  <li>扩展类加载器（Extension ClassLoader）：这个加载器由sun.misc.Launcher$ExtClassLoader实现，它负责加载<code class="highlighter-rouge">$JAVA_HOME/lib/ext</code>目录中的，或者被<code class="highlighter-rouge">java.ext.dirs</code>系统变量所指定的路径中的所有类库，开发者可以直接使用扩展类加载器。</li>
+  <li>启动类加载器（Bootstrap ClassLoader）：这个类加载器负责将存放在<code class="language-plaintext highlighter-rouge">$JAVA_HOME/lib</code>目录中的。启动类加载器无法被Java程序直接引用，用户在编写自定义类加载器时，如果需要把加载请求委派给引导类加载器，那直接使用null代替即可。</li>
+  <li>扩展类加载器（Extension ClassLoader）：这个加载器由sun.misc.Launcher$ExtClassLoader实现，它负责加载<code class="language-plaintext highlighter-rouge">$JAVA_HOME/lib/ext</code>目录中的，或者被<code class="language-plaintext highlighter-rouge">java.ext.dirs</code>系统变量所指定的路径中的所有类库，开发者可以直接使用扩展类加载器。</li>
   <li>
     <p>应用程序类加载器（Application ClassLoader）：这个类加载器由sun.misc.Launcher$AppClassLoader实现。由于这个类加载器是ClassLoader中的getSystemClassLoader()方法的返回值，所以一般也称它为系统类加载器。它负责加载用户类路径（ClassPath）上所指定的类库，开发者可以直接使用这个类加载器，如果应用程序中没有自定义自己的类加载器，一般情况下这个就是程序中默认的类加载器。</p>
   </li>
@@ -134,16 +134,16 @@
 
 <p>如果有两个jar包，但是版本不同，里面的类名都是一致的，也就是可能产生jar包冲突的类，这样会由什么顺序会加载对应的类呢？</p>
 
-<p><code class="highlighter-rouge">java -cp one.jar;two.jar MyMain</code></p>
+<p><code class="language-plaintext highlighter-rouge">java -cp one.jar;two.jar MyMain</code></p>
 
-<p>classLoader 会查找资源第一次出现的地方，这会通过classPath来寻找。如果A出现在<code class="highlighter-rouge">one.jar</code>中，那么就从One.jar中来加载类A。
-如果<code class="highlighter-rouge">java -cp two.jar;one.jar MyMain</code>, 那么将会加载<code class="highlighter-rouge">two.jar</code>中的类A。</p>
+<p>classLoader 会查找资源第一次出现的地方，这会通过classPath来寻找。如果A出现在<code class="language-plaintext highlighter-rouge">one.jar</code>中，那么就从One.jar中来加载类A。
+如果<code class="language-plaintext highlighter-rouge">java -cp two.jar;one.jar MyMain</code>, 那么将会加载<code class="language-plaintext highlighter-rouge">two.jar</code>中的类A。</p>
 
 <h3 id="classnotfoundexception--noclassdeffounderror">ClassNotFoundException &amp; NoClassDefFoundError</h3>
 
-<p><code class="highlighter-rouge">java.lang.ClassNotFoundException</code>代表这个类没有在classPath中找到。</p>
+<p><code class="language-plaintext highlighter-rouge">java.lang.ClassNotFoundException</code>代表这个类没有在classPath中找到。</p>
 
-<p><code class="highlighter-rouge">java.lang.NoClassDefFoundError</code>这个异常代表，JVM在其内部类定义数据结构中查找了类的定义，但没有找到对应的类。这和在classPath没有找到类有所不同。通常这代表我们之前尝试从classPath中加载这个类，但是由于某些原因加载失败，现在我们尝试再次去使用这个类(因此需要去load这个类由于上次load失败)，但是我们不准备尝试去load它，因为我们之前load失败(因此推测出我们会再次失败)。前面的Failure可能是一个ClassNotFoundException 或者 ExceptionInInitializerError(静态代码块初始化失败) 或者其他问题。因此NoClassDefFoundError 不一定是因为classPath的问题，要看它前面失败的原因。</p>
+<p><code class="language-plaintext highlighter-rouge">java.lang.NoClassDefFoundError</code>这个异常代表，JVM在其内部类定义数据结构中查找了类的定义，但没有找到对应的类。这和在classPath没有找到类有所不同。通常这代表我们之前尝试从classPath中加载这个类，但是由于某些原因加载失败，现在我们尝试再次去使用这个类(因此需要去load这个类由于上次load失败)，但是我们不准备尝试去load它，因为我们之前load失败(因此推测出我们会再次失败)。前面的Failure可能是一个ClassNotFoundException 或者 ExceptionInInitializerError(静态代码块初始化失败) 或者其他问题。因此NoClassDefFoundError 不一定是因为classPath的问题，要看它前面失败的原因。</p>
 
 <h3 id="about-oom">About OOM</h3>
 
@@ -154,9 +154,9 @@
   <li>java虚拟机栈： 是线程私有的，每个方法执行会创建一个栈帧，用于存储局部变量表，操作数栈，动态链接，方法出口等信息。</li>
   <li>本地方法栈： 和虚拟机栈类似，但方法是native方法。</li>
   <li>Java堆： 用于存储对象</li>
-  <li>方法区： 存储被虚拟机加载的类信息，常量，静态变量，即时编译器编译后的代码等数据。在JDK1.7时被称为永久代，放在JVM中，可以通过设置<code class="highlighter-rouge">PermSize</code>和<code class="highlighter-rouge">MaxPermSize</code>来设置永久代大小，每次扩展永久代内存伴随full gc，而且超过最大永久代会造成内存溢出；jdk1.8中使用元空间代替永久代，减小gc，而且默认元空间不设上限，可以扩展。</li>
+  <li>方法区： 存储被虚拟机加载的类信息，常量，静态变量，即时编译器编译后的代码等数据。在JDK1.7时被称为永久代，放在JVM中，可以通过设置<code class="language-plaintext highlighter-rouge">PermSize</code>和<code class="language-plaintext highlighter-rouge">MaxPermSize</code>来设置永久代大小，每次扩展永久代内存伴随full gc，而且超过最大永久代会造成内存溢出；jdk1.8中使用元空间代替永久代，减小gc，而且默认元空间不设上限，可以扩展。</li>
   <li>运行时常量池： Class文件中除了有类的版本，字段，方法，接口等描述信息外，还有一项信息是常量池，用于存放编译期生成的各种字面量和方法引用，这部分信息将在类加载后进入方法区的运行时常量池存放。<strong>在JDK1.6中运行时常量池是方法区的一部分；jdk1.7中，运行时常量池从方法区中挪出来， 单独存放在堆中;JDK1.8, 参数发生了改变，JVM使用MetaSpace代替了PermSpace, 元空间是放在堆外本地直接内存，可以设置MaxMetaSpace，而默认是无最大限制。</strong></li>
-  <li>直接内存： 堆外内存，可以使用<code class="highlighter-rouge">sun.misc.unsafe</code>类进行访问堆外内存，一些框架netty也是默认使用堆外内存进行缓存数据。</li>
+  <li>直接内存： 堆外内存，可以使用<code class="language-plaintext highlighter-rouge">sun.misc.unsafe</code>类进行访问堆外内存，一些框架netty也是默认使用堆外内存进行缓存数据。</li>
 </ul>
 
 <p>OutOfMemoryError异常分为：</p>
@@ -164,12 +164,12 @@
 <ul>
   <li>堆溢出
     <ul>
-      <li><code class="highlighter-rouge">java.lang.OutOfMemoryError: Java heap space</code>
+      <li><code class="language-plaintext highlighter-rouge">java.lang.OutOfMemoryError: Java heap space</code>
         <ul>
           <li>代表堆内存溢出了，需要合理设置和使用内存。</li>
         </ul>
       </li>
-      <li><code class="highlighter-rouge">java.lang.OutOfMemoryError: Gc overhead limit exceeded</code>
+      <li><code class="language-plaintext highlighter-rouge">java.lang.OutOfMemoryError: Gc overhead limit exceeded</code>
         <ul>
           <li>系统大量的时间都在GC（98%）而回收的效果不明显（2% heap空间），就会抛出这个异常。实际这是一个JVM预判性的异常，也就是说抛出这个异常的时候没有真正的内存溢出。</li>
         </ul>
@@ -178,13 +178,13 @@
   </li>
   <li>虚拟机栈和本地方法栈溢出
     <ul>
-      <li><code class="highlighter-rouge">java.lang.StackOverflowError</code>
+      <li><code class="language-plaintext highlighter-rouge">java.lang.StackOverflowError</code>
         <ul>
           <li>线程请求的栈深度大于虚拟机所允许的最大深度,通常是由于递归造成。</li>
           <li>在单线程下，无论是由于栈帧太大还是虚拟机栈容量太小，当虚拟机栈内存无法分配都是抛出StackOverflowError.</li>
         </ul>
       </li>
-      <li><code class="highlighter-rouge">java.lang.OutOfMemoryError: unable to create new native thread</code>
+      <li><code class="language-plaintext highlighter-rouge">java.lang.OutOfMemoryError: unable to create new native thread</code>
         <ul>
           <li>在建立多线程造成的内存溢出，可以通过减少每个线程栈容量来换取更多地线程数。</li>
         </ul>
@@ -193,7 +193,7 @@
   </li>
   <li>方法区和运行时常量池溢出
     <ul>
-      <li>JDK1.7 中有参数<code class="highlighter-rouge">-XX:PermSize</code>和<code class="highlighter-rouge">-XX:MaxPermSize</code>来设置永久代大小，放在JVm中的非堆区域；jdk1.8中有参数<code class="highlighter-rouge">-XX:MetaspaceSize</code>和<code class="highlighter-rouge">-XX:MaxMetaspaceSize</code>来设置元空间大小，放在本地直接内存，默认最大元空间是无限大的。
+      <li>JDK1.7 中有参数<code class="language-plaintext highlighter-rouge">-XX:PermSize</code>和<code class="language-plaintext highlighter-rouge">-XX:MaxPermSize</code>来设置永久代大小，放在JVm中的非堆区域；jdk1.8中有参数<code class="language-plaintext highlighter-rouge">-XX:MetaspaceSize</code>和<code class="language-plaintext highlighter-rouge">-XX:MaxMetaspaceSize</code>来设置元空间大小，放在本地直接内存，默认最大元空间是无限大的。
         <ul>
           <li>`java.lang.OutOfMemoryError:PermGen space/ Metaspace
             <ul>
@@ -206,10 +206,10 @@
   </li>
   <li>本地直接内存溢出
     <ul>
-      <li><code class="highlighter-rouge">java.lang.OutOfMemoryError at sun.misc.Unsafe.allocateMemory(native Method)</code>
+      <li><code class="language-plaintext highlighter-rouge">java.lang.OutOfMemoryError at sun.misc.Unsafe.allocateMemory(native Method)</code>
         <ul>
-          <li>可以调大 <code class="highlighter-rouge">-XX:MaxDirectMemorySize</code>调大最大直接内存容量</li>
-          <li>netty中会默认使用本地直接内存来缓存数据，可以设置<code class="highlighter-rouge">-Dio.netty.noPreferDirect=true -Dio.netty.recycler.maxCapacity=0 -Dio.netty.noUnsafe=true</code>来避免使用堆外内存来避免。</li>
+          <li>可以调大 <code class="language-plaintext highlighter-rouge">-XX:MaxDirectMemorySize</code>调大最大直接内存容量</li>
+          <li>netty中会默认使用本地直接内存来缓存数据，可以设置<code class="language-plaintext highlighter-rouge">-Dio.netty.noPreferDirect=true -Dio.netty.recycler.maxCapacity=0 -Dio.netty.noUnsafe=true</code>来避免使用堆外内存来避免。</li>
         </ul>
       </li>
     </ul>

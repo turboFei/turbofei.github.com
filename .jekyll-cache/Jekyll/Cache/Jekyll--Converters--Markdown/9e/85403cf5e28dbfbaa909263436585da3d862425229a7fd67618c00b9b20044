@@ -1,4 +1,4 @@
-I"6�
+I"y�
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -25,7 +25,7 @@
 
 <h3 id="前言">前言</h3>
 
-<p>Spark Sql里面有很多的参数，而且这些参数在Spark官网中没有明确的解释，可能是太多了吧，可以通过在spark-sql中使用<code class="highlighter-rouge">set -v</code> 命令显示当前spark-sql版本支持的参数。</p>
+<p>Spark Sql里面有很多的参数，而且这些参数在Spark官网中没有明确的解释，可能是太多了吧，可以通过在spark-sql中使用<code class="language-plaintext highlighter-rouge">set -v</code> 命令显示当前spark-sql版本支持的参数。</p>
 
 <p>本文讲解最近关于在参与hive往spark迁移过程中遇到的一些参数相关问题的调优。</p>
 
@@ -35,22 +35,22 @@
 
 <h4 id="sparksqlhiveconvertmetastoreparquet">spark.sql.hive.convertMetastoreParquet</h4>
 
-<p>parquet是一种列式存储格式，可以用于spark-sql 和hive 的存储格式。在spark中，如果使用<code class="highlighter-rouge">using parqeut</code>的形式创建表，则创建的是spark 的DataSource表；而如果使用<code class="highlighter-rouge">stored as parquet</code>则创建的是hive表。</p>
+<p>parquet是一种列式存储格式，可以用于spark-sql 和hive 的存储格式。在spark中，如果使用<code class="language-plaintext highlighter-rouge">using parqeut</code>的形式创建表，则创建的是spark 的DataSource表；而如果使用<code class="language-plaintext highlighter-rouge">stored as parquet</code>则创建的是hive表。</p>
 
-<p><code class="highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>默认设置是true, 它代表使用spark-sql内置的parquet的reader和writer(即进行反序列化和序列化),它具有更好地性能，如果设置为false，则代表使用 Hive的序列化方式。</p>
+<p><code class="language-plaintext highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>默认设置是true, 它代表使用spark-sql内置的parquet的reader和writer(即进行反序列化和序列化),它具有更好地性能，如果设置为false，则代表使用 Hive的序列化方式。</p>
 
 <p>但是有时候当其设置为true时，会出现使用hive查询表有数据，而使用spark查询为空的情况.</p>
 
-<p>但是，有些情况下在将<code class="highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>设为false，可能发生以下异常(spark-2.3.2)。</p>
+<p>但是，有些情况下在将<code class="language-plaintext highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>设为false，可能发生以下异常(spark-2.3.2)。</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">java</span><span class="o">.</span><span class="na">lang</span><span class="o">.</span><span class="na">ClassCastException</span><span class="o">:</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">LongWritable</span> <span class="n">cannot</span> <span class="n">be</span> <span class="n">cast</span> <span class="n">to</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">IntWritable</span>
 	<span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">hive</span><span class="o">.</span><span class="na">serde2</span><span class="o">.</span><span class="na">objectinspector</span><span class="o">.</span><span class="na">primitive</span><span class="o">.</span><span class="na">WritableIntObjectInspector</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="nc">WritableIntObjectInspector</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">36</span><span class="o">)</span>
 
 </code></pre></div></div>
 
-<p>这是因为在其为false时候，是使用hive-metastore使用的元数据进行读取数据，而如果此表是使用spark sql DataSource创建的parquet表，其数据类型可能出现不一致的情况，例如通过metaStore读取到的是IntWritable类型，其创建了一个<code class="highlighter-rouge">WritableIntObjectInspector</code>用来解析数据，而实际上value是LongWritable类型，因此出现了类型转换异常。</p>
+<p>这是因为在其为false时候，是使用hive-metastore使用的元数据进行读取数据，而如果此表是使用spark sql DataSource创建的parquet表，其数据类型可能出现不一致的情况，例如通过metaStore读取到的是IntWritable类型，其创建了一个<code class="language-plaintext highlighter-rouge">WritableIntObjectInspector</code>用来解析数据，而实际上value是LongWritable类型，因此出现了类型转换异常。</p>
 
-<p>与该参数相关的一个参数是<code class="highlighter-rouge">spark.sql.hive.convertMetastoreParquet.mergeSchema</code>, 如果也是true，那么将会尝试合并各个parquet 文件的schema，以使得产生一个兼容所有parquet文件的schema.</p>
+<p>与该参数相关的一个参数是<code class="language-plaintext highlighter-rouge">spark.sql.hive.convertMetastoreParquet.mergeSchema</code>, 如果也是true，那么将会尝试合并各个parquet 文件的schema，以使得产生一个兼容所有parquet文件的schema.</p>
 
 <h4 id="sparksqlfilesignoremissingfiles--sparksqlfilesignorecorruptfiles">spark.sql.files.ignoreMissingFiles &amp;&amp; spark.sql.files.ignoreCorruptFiles</h4>
 
@@ -58,7 +58,7 @@
 
 <p>在进行spark DataSource 表查询时候，可能会遇到非分区表中的文件缺失/corrupt 或者分区表分区路径下的文件缺失/corrupt 异常，这时候加这两个参数会忽略这两个异常，这两个参数默认都是false，建议在线上可以都设为true.</p>
 
-<p>其源码逻辑如下，简单描述就是如果遇到<code class="highlighter-rouge">FileNotFoundException</code>, 如果设置了<code class="highlighter-rouge">ignoreMissingFiles=true</code>则忽略异常，否则抛出异常;如果不是FileNotFoundException 而是IOException(FileNotFoundException的父类)或者RuntimeException,则认为文件损坏,如果设置了<code class="highlighter-rouge">ignoreCorruptFiles=true</code>则忽略异常。</p>
+<p>其源码逻辑如下，简单描述就是如果遇到<code class="language-plaintext highlighter-rouge">FileNotFoundException</code>, 如果设置了<code class="language-plaintext highlighter-rouge">ignoreMissingFiles=true</code>则忽略异常，否则抛出异常;如果不是FileNotFoundException 而是IOException(FileNotFoundException的父类)或者RuntimeException,则认为文件损坏,如果设置了<code class="language-plaintext highlighter-rouge">ignoreCorruptFiles=true</code>则忽略异常。</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">catch</span> <span class="o">{</span>
 <span class="k">case</span> <span class="n">e</span><span class="k">:</span> <span class="kt">FileNotFoundException</span> <span class="kt">if</span> <span class="kt">ignoreMissingFiles</span> <span class="o">=&gt;</span>
@@ -83,13 +83,13 @@
  
 </code></pre></div></div>
 
-<p>而<code class="highlighter-rouge">spark.sql.hive.verifyPartitionPath</code>参数默认是false，当设置为true的时候会在获得分区路径时对分区路径是否存在做一个校验，过滤掉不存在的分区路径，这样就会避免上面的错误。</p>
+<p>而<code class="language-plaintext highlighter-rouge">spark.sql.hive.verifyPartitionPath</code>参数默认是false，当设置为true的时候会在获得分区路径时对分区路径是否存在做一个校验，过滤掉不存在的分区路径，这样就会避免上面的错误。</p>
 
 <h4 id="sparkfilesignorecorruptfiles--sparkfilesignoremissingfiles">spark.files.ignoreCorruptFiles &amp;&amp; spark.files.ignoreMissingFiles</h4>
 
-<p>这两个参数和上面的<code class="highlighter-rouge">spark.sql.files.ignoreCorruptFiles</code>很像，但是区别是很大的。在spark进行DataSource表查询时候<code class="highlighter-rouge">spark.sq.files.*</code>才会生效，而spark如果查询的是一张hive表，其会走HadoopRDD这条执行路线。</p>
+<p>这两个参数和上面的<code class="language-plaintext highlighter-rouge">spark.sql.files.ignoreCorruptFiles</code>很像，但是区别是很大的。在spark进行DataSource表查询时候<code class="language-plaintext highlighter-rouge">spark.sq.files.*</code>才会生效，而spark如果查询的是一张hive表，其会走HadoopRDD这条执行路线。</p>
 
-<p>所以就会出现，即使你设置了<code class="highlighter-rouge">spark.sql.files.ignoreMissingFiles</code>的情况下，仍然报FileNotFoundException的情况，异常栈如下, 可以看到这里面走到了HadoopRDD，而且后面是<code class="highlighter-rouge">org.apache.hadoop.hive.ql.io.parquet.read.ParquetRecordReaderWrappe</code>可见是查询一张hive表。</p>
+<p>所以就会出现，即使你设置了<code class="language-plaintext highlighter-rouge">spark.sql.files.ignoreMissingFiles</code>的情况下，仍然报FileNotFoundException的情况，异常栈如下, 可以看到这里面走到了HadoopRDD，而且后面是<code class="language-plaintext highlighter-rouge">org.apache.hadoop.hive.ql.io.parquet.read.ParquetRecordReaderWrappe</code>可见是查询一张hive表。</p>
 
 <div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nc">Caused</span> <span class="nl">by:</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">spark</span><span class="o">.</span><span class="na">SparkException</span><span class="o">:</span> <span class="nc">Job</span> <span class="n">aborted</span> <span class="n">due</span> <span class="n">to</span> <span class="n">stage</span> <span class="nl">failure:</span> <span class="nc">Task</span> <span class="mi">107052</span> <span class="n">in</span> <span class="n">stage</span> <span class="mf">914.0</span> <span class="n">failed</span> <span class="mi">4</span> <span class="n">times</span><span class="o">,</span> <span class="n">most</span> <span class="n">recent</span> <span class="nl">failure:</span> <span class="nc">Lost</span> <span class="n">task</span> <span class="mf">107052.3</span> <span class="n">in</span> <span class="n">stage</span> <span class="mf">914.0</span> <span class="o">(</span><span class="no">TID</span> <span class="mi">387381</span><span class="o">,</span> <span class="n">hadoop2698</span><span class="o">.</span><span class="na">jd</span><span class="o">.</span><span class="mi">163</span><span class="o">.</span><span class="na">org</span><span class="o">,</span> <span class="n">executor</span> <span class="mi">266</span><span class="o">):</span> <span class="n">java</span><span class="o">.</span><span class="na">io</span><span class="o">.</span><span class="na">FileNotFoundException</span><span class="o">:</span> <span class="nc">File</span> <span class="n">does</span> <span class="n">not</span> <span class="nl">exist:</span> <span class="nl">hdfs:</span><span class="c1">//hz-cluster10/user/da_haitao/da_hivesrc/haitao_dev_log/integ_browse_app_dt/day=2019-06-25/os=Android/000067_0</span>
         <span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">hadoop</span><span class="o">.</span><span class="na">hdfs</span><span class="o">.</span><span class="na">DistributedFileSystem</span><span class="err">$</span><span class="mi">22</span><span class="o">.</span><span class="na">doCall</span><span class="o">(</span><span class="nc">DistributedFileSystem</span><span class="o">.</span><span class="na">java</span><span class="o">:</span><span class="mi">1309</span><span class="o">)</span>
@@ -105,7 +105,7 @@
         <span class="n">at</span> <span class="n">org</span><span class="o">.</span><span class="na">apache</span><span class="o">.</span><span class="na">spark</span><span class="o">.</span><span class="na">rdd</span><span class="o">.</span><span class="na">HadoopRDD</span><span class="err">$</span><span class="n">$anon</span><span class="err">$</span><span class="mi">1</span><span class="o">.</span><span class="na">liftedTree1</span><span class="err">$</span><span class="mi">1</span><span class="o">(</span><span class="nc">HadoopRDD</span><span class="o">.</span><span class="na">scala</span><span class="o">:</span><span class="mi">257</span><span class="o">)</span>
 </code></pre></div></div>
 
-<p>此时可以将<code class="highlighter-rouge">spark.files.ignoreCorruptFiles &amp;&amp; spark.files.ignoreMissingFiles</code>设为true，其代码逻辑和上面的<code class="highlighter-rouge">spark.sql.file.*</code>逻辑没明显区别，此处不再赘述.</p>
+<p>此时可以将<code class="language-plaintext highlighter-rouge">spark.files.ignoreCorruptFiles &amp;&amp; spark.files.ignoreMissingFiles</code>设为true，其代码逻辑和上面的<code class="language-plaintext highlighter-rouge">spark.sql.file.*</code>逻辑没明显区别，此处不再赘述.</p>
 
 <h3 id="性能调优">性能调优</h3>
 

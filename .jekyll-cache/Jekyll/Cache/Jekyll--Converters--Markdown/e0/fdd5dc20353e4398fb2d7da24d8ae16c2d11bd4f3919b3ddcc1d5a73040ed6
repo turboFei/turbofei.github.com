@@ -1,4 +1,4 @@
-I"�
+I"p
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -12,7 +12,7 @@
 
 <p>deca主要实现的功能就是减小了大数据平台在运行任务过程中的数据在内存中的占用量以及在运行过程中对象的数量。</p>
 
-<p>当前的主流分布式内存计算系统均采用<code class="highlighter-rouge">高级托管语言</code>开发，这样开发进度快，方便部署和维护。</p>
+<p>当前的主流分布式内存计算系统均采用<code class="language-plaintext highlighter-rouge">高级托管语言</code>开发，这样开发进度快，方便部署和维护。</p>
 
 <p>GC是托管语言（JAVA,SCALA等）的运行时系统自主管理对象的基础，GC操作会检索当前堆中存活的对象，并释放已经死亡对象的空间。</p>
 
@@ -27,7 +27,7 @@
   <li>
     <p>Full GC 问题</p>
 
-    <p>内存膨胀会导致JVM更加频繁的触发full gc（检索整个JVM堆内存），而GC开销与<code class="highlighter-rouge">存活对象数量</code>成正比，导致GC时间过长。</p>
+    <p>内存膨胀会导致JVM更加频繁的触发full gc（检索整个JVM堆内存），而GC开销与<code class="language-plaintext highlighter-rouge">存活对象数量</code>成正比，导致GC时间过长。</p>
   </li>
 </ol>
 
@@ -63,13 +63,13 @@
   </li>
 </ol>
 
-<p><code class="highlighter-rouge">长时间存活对象</code>会一直活在内存中，每次Full GC 要扫描的对象数量很多，计算开销很大。而且对象一直存活，会大量占用内存，频繁导致full gc。</p>
+<p><code class="language-plaintext highlighter-rouge">长时间存活对象</code>会一直活在内存中，每次Full GC 要扫描的对象数量很多，计算开销很大。而且对象一直存活，会大量占用内存，频繁导致full gc。</p>
 
 <p><strong><em>方法设计</em></strong></p>
 
-<p>核心思想是减少数据<code class="highlighter-rouge">对象的数量</code>，而非数据的大小。</p>
+<p>核心思想是减少数据<code class="language-plaintext highlighter-rouge">对象的数量</code>，而非数据的大小。</p>
 
-<p>使用对象拆解，暴露出数据对象中的<code class="highlighter-rouge">裸数据</code>：原生字段类型；去除对象头和引用结构。</p>
+<p>使用对象拆解，暴露出数据对象中的<code class="language-plaintext highlighter-rouge">裸数据</code>：原生字段类型；去除对象头和引用结构。</p>
 
 <p>基于生命周期的内存管理：将相同/相近生命周期的一组数据对象中的裸数据存放在连续的内存块（数组）中。</p>
 
@@ -105,7 +105,7 @@
 
 <p>这样就处理了变长类型的处理，之前是只实现了reduceBykey的。</p>
 
-<p>后面我们也尝试了<code class="highlighter-rouge">列式存储</code>，把之前page中的数组形式，转换为列式存储。</p>
+<p>后面我们也尝试了<code class="language-plaintext highlighter-rouge">列式存储</code>，把之前page中的数组形式，转换为列式存储。</p>
 
 <p>同时负责实验的设计，实验过程中遇到bug的解决以及gc统计分析的工作。</p>
 
@@ -117,5 +117,5 @@
 
 <p><strong>收获</strong></p>
 
-<p><code class="highlighter-rouge">mark</code></p>
+<p><code class="language-plaintext highlighter-rouge">mark</code></p>
 :ET

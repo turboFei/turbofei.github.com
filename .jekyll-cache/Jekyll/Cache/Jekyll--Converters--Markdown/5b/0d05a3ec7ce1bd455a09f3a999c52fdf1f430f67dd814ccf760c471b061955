@@ -1,4 +1,4 @@
-I"gp
+I"�r
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -56,7 +56,7 @@
 
 <p>一天用户告诉我他有一个任务在Shuffle Read阶段出错，每天都要重试，有时候重试一次，有时候重试几次可以成功。任务报错如下:</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WARN  [shuffle-client-6-2:TransportChannelHandler@78] - Exception in connection from hostName/hostIp:7337
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>WARN  [shuffle-client-6-2:TransportChannelHandler@78] - Exception in connection from hostName/hostIp:7337
 java.lang.IllegalArgumentException: Too large frame: 2991947178
 	at org.spark_project.guava.base.Preconditions.checkArgument(Preconditions.java:119)
 	at org.apache.spark.network.util.TransportFrameDecoder.decodeNext(TransportFrameDecoder.java:133)
@@ -74,53 +74,53 @@ java.lang.IllegalArgumentException: Too large frame: 2991947178
 
 <p>看来用户还是比较幸运的，重试之后可以刚好调度在数据所在节点执行task。那么如果有两个partition的数据都发生了严重的倾斜，而且这两个partition不在同一个节点之上，那样无论任务怎么重新调度，都必然至少有一个partition无法fetch，这必然造成了task的失败，进一步造成application的失败。</p>
 
-<p>继续分析这个问题，spark有一个参数<code class="highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>,代表着可以从远端拉取数据放入内存的最大size。如果这一批要拉取的数据大小之和小于这个值，那么spark 使用fetch chunk的方式，都是一次拉取一整块的partition数据，然后放在内存里。如果一批要拉取数据大小之和大于这个size，就会采用fetchStream的方式，将这些partition数据流式拉取到本地保存为本地文件。</p>
+<p>继续分析这个问题，spark有一个参数<code class="language-plaintext highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>,代表着可以从远端拉取数据放入内存的最大size。如果这一批要拉取的数据大小之和小于这个值，那么spark 使用fetch chunk的方式，都是一次拉取一整块的partition数据，然后放在内存里。如果一批要拉取数据大小之和大于这个size，就会采用fetchStream的方式，将这些partition数据流式拉取到本地保存为本地文件。</p>
 
-<p>在spark2.4之前这个参数默认都是<code class="highlighter-rouge">Long.MaxValue</code>，这个值是超级大的，所以可以认为spark2.4之前如果你没有对这个参数进行额外设置，比如设置为2G，1500m，就可以说你的所有partition拉取都是一次进行。</p>
+<p>在spark2.4之前这个参数默认都是<code class="language-plaintext highlighter-rouge">Long.MaxValue</code>，这个值是超级大的，所以可以认为spark2.4之前如果你没有对这个参数进行额外设置，比如设置为2G，1500m，就可以说你的所有partition拉取都是一次进行。</p>
 
-<p>而spark2.4之后，对该参数的默认值更改为<code class="highlighter-rouge">Integet.MaxValue-512</code>，也就是说，这样的参数就不会触发到一次性拉取一个大于2GB的数据了。</p>
+<p>而spark2.4之后，对该参数的默认值更改为<code class="language-plaintext highlighter-rouge">Integet.MaxValue-512</code>，也就是说，这样的参数就不会触发到一次性拉取一个大于2GB的数据了。</p>
 
 <h4 id="优化方案">优化方案</h4>
 
 <p>问题已经分析的很明确。该问题的解决方案可以分为三种。</p>
 
 <ul>
-  <li>通过设置<code class="highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>为小于2GB，来避免发生这个问题，这是最简单的</li>
+  <li>通过设置<code class="language-plaintext highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>为小于2GB，来避免发生这个问题，这是最简单的</li>
   <li>或者是用户解决数据倾斜的问题</li>
   <li>从平台侧解决这个问题。</li>
 </ul>
 
 <p>讲一下从平台侧对这个问题的解决，Spark作为一个大数据计算引擎，一个partition有超过2GB的数据并不过分，而作为一个大数据平台开发，自然要积极从平台侧出发。</p>
 
-<p>而虽然能够通过配置<code class="highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>小于2GB来避免这个问题的发生，但是这也造成了即使我们在资源充足的情况下，也不能将这个参数设为一个大于2GB的值，而这也就造成了有时候即使我们内存资源充足，当我们一批fetch数据大于2GB时也要将这些数据进行落盘，新增了一些I/O开销。因此，我们能不能突破这个<code class="highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>不能设置大于2GB的限制，在任何设置下都能成功的取到数据呢？</p>
+<p>而虽然能够通过配置<code class="language-plaintext highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>小于2GB来避免这个问题的发生，但是这也造成了即使我们在资源充足的情况下，也不能将这个参数设为一个大于2GB的值，而这也就造成了有时候即使我们内存资源充足，当我们一批fetch数据大于2GB时也要将这些数据进行落盘，新增了一些I/O开销。因此，我们能不能突破这个<code class="language-plaintext highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>不能设置大于2GB的限制，在任何设置下都能成功的取到数据呢？</p>
 
 <p>其实一开始看到用户的任务可以通过重新调度到partition所在节点上解决之后，曾经想过使用调度优化来解决，但是前面也提过，如果有两个partition oversize，那么这个任务必定失败。</p>
 
 <p>因此想到了对比较大的partition进行划分，每次拉取一部分数据，这样就不会触发到netty的2GB限制。</p>
 
-<p>首先描述一下目前Spark <strong>在没有达到<code class="highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>限制时拉取数据的过程</strong>。</p>
+<p>首先描述一下目前Spark <strong>在没有达到<code class="language-plaintext highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>限制时拉取数据的过程</strong>。</p>
 
 <p><img src="/imgs/spark-shuffle-optimization/shuffle-3.png" alt="shuffle fetch 数据过程(批量拉取量未超过最大放入内存阈值)" /></p>
 
-<p>如上图所示，可以看到，shuffle read端将每个partition对应的数据，作为一个ManagedBuffer拉取过来，存放在一个阻塞队列中，之后task会依次去取这些数据进行计算。这就是目前shuffle fetch的不足之处，不管对应的partition有多大，只要这批拉取数据量小于<code class="highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>都一次性去取过来。</p>
+<p>如上图所示，可以看到，shuffle read端将每个partition对应的数据，作为一个ManagedBuffer拉取过来，存放在一个阻塞队列中，之后task会依次去取这些数据进行计算。这就是目前shuffle fetch的不足之处，不管对应的partition有多大，只要这批拉取数据量小于<code class="language-plaintext highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>都一次性去取过来。</p>
 
 <p>我们针对此方案作出了优化：现简单描述如下:</p>
 
 <ol>
   <li>
-    <p>设置Shuffle一次可以fetch的阈值<code class="highlighter-rouge">SHUFFLE_FETCH_THRESHOLD</code>为2GB</p>
+    <p>设置Shuffle一次可以fetch的阈值<code class="language-plaintext highlighter-rouge">SHUFFLE_FETCH_THRESHOLD</code>为2GB</p>
   </li>
   <li>
-    <p>设置一个参数<code class="highlighter-rouge">spark.shuffle.fetch.split</code>来控制是否使用本方案拉取数据</p>
+    <p>设置一个参数<code class="language-plaintext highlighter-rouge">spark.shuffle.fetch.split</code>来控制是否使用本方案拉取数据</p>
   </li>
   <li>
-    <p>在创建mapStatus阶段，计算每个partition需要被fetch的次数 <code class="highlighter-rouge">size/SHUFFLE_FETCH_THRESHOLD</code>保存为map.为了节省内存空间只保存次数1次以上的, 从map中获取不到则为1次。</p>
+    <p>在创建mapStatus阶段，计算每个partition需要被fetch的次数 <code class="language-plaintext highlighter-rouge">size/SHUFFLE_FETCH_THRESHOLD</code>保存为map.为了节省内存空间只保存次数1次以上的, 从map中获取不到则为1次。</p>
   </li>
   <li>
-    <p>定义一种新的BlockId 为<code class="highlighter-rouge">ShuffleBlockSegmentId</code>，用来让shuffle 服务端来识别出来我们要使用什么样的方案获取数据。</p>
+    <p>定义一种新的BlockId 为<code class="language-plaintext highlighter-rouge">ShuffleBlockSegmentId</code>，用来让shuffle 服务端来识别出来我们要使用什么样的方案获取数据。</p>
   </li>
   <li>
-    <p>在shuffle client端，根据<code class="highlighter-rouge">spark.shuffle.fetch.split</code>参数来创建我们要发送到shuffle 服务端的BlockID类型，如果是多次拉取，则创建<code class="highlighter-rouge">ShuffleBlockSegmentId</code>,否则还是之前的<code class="highlighter-rouge">ShuffleBlockId</code>.</p>
+    <p>在shuffle client端，根据<code class="language-plaintext highlighter-rouge">spark.shuffle.fetch.split</code>参数来创建我们要发送到shuffle 服务端的BlockID类型，如果是多次拉取，则创建<code class="language-plaintext highlighter-rouge">ShuffleBlockSegmentId</code>,否则还是之前的<code class="language-plaintext highlighter-rouge">ShuffleBlockId</code>.</p>
   </li>
   <li>
     <p>对于一个ShuffleBlockID对应的partition数据，使用一个buf的Sequence来保存，而不是原来的只用一个buf来保存。</p>
@@ -129,13 +129,13 @@ java.lang.IllegalArgumentException: Too large frame: 2991947178
     <p>由于我们现在分多次拉取一个partition的数据，因此需要这个partition数据完全拉取结束之后才能进入原来的LinkedBlockingQueue, 因此我们使用一个PriorityBlockingQueue来存放一个partition对应的多块数据，而且优先级阻塞队列还提供了排序功能，我们可以保证一个partition的数据是按序排放。当该ShuffleBlockId对应的所有数据都拉取过来之后，将放在优先级队列中的buf出队，然后放入LinkedBlockingQueue中，供task用于取数据计算。</p>
   </li>
   <li>
-    <p>在shuffle服务端，通过识别我们发送的blockId类型来决定如何取数据，如果是<code class="highlighter-rouge">ShuffleBlockSegmentId</code>,则取一块数据，否则，取全部数据。</p>
+    <p>在shuffle服务端，通过识别我们发送的blockId类型来决定如何取数据，如果是<code class="language-plaintext highlighter-rouge">ShuffleBlockSegmentId</code>,则取一块数据，否则，取全部数据。</p>
 
     <p>新方案拉取过程如下图所示:</p>
 
     <p><img src="/imgs/spark-shuffle-optimization/shuffle-4.png" alt="新方案Shuffle fetch过程" /></p>
 
-    <p>通过此方案，我们就可以突破<code class="highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>2GB和单partition数据量大于2GB的限制，为所欲为。</p>
+    <p>通过此方案，我们就可以突破<code class="language-plaintext highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>2GB和单partition数据量大于2GB的限制，为所欲为。</p>
   </li>
 </ol>
 
@@ -157,7 +157,7 @@ java.lang.IllegalArgumentException: Too large frame: 2991947178
 
 <p>还是看日志，通过观察日志，发现用户的任务中有大量的shuffle-client拉取数据超时，然后重试的操作。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2019-04-26 12:18:49,848 [25708] - INFO  [Executor task launch worker for task 1689:Logging$class@54] - Started reading broadcast variable 5
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>2019-04-26 12:18:49,848 [25708] - INFO  [Executor task launch worker for task 1689:Logging$class@54] - Started reading broadcast variable 5
 2019-04-26 12:18:49,906 [25766] - INFO  [Executor task launch worker for task 1689:TransportClientFactory@254] - Successfully created connection to hadoop3977.jd.163.org/hostIp:38939 after 1 ms (0 ms spent in bootstraps)
 2019-04-26 12:18:50,291 [26151] - WARN  [shuffle-client-4-1:TransportChannelHandler@78] - Exception in connection from hadoop3977.jd.163.org/hostIp:38939
 java.io.IOException: Connection reset by peer
@@ -167,7 +167,7 @@ java.io.IOException: Connection reset by peer
 	at sun.nio.ch.IOUtil.read(IOUtil.java:192)
 </code></pre></div></div>
 
-<p>重试操作是spark shuffle 阶段的一个优化，这可以避免由于网络或者节点暂时繁忙而导致拉取数据失败，而是可以多重试几次，保证数据拉取的健壮性，避免贸然的失败。可以使用 <code class="highlighter-rouge">spark.shuffle.io.maxRetries</code> 和<code class="highlighter-rouge">spark.shuffle.io.retryWait</code>来配置最大重试次数与重试时间间隔。</p>
+<p>重试操作是spark shuffle 阶段的一个优化，这可以避免由于网络或者节点暂时繁忙而导致拉取数据失败，而是可以多重试几次，保证数据拉取的健壮性，避免贸然的失败。可以使用 <code class="language-plaintext highlighter-rouge">spark.shuffle.io.maxRetries</code> 和<code class="language-plaintext highlighter-rouge">spark.shuffle.io.retryWait</code>来配置最大重试次数与重试时间间隔。</p>
 
 <p>日志中是说，这个shuffle-client一直连接超时，然后不断重试，直到将重试次数用尽。如果我们配置的最大重试次数为15次，重试间隔为20s的话，这样一个task不断重试下来就要推迟五分钟，如果很多的task推迟，后果很严重。</p>
 
@@ -175,7 +175,7 @@ java.io.IOException: Connection reset by peer
 
 <p>前面说了有两种shuffle client，blockTransferService是用于拉取由spark自身管理的数据，现在有了ExternalShuffleService用于管理shuffle 数据，那么blockTransferService还有什么作用呢？那就是拉取Broadcast数据。</p>
 
-<p>上面的日志也是说重试时发生在<code class="highlighter-rouge">reading broadcast variable</code>阶段。</p>
+<p>上面的日志也是说重试时发生在<code class="language-plaintext highlighter-rouge">reading broadcast variable</code>阶段。</p>
 
 <p>通过对日志进行详细的分析,问题如下:</p>
 
@@ -190,7 +190,7 @@ java.io.IOException: Connection reset by peer
 
 <h4 id="优化方案-1">优化方案</h4>
 
-<p>通过对问题深入的分析，发现问题出现在<code class="highlighter-rouge">RetryingBlockFetcher</code>的重试逻辑。</p>
+<p>通过对问题深入的分析，发现问题出现在<code class="language-plaintext highlighter-rouge">RetryingBlockFetcher</code>的重试逻辑。</p>
 
 <p>其重试逻辑如下:</p>
 
@@ -199,12 +199,12 @@ java.io.IOException: Connection reset by peer
   <li>并且此时还有重试次数未用尽，那就继续重试。</li>
 </ol>
 
-<p>但是当初设计这个重试逻辑的人可能忽略了ExecutorDynamicAllocation，因为executor很容易被回收，当fetch数据时相关的节点已经死掉时，也会抛出IO异常，因此这会触发<code class="highlighter-rouge">RetryingBlockFetcher</code>的重试逻辑，但是这样的重试显然是毫无意义的，因此你永远不可能向一个已经死掉的executor索要数据。</p>
+<p>但是当初设计这个重试逻辑的人可能忽略了ExecutorDynamicAllocation，因为executor很容易被回收，当fetch数据时相关的节点已经死掉时，也会抛出IO异常，因此这会触发<code class="language-plaintext highlighter-rouge">RetryingBlockFetcher</code>的重试逻辑，但是这样的重试显然是毫无意义的，因此你永远不可能向一个已经死掉的executor索要数据。</p>
 
 <p>因此，我对此重试进行了优化。</p>
 
 <ol>
-  <li>设置一种新的消息类型, <code class="highlighter-rouge">IsExecutorAlive</code>.在BlockTransferService捕获到IOException时，发往driver。</li>
+  <li>设置一种新的消息类型, <code class="language-plaintext highlighter-rouge">IsExecutorAlive</code>.在BlockTransferService捕获到IOException时，发往driver。</li>
   <li>driver根据消息中的executorID来查找自己维护的一个以executorId为key的map，时间复杂度为o(1)，如果此executorId在map中则代表存活，否则，该Executor已经被回收.</li>
   <li>回复executorId对应的Executor状态给索要信息的executor。</li>
   <li>根据返回结果，如果该executor依然存活，则重试，否则，抛出ExecutorDeadException，重试结束。</li>
@@ -250,7 +250,7 @@ java.io.IOException: Connection reset by peer
 
 <p>会报以下类似异常.</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>18/11/13 08:10:08 INFO client.TransportClientFactory: Successfully created connection to hadoop2997.lt.163.org/hostIp:7337 after 0 ms (0 ms spent in bootstraps) 18/11/13 08:10:08 ERROR util.Utils: Aborting task java.io.IOException: FAILED_TO_UNCOMPRESS(5) at org.xerial.snappy.SnappyNative.throw_error(SnappyNative.java:98) at org.xerial.snappy.SnappyNative.rawUncompress(Native Method) at org.xerial.snappy.Snappy.rawUncompress(Snappy.java:474) at 
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>18/11/13 08:10:08 INFO client.TransportClientFactory: Successfully created connection to hadoop2997.lt.163.org/hostIp:7337 after 0 ms (0 ms spent in bootstraps) 18/11/13 08:10:08 ERROR util.Utils: Aborting task java.io.IOException: FAILED_TO_UNCOMPRESS(5) at org.xerial.snappy.SnappyNative.throw_error(SnappyNative.java:98) at org.xerial.snappy.SnappyNative.rawUncompress(Native Method) at org.xerial.snappy.Snappy.rawUncompress(Snappy.java:474) at 
 </code></pre></div></div>
 
 <p>这个异常是在后续计算过程中报的，说明目前的spark shuffle 数据校验机制存在问题。</p>
@@ -259,7 +259,7 @@ java.io.IOException: Connection reset by peer
 
 <ul>
   <li>只校验使用数据压缩格式(例如snappy,lz4)的数据，而非压缩的数据不进行校验。</li>
-  <li>只能校验小于<code class="highlighter-rouge">maxBytesInFlight/3</code>(默认maxBytesInflight为48M)的数据,大小有局限</li>
+  <li>只能校验小于<code class="language-plaintext highlighter-rouge">maxBytesInFlight/3</code>(默认maxBytesInflight为48M)的数据,大小有局限</li>
   <li>采用创建的一个outputStream,然后将InputStream传入，然后再基于这个outputStream创建inputStream的方式来校验，会浪费内存</li>
 </ul>
 
@@ -295,13 +295,13 @@ java.io.IOException: Connection reset by peer
 
 <h5 id="shuffle-write-phase">Shuffle Write Phase</h5>
 
-<p>首先简单介绍一下shuffle write。shuffle writer分为三种，<code class="highlighter-rouge">BypassMergeSortShuffleWriter</code>, <code class="highlighter-rouge">SortShuffleWriter</code>和<code class="highlighter-rouge">UnsafeShuffleWriter</code>. BypassShuffleWriter最后写的shuffle block组织方式与后两种不同，后两种shuffle writer的shuffle block文件组织方式是相同的。</p>
+<p>首先简单介绍一下shuffle write。shuffle writer分为三种，<code class="language-plaintext highlighter-rouge">BypassMergeSortShuffleWriter</code>, <code class="language-plaintext highlighter-rouge">SortShuffleWriter</code>和<code class="language-plaintext highlighter-rouge">UnsafeShuffleWriter</code>. BypassShuffleWriter最后写的shuffle block组织方式与后两种不同，后两种shuffle writer的shuffle block文件组织方式是相同的。</p>
 
 <p>如下图所示.</p>
 
 <p><img src="/imgs/spark-shuffle-optimization/shuffle-5.png" alt="ShuffleWriter" /></p>
 
-<p>由图可见，如果一个shuffle过程有m个mapper, n个reducer。那么BypassShuffleWriter会创建 m*n个shuffle文件，如果m和n都比较大，比如m=n=5000，那么就会创建2500万个文件，这很可怕，所以BypassShuffleWriter默认只会在reducer个数少于200的时候使用，可以通过<code class="highlighter-rouge">spark.shuffle.sort.bypassMergeThreshold</code>配置这个参数。</p>
+<p>由图可见，如果一个shuffle过程有m个mapper, n个reducer。那么BypassShuffleWriter会创建 m*n个shuffle文件，如果m和n都比较大，比如m=n=5000，那么就会创建2500万个文件，这很可怕，所以BypassShuffleWriter默认只会在reducer个数少于200的时候使用，可以通过<code class="language-plaintext highlighter-rouge">spark.shuffle.sort.bypassMergeThreshold</code>配置这个参数。</p>
 
 <p>而SortShuffleWriter和UnsafeShuffleWriter的组织shuffle文件的方法是一样的，这是针对BypassShuffleWriter的改进。由图可见，这两种shuffleWriter只会针对一个mapTask创建一个shuffle文件，建立一个索引文件记录每个划分之后的partition数据在这个文件中的偏移量(BypassShuffleWriter也有这样的索引文件)。这样每个mapTask只创建了两个文件，一个数据文件，一个索引文件，大大减小了文件的数量，减小了系统的压力。</p>
 
@@ -319,7 +319,7 @@ java.io.IOException: Connection reset by peer
 
 <p>前面已经提到过shuffle fetch数据的过程，只不过这里会在读数据时候，将map阶段计算的对应partition部分的crc值也一起拉取过来，然后与拉取过来的数据重新计算得到的crc值进行对比。</p>
 
-<p>前面也提到过，如果一批拉取的数据的量小于<code class="highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>是会将数据全部放在内存中的，只有超过这个数量才会将远端的数据先落磁盘然后之后再读取，因此保存在磁盘中的数据，包括本地的shuffle block文件与远端拉取落磁盘的文件。</p>
+<p>前面也提到过，如果一批拉取的数据的量小于<code class="language-plaintext highlighter-rouge">spark.maxRemoteBlockSizeFetchToMem</code>是会将数据全部放在内存中的，只有超过这个数量才会将远端的数据先落磁盘然后之后再读取，因此保存在磁盘中的数据，包括本地的shuffle block文件与远端拉取落磁盘的文件。</p>
 
 <p>针对远端拉取过来放在内存中的数据，由于其本身就在内存，因此对其计算crc值是十分迅速的，而且内存中inputStream支持reset操作，我们在计算crc之后，进行一下reset操作，就可以继续将这个inputStream用于后续的task计算。</p>
 

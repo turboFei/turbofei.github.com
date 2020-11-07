@@ -1,4 +1,4 @@
-I"r
+I"�t
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
@@ -60,9 +60,9 @@
 
 <ul>
   <li>使用Spark DataFrame API进行创建</li>
-  <li>使用<code class="highlighter-rouge">using parquet</code>的方式创建
+  <li>使用<code class="language-plaintext highlighter-rouge">using parquet</code>的方式创建
     <ul>
-      <li>例如: <code class="highlighter-rouge">create table ta (id int, name string) using parquet</code></li>
+      <li>例如: <code class="language-plaintext highlighter-rouge">create table ta (id int, name string) using parquet</code></li>
     </ul>
   </li>
 </ul>
@@ -70,20 +70,20 @@
 <p><strong>Hive 表</strong></p>
 
 <ul>
-  <li>使用<code class="highlighter-rouge">stored as parquet</code>进行创建
+  <li>使用<code class="language-plaintext highlighter-rouge">stored as parquet</code>进行创建
     <ul>
-      <li>例如: <code class="highlighter-rouge">create table ta(id int, name string) stored as parquet </code></li>
+      <li>例如: <code class="language-plaintext highlighter-rouge">create table ta(id int, name string) stored as parquet </code></li>
     </ul>
   </li>
 </ul>
 
-<p>如果想判断一张已经建的表是hive表还是spark DataSource表可以使用 <code class="highlighter-rouge">show create table</code>命令查看信息。</p>
+<p>如果想判断一张已经建的表是hive表还是spark DataSource表可以使用 <code class="language-plaintext highlighter-rouge">show create table</code>命令查看信息。</p>
 
 <ul>
   <li>
     <p>hive表 可以看到其INPUTFORMAT/OUTPUTFORMAT是 hive开头的。</p>
 
-    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CREATE TABLE `ta`(`id` int, `name` string)
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CREATE TABLE `ta`(`id` int, `name` string)
 ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
 WITH SERDEPROPERTIES (
   'serialization.format' = '1'
@@ -98,7 +98,7 @@ TBLPROPERTIES (
   </li>
   <li>
     <p>Spark DataSource表</p>
-    <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CREATE TABLE `ta` (`id` INT, `name` STRING)
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>CREATE TABLE `ta` (`id` INT, `name` STRING)
 USING parquet
 OPTIONS (
   `serialization.format` '1'
@@ -109,11 +109,11 @@ OPTIONS (
 
 <h4 id="兼容性问题与规避方案">兼容性问题与规避方案</h4>
 
-<p>前面通过<code class="highlighter-rouge">show create table</code>命令也看到了，hive表就是使用hive 的parquet序列化方式。而spark由于自带的parquet性能更加卓越，所以在spark中有一个参数，<code class="highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>, 其默认是true，表示将使用spark内置的parquet的序列化和反序列化去读取使用hive语法创建的hive表，而非使用hive内置的parquet序列化和反序列化。</p>
+<p>前面通过<code class="language-plaintext highlighter-rouge">show create table</code>命令也看到了，hive表就是使用hive 的parquet序列化方式。而spark由于自带的parquet性能更加卓越，所以在spark中有一个参数，<code class="language-plaintext highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>, 其默认是true，表示将使用spark内置的parquet的序列化和反序列化去读取使用hive语法创建的hive表，而非使用hive内置的parquet序列化和反序列化。</p>
 
 <p>所以，有时候就会出现使用spark读取hive表时数据全为null的情况(spark中遇到数据解释不了，或者overflow，默认就是返回null)。</p>
 
-<p>这时候，可以将<code class="highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>设为false，来解决这个问题。</p>
+<p>这时候，可以将<code class="language-plaintext highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>设为false，来解决这个问题。</p>
 
 <h3 id="数据计算">数据计算</h3>
 
@@ -129,7 +129,7 @@ OPTIONS (
 
 <p>对于一个double类型，其可以精确的表示小数点后15位，有效位数位16位。而Decimal类型相对于double类型可以更加精确的表示保证数据计算，例如对于一个Decimal(38, 24)类型，其可以精确的表示小数点后23位。</p>
 
-<p>下面介绍<code class="highlighter-rouge">spark.sql.decimalOperations.allowPrecisionLoss</code>参数。</p>
+<p>下面介绍<code class="language-plaintext highlighter-rouge">spark.sql.decimalOperations.allowPrecisionLoss</code>参数。</p>
 
 <p>当该参数为true(默认)，表示允许丢失精度，会根据Hive行为和SQL ANSI 2011规范来决定result的类型，即如果无法精确的表示，则舍入结果的小数部分。</p>
 
@@ -163,7 +163,7 @@ OPTIONS (
 
 <p>在Spark sql中有一系列关于类型转换的Rule，这些Rule作用在Analysis阶段的Resolution子阶段。</p>
 
-<p>我们来看一下其中一条Rule,  <code class="highlighter-rouge">ImplicitTypeCasts</code> 中和BinaryOperator相关的代码。</p>
+<p>我们来看一下其中一条Rule,  <code class="language-plaintext highlighter-rouge">ImplicitTypeCasts</code> 中和BinaryOperator相关的代码。</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/analysis/TypeCoercion.scala</span>
 <span class="k">case</span> <span class="n">b</span> <span class="k">@</span> <span class="nc">BinaryOperator</span><span class="o">(</span><span class="n">left</span><span class="o">,</span> <span class="n">right</span><span class="o">)</span> <span class="k">if</span> <span class="nv">left</span><span class="o">.</span><span class="py">dataType</span> <span class="o">!=</span> <span class="nv">right</span><span class="o">.</span><span class="py">dataType</span> <span class="k">=&gt;</span> 
@@ -182,7 +182,7 @@ OPTIONS (
 
 <p>解释一下上面的代码，针对一个BinaryOperator(例如 + - * /), 如果左边的数据类型和右边不一致，那么会寻找一个左右操作数的common type, 然后将左右操作数都转换为common type。针对我们此处case中的 Decimal(34, 24) 和Literal(1), 它们的common type就是Decimal(34, 24),所以这里的Literal(1)将被转换为Decimal(34, 24)。</p>
 
-<p>这样该二元操作的两边就都是Decimal类型。接下来这个二元操作会被Rule <code class="highlighter-rouge">DecimalPrecision</code>中的decimalAndDecimal方法处理。由于该二元操作是乘法操作，我们看乘法操作部分的代码。</p>
+<p>这样该二元操作的两边就都是Decimal类型。接下来这个二元操作会被Rule <code class="language-plaintext highlighter-rouge">DecimalPrecision</code>中的decimalAndDecimal方法处理。由于该二元操作是乘法操作，我们看乘法操作部分的代码。</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// sql/catalyst/src/main/scala/org/apache/spark/sql/catalyst/analysis/DecimalPrecision.scala</span>
 <span class="k">case</span> <span class="nc">Multiply</span><span class="o">(</span><span class="n">e1</span> <span class="k">@</span> <span class="nv">DecimalType</span><span class="o">.</span><span class="py">Expression</span><span class="o">(</span><span class="n">p1</span><span class="o">,</span> <span class="n">s1</span><span class="o">),</span> <span class="n">e2</span> <span class="k">@</span> <span class="nv">DecimalType</span><span class="o">.</span><span class="py">Expression</span><span class="o">(</span><span class="n">p2</span><span class="o">,</span> <span class="n">s2</span><span class="o">))</span> <span class="k">=&gt;</span>
@@ -250,9 +250,9 @@ OPTIONS (
   </tbody>
 </table>
 
-<p>这个结果是异常的，正确的结果应该只有一条<code class="highlighter-rouge"> 2, n1</code>.</p>
+<p>这个结果是异常的，正确的结果应该只有一条<code class="language-plaintext highlighter-rouge"> 2, n1</code>.</p>
 
-<p>P.S. 在master分支，对hive table做了一些优化，如果将<code class="highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>设为true(此时会将InsertIntoHiveTable的操作转换为使用Spark DataSource的写入)是可以得到正确的结果，但是如果将<code class="highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>设为false，依然会得到上述异常数据。</p>
+<p>P.S. 在master分支，对hive table做了一些优化，如果将<code class="language-plaintext highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>设为true(此时会将InsertIntoHiveTable的操作转换为使用Spark DataSource的写入)是可以得到正确的结果，但是如果将<code class="language-plaintext highlighter-rouge">spark.sql.hive.convertMetastoreParquet</code>设为false，依然会得到上述异常数据。</p>
 
 <p>其实这是Hive的一个bug，相关patch为 <a href="https://issues.apache.org/jira/browse/HIVE-17063.">HIVE-17063</a></p>
 
@@ -268,7 +268,7 @@ OPTIONS (
 
 <p>简单介绍一下FileOutputCommitter。首先其有一个outputPath和一个committer 算法版本，1或者2。</p>
 
-<p>其会有一个<code class="highlighter-rouge">$tablePath/_temporary/number</code>（对于Spark来说是<code class="highlighter-rouge">$tablePath/_temporary/0</code>）作为一个working 目录(存放中间数据)，task在未完成之前的数据在这个working目录中进行。</p>
+<p>其会有一个<code class="language-plaintext highlighter-rouge">$tablePath/_temporary/number</code>（对于Spark来说是<code class="language-plaintext highlighter-rouge">$tablePath/_temporary/0</code>）作为一个working 目录(存放中间数据)，task在未完成之前的数据在这个working目录中进行。</p>
 
 <p>如果committer算法版本为1，task完成之后会首先commit到一个 task_attempt_output目录(在_temporary/0下面)，在所有task完成之后会将所有task_attempt_output 下面的数据commit到outputPath中，这是一个二阶段提交。</p>
 
@@ -280,13 +280,13 @@ OPTIONS (
 
 <p>表按照是否有分区来划分，可以分为分区表和非分区表。</p>
 
-<p>针对非分区表，spark在进行写入时候的working目录都是 <code class="highlighter-rouge">$tablePath/_temporary/0</code>.</p>
+<p>针对非分区表，spark在进行写入时候的working目录都是 <code class="language-plaintext highlighter-rouge">$tablePath/_temporary/0</code>.</p>
 
-<p>针对分区表，spark在写入时候会判断这个写入操作是否是dynamicPartitionOverwrite。如果是，则其working目录是<code class="highlighter-rouge">$tablePath/.spark-staging-${UUID}</code>,也就是不会重复的，每次都独一无二的。如果不是，则其working目录还是<code class="highlighter-rouge">$tablePath/_temporary/0</code>。</p>
+<p>针对分区表，spark在写入时候会判断这个写入操作是否是dynamicPartitionOverwrite。如果是，则其working目录是<code class="language-plaintext highlighter-rouge">$tablePath/.spark-staging-${UUID}</code>,也就是不会重复的，每次都独一无二的。如果不是，则其working目录还是<code class="language-plaintext highlighter-rouge">$tablePath/_temporary/0</code>。</p>
 
 <p>介绍一下dynamicPartitionOverwrite。对分区表分区进行overwrite分为static 和dynamic两种类型。</p>
 
-<p>在Spark中相关参数为<code class="highlighter-rouge">spark.sql.sources.partitionOverwriteMode</code>(hive中也有对应的参数),默认为<code class="highlighter-rouge">static</code>，代表不允许进行dynamicPartitionOverwrite，如果设为<code class="highlighter-rouge">dynamic</code>代表允许dynamicPartitionOverwrite。</p>
+<p>在Spark中相关参数为<code class="language-plaintext highlighter-rouge">spark.sql.sources.partitionOverwriteMode</code>(hive中也有对应的参数),默认为<code class="language-plaintext highlighter-rouge">static</code>，代表不允许进行dynamicPartitionOverwrite，如果设为<code class="language-plaintext highlighter-rouge">dynamic</code>代表允许dynamicPartitionOverwrite。</p>
 
 <p>dynamic代表你不必指定所有partition key的值，由spark来根据结果，确定你要overwrite哪些partition，因此其在数据计算完成之前，不会去删表中的分区。</p>
 
@@ -297,13 +297,13 @@ OPTIONS (
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">insert</span> <span class="n">overwrite</span> <span class="k">table</span> <span class="n">tablea</span> <span class="n">partition</span><span class="p">(</span><span class="n">p1</span><span class="o">=</span><span class="n">v1</span><span class="p">,</span><span class="n">p2</span><span class="o">=</span><span class="n">v2</span><span class="p">,</span><span class="n">p3</span><span class="p">)</span> <span class="k">select</span> <span class="p">...</span>
 </code></pre></div></div>
 
-<p>如果是static的overwrite，其会首先删掉 表下面的 <code class="highlighter-rouge">p1=v1/p2=v2</code>分区(会删掉下面所有的p3子分区)，然后在数据计算完之后，将数据写入。</p>
+<p>如果是static的overwrite，其会首先删掉 表下面的 <code class="language-plaintext highlighter-rouge">p1=v1/p2=v2</code>分区(会删掉下面所有的p3子分区)，然后在数据计算完之后，将数据写入。</p>
 
-<p>如果是dynamic的overwrite，其不会首先删掉表下面的 <code class="highlighter-rouge">p1=v1/p2=v2</code>分区，而是会根据计算的结果去判断，我应该删掉哪些子分区。</p>
+<p>如果是dynamic的overwrite，其不会首先删掉表下面的 <code class="language-plaintext highlighter-rouge">p1=v1/p2=v2</code>分区，而是会根据计算的结果去判断，我应该删掉哪些子分区。</p>
 
-<p>比如说在进行overwrite之前, <code class="highlighter-rouge">p1=v1/p2=v2</code>下面有 <code class="highlighter-rouge">p3=v31</code> 和<code class="highlighter-rouge">p3=v32</code>两个子分区，而实际<code class="highlighter-rouge">select ...</code>语句产生的结果只有<code class="highlighter-rouge">p3=v31</code>的结果。</p>
+<p>比如说在进行overwrite之前, <code class="language-plaintext highlighter-rouge">p1=v1/p2=v2</code>下面有 <code class="language-plaintext highlighter-rouge">p3=v31</code> 和<code class="language-plaintext highlighter-rouge">p3=v32</code>两个子分区，而实际<code class="language-plaintext highlighter-rouge">select ...</code>语句产生的结果只有<code class="language-plaintext highlighter-rouge">p3=v31</code>的结果。</p>
 
-<p>如果是static overwrite，会先把<code class="highlighter-rouge">p3=v31</code> 和<code class="highlighter-rouge">p3=v32</code>两个子分区都删掉，而dynamic overwrite，只会在最后根据计算结果只overwrite <code class="highlighter-rouge">p3=v31</code>这个分区。</p>
+<p>如果是static overwrite，会先把<code class="language-plaintext highlighter-rouge">p3=v31</code> 和<code class="language-plaintext highlighter-rouge">p3=v32</code>两个子分区都删掉，而dynamic overwrite，只会在最后根据计算结果只overwrite <code class="language-plaintext highlighter-rouge">p3=v31</code>这个分区。</p>
 
 <p>关于表的写入背景知识介绍到这里，下面介绍具体场景。</p>
 
@@ -311,13 +311,13 @@ OPTIONS (
 
 <p>如果应用appA 是对tableA一个static partition overwrite，其由于某个task hang住，然后被kill掉，所以其working目录($tableA/_temporary/0)没有被清理掉.</p>
 
-<p>而我们在其被kill掉之后，又重新跑这个应用，新的应用继续使用<code class="highlighter-rouge">$tableA/_temporary/0</code>作为working目录，之后新应用运行成功，但是提交时候将上次遗留的一些task的数据提交到最终目录，造成数据重复。</p>
+<p>而我们在其被kill掉之后，又重新跑这个应用，新的应用继续使用<code class="language-plaintext highlighter-rouge">$tableA/_temporary/0</code>作为working目录，之后新应用运行成功，但是提交时候将上次遗留的一些task的数据提交到最终目录，造成数据重复。</p>
 
-<p>针对这个场景，暂时解决方案，我们需要在应用被kill之后，手动清理<code class="highlighter-rouge">_temporary/0</code>.</p>
+<p>针对这个场景，暂时解决方案，我们需要在应用被kill之后，手动清理<code class="language-plaintext highlighter-rouge">_temporary/0</code>.</p>
 
 <h5 id="两个应用并发写入一个表">两个应用并发写入一个表</h5>
 
-<p>如果在kill应用的时候，resourceManager发生了异常，造成了我们以为应用已经被kill掉，然后我们又重新提交了一样的应用去写数据。两个应用会共用<code class="highlighter-rouge">_temporary/0</code>,互相干扰，可能造成结果异常。</p>
+<p>如果在kill应用的时候，resourceManager发生了异常，造成了我们以为应用已经被kill掉，然后我们又重新提交了一样的应用去写数据。两个应用会共用<code class="language-plaintext highlighter-rouge">_temporary/0</code>,互相干扰，可能造成结果异常。</p>
 
 <p>针对这个场景，我们可能不容易察觉。</p>
 

@@ -1,4 +1,4 @@
-I"�
+I"�
 <p>目录</p>
 
 <ul id="markdown-toc">
@@ -94,7 +94,7 @@
 
 <p>执行的顺序由调用顺序决定。例如,下面的这个命令, clean和package属于编译phases，而dependency:copy-dependencies是一个goal(属于maven-dependency-plugin)。</p>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn clean dependency:copy-dependencies package
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mvn clean dependency:copy-dependencies package
 </code></pre></div></div>
 
 <p>这条命令clean 会最下执行，也就是说先运行clean lifecycle,然后运行 dependency:copy-dependencies, 最后进行package(包括package之前的phases).</p>
@@ -285,7 +285,7 @@
 <span class="nt">&lt;/properties&gt;</span>
 </code></pre></div></div>
 <p>使用方式 如下 ：</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>${file.encoding}
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>${file.encoding}
 </code></pre></div></div>
 
 <p>还可以使用project.xx引用pom里定义的其它属性：如$(project.version}</p>
@@ -360,7 +360,7 @@
   </ul>
 </blockquote>
 
-<p><code class="highlighter-rouge">resources</code>标签用于描述工程中资源的位置.</p>
+<p><code class="language-plaintext highlighter-rouge">resources</code>标签用于描述工程中资源的位置.</p>
 
 <div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>			<span class="nt">&lt;resource&gt;</span> 
         <span class="nt">&lt;targetPath&gt;</span>META-INF/plexus<span class="nt">&lt;/targetPath&gt;</span> 
@@ -532,7 +532,7 @@
 
 <h5 id="maven-shade-plugin">Maven-shade-plugin</h5>
 
-<p>如果是作为使用方可以使用<code class="highlighter-rouge">exclusions</code>来去掉一些依赖包避免冲突，而如果是作为提供方，有时候需要在提供jar包时候避免产生依赖冲突，而<code class="highlighter-rouge">maven-shade-plugin</code>非常适合这个场景.</p>
+<p>如果是作为使用方可以使用<code class="language-plaintext highlighter-rouge">exclusions</code>来去掉一些依赖包避免冲突，而如果是作为提供方，有时候需要在提供jar包时候避免产生依赖冲突，而<code class="language-plaintext highlighter-rouge">maven-shade-plugin</code>非常适合这个场景.</p>
 
 <p>下面这个例子。</p>
 
@@ -780,7 +780,7 @@ layout：default或者legacy</p>
         <span class="nt">&lt;/profile&gt;</span>
 </code></pre></div></div>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./build/mvn clean install -Pspark-2.3
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./build/mvn clean install -Pspark-2.3
 </code></pre></div></div>
 
 <p>这里就激活了spark-2.3对应的properties.</p>
