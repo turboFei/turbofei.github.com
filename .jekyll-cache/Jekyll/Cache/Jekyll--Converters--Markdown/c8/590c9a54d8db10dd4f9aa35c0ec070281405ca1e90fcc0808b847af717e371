@@ -1,4 +1,4 @@
-I"]~
+I"c�
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
@@ -31,18 +31,12 @@
       </li>
     </ul>
   </li>
+  <li><a href="#总结" id="markdown-toc-总结">总结</a></li>
 </ul>
 
 <h3 id="前言">前言</h3>
 
-<table>
-  <tbody>
-    <tr>
-      <td>本文讲eBay Spark测试框架-Woody, 其已被发表在公众号eBay技术荟[Hadoop 平台进阶之路</td>
-      <td>eBay Spark测试框架–Woody](https://mp.weixin.qq.com/s/PZoGtkPd6RHTEtfwOx2H0w)</td>
-    </tr>
-  </tbody>
-</table>
+<p>本文讲eBay Spark测试框架-Woody, 其已被发表在公众号eBay技术荟<a href="https://mp.weixin.qq.com/s/PZoGtkPd6RHTEtfwOx2H0w">Hadoop 平台进阶之路|eBay Spark测试框架–Woody</a></p>
 
 <p>新版本的Spark拥有更好的性能和稳定性，对于用户来说，如果长期停留在低版本的Spark，不仅会浪费集群资源，还会进一步加大平台管理团队的工作量。如果进行Spark大版本升级，考虑到版本间可能由于计算行为不一致而导致的数据质量问题，用户就要投入大量的精力去对比重要的job在不同版本下的数据质量，加大了版本升级的困难度。</p>
 
@@ -428,5 +422,9 @@
 <p>为Woody开发了conversion history server以及runtime的conversions页面。图6是一个runtime的转换详情页面。</p>
 
 <p><img src="/public/img/woody/p6.png" alt="" /></p>
+
+<h3 id="总结">总结</h3>
+
+<p>eBay Hadoop team开发的Spark测试框架Woody能够利用LogicalPlan提取job语句中的有效信息，并利用ParserRuleContext进行转换，以线上数据作为输入，将结果输出到测试目录；支持使用不同的Spark版本，conf，甚至修改job sql语句来运行，在运行之后得到数据质量结果和性能比较。总的来说，测试框架Woody的功能主要有以下两个方面：一是用于Spark版本升级及Spark sql job调优，二是用于端到端测试，帮助用户在job pipeline上线之前安全的利用真实的线上数据进行端到端的测试，验证新feature和bug修复，而无需修改任何代码。未来，Hadoop team将进一步优化Woody，以期更好的使用体验。</p>
 
 :ET

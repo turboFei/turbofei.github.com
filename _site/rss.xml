@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2020-11-07T11:19:58+08:00</lastBuildDate>
-        <pubDate>2020-11-07T11:19:58+08:00</pubDate>
+        <lastBuildDate>2020-11-08T08:49:20+08:00</lastBuildDate>
+        <pubDate>2020-11-08T08:49:20+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -50,14 +50,7 @@
 
 &lt;h3 id=&quot;前言&quot;&gt;前言&lt;/h3&gt;
 
-&lt;table&gt;
-  &lt;tbody&gt;
-    &lt;tr&gt;
-      &lt;td&gt;本文讲eBay Spark测试框架-Woody, 其已被发表在公众号eBay技术荟[Hadoop 平台进阶之路&lt;/td&gt;
-      &lt;td&gt;eBay Spark测试框架–Woody](https://mp.weixin.qq.com/s/PZoGtkPd6RHTEtfwOx2H0w)&lt;/td&gt;
-    &lt;/tr&gt;
-  &lt;/tbody&gt;
-&lt;/table&gt;
+&lt;p&gt;本文讲eBay Spark测试框架-Woody, 其已被发表在公众号eBay技术荟&lt;a href=&quot;https://mp.weixin.qq.com/s/PZoGtkPd6RHTEtfwOx2H0w&quot;&gt;Hadoop 平台进阶之路|eBay Spark测试框架–Woody&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;新版本的Spark拥有更好的性能和稳定性，对于用户来说，如果长期停留在低版本的Spark，不仅会浪费集群资源，还会进一步加大平台管理团队的工作量。如果进行Spark大版本升级，考虑到版本间可能由于计算行为不一致而导致的数据质量问题，用户就要投入大量的精力去对比重要的job在不同版本下的数据质量，加大了版本升级的困难度。&lt;/p&gt;
 

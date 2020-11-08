@@ -13,7 +13,7 @@ tags: [spark]
 
 ### 前言
 
-本文讲eBay Spark测试框架-Woody, 其已被发表在公众号eBay技术荟[Hadoop 平台进阶之路|eBay Spark测试框架--Woody](https://mp.weixin.qq.com/s/PZoGtkPd6RHTEtfwOx2H0w)
+本文讲eBay Spark测试框架-Woody, 其已被发表在公众号eBay技术荟[Hadoop 平台进阶之路\|eBay Spark测试框架--Woody](https://mp.weixin.qq.com/s/PZoGtkPd6RHTEtfwOx2H0w)
 
 新版本的Spark拥有更好的性能和稳定性，对于用户来说，如果长期停留在低版本的Spark，不仅会浪费集群资源，还会进一步加大平台管理团队的工作量。如果进行Spark大版本升级，考虑到版本间可能由于计算行为不一致而导致的数据质量问题，用户就要投入大量的精力去对比重要的job在不同版本下的数据质量，加大了版本升级的困难度。
 
