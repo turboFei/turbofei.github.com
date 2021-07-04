@@ -35,12 +35,12 @@ publishDir = "content"
 [[menu.main]]
    name = "Latest"
    parent = "documentation"
-   url = "docs/latest/index.html"
+   url = "https://kyuubi.readthedocs.io/en/latest/"
 
 [[menu.main]]
    name = "Stable"
    parent = "documentation"
-   url = "docs/stable/index.html"
+   url = "https://kyuubi.readthedocs.io/en/stable/"
 
 
 

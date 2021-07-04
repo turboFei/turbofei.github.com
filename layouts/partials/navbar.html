@@ -23,10 +23,10 @@
                   <li {{if $currentPage.HasMenuCurrent "main" . }}class="active"{{end}}><a href="{{.URL }}">{{.Name}}</a></li>
                {{end}}
                {{if eq .Name "Documentation"}}
-               <li role="separator" class="divider"></li>
-               {{range (where (where $currentPage.Site.Pages "Section" "release") ".Params.linked" true)}}
-               <li><a href="docs/r{{.File.BaseFileName}}/">{{.File.BaseFileName}}</a></li>
-               {{end}}
+<!--               <li role="separator" class="divider"></li>-->
+<!--               {{range (where (where $currentPage.Site.Pages "Section" "release") ".Params.linked" true)}}-->
+<!--               <li><a href="docs/r{{.File.BaseFileName}}/">{{.File.BaseFileName}}</a></li>-->
+<!--               {{end}}-->
                {{end}}
              </ul>
            </li>
