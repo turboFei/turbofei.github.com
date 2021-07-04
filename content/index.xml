@@ -2,86 +2,86 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Apache Kyuubi</title>
-    <link>https://kyuubi.apache.org/</link>
+    <link>https://www.turbofei.wang/</link>
     <description>Recent content on Apache Kyuubi</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
     <copyright>Copyright © 2021-{year} The Apache Software Foundation</copyright>
-    <lastBuildDate>Mon, 21 Jun 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://kyuubi.apache.org/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Mon, 21 Jun 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://www.turbofei.wang/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>accept Kyuubi into Apache Incubator</title>
-      <link>https://kyuubi.apache.org/news/2021-07-01-accept-kyuubi-into-apache-incubator.html</link>
+      <link>https://www.turbofei.wang/news/2021-07-01-accept-kyuubi-into-apache-incubator.html</link>
       <pubDate>Mon, 21 Jun 2021 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/news/2021-07-01-accept-kyuubi-into-apache-incubator.html</guid>
+      <guid>https://www.turbofei.wang/news/2021-07-01-accept-kyuubi-into-apache-incubator.html</guid>
       <description>Kyuubi is accepted into Apache Incubator, see details in incubation status.</description>
     </item>
     
     <item>
       <title>release 1.2.0 is available</title>
-      <link>https://kyuubi.apache.org/release/1.2.0.html</link>
+      <link>https://www.turbofei.wang/release/1.2.0.html</link>
       <pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/release/1.2.0.html</guid>
+      <guid>https://www.turbofei.wang/release/1.2.0.html</guid>
       <description>For more information check the release note.</description>
     </item>
     
     <item>
       <title>Apache Kyuubi Releases</title>
-      <link>https://kyuubi.apache.org/releases.html</link>
+      <link>https://www.turbofei.wang/releases.html</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/releases.html</guid>
+      <guid>https://www.turbofei.wang/releases.html</guid>
       <description>See all Kyuubi releases in github releases page.
 License The software licensed under Apache License 2.0.</description>
     </item>
     
     <item>
       <title>Contributing</title>
-      <link>https://kyuubi.apache.org/contributing.html</link>
+      <link>https://www.turbofei.wang/contributing.html</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/contributing.html</guid>
+      <guid>https://www.turbofei.wang/contributing.html</guid>
       <description>Contributing to Kyuubi including source code, documents, tests e.t.c. means that you agree to the Apache License v2.0.
  Better to search the issue history first before reporting an Issue Better to create an Issue to describe the feature or bug first before make a pull request. Better to use English for world widely understanding. Ask us anything  Before you start, please read the Code of Conduct carefully, familiarize yourself with it and refer to it whenever you need it.</description>
     </item>
     
     <item>
       <title>Description</title>
-      <link>https://kyuubi.apache.org/description.html</link>
+      <link>https://www.turbofei.wang/description.html</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/description.html</guid>
+      <guid>https://www.turbofei.wang/description.html</guid>
       <description>Apache Kyuubi (Incubating)
 Kyuubi is a distributed multi-tenant Thrift JDBC/ODBC server for large-scale data management, processing, and analytics, built on top of Apache Spark and designed to support more engines (i.e., Flink).</description>
     </item>
     
     <item>
       <title>Kyuubi Issue Tracking</title>
-      <link>https://kyuubi.apache.org/issue_tracking.html</link>
+      <link>https://www.turbofei.wang/issue_tracking.html</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/issue_tracking.html</guid>
+      <guid>https://www.turbofei.wang/issue_tracking.html</guid>
       <description>The project tracks bugs and new features on github issues.
 If you&amp;rsquo;d like, you can also subscribe to commits@kyuubi.apache.org to get emails about commits.</description>
     </item>
     
     <item>
       <title>Kyuubi Mailing Lists</title>
-      <link>https://kyuubi.apache.org/mailing_lists.html</link>
+      <link>https://www.turbofei.wang/mailing_lists.html</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/mailing_lists.html</guid>
+      <guid>https://www.turbofei.wang/mailing_lists.html</guid>
       <description>Mailing Lists dev@spark.apache.org is for people who want to contribute code to Kyuubi. (subscribe) (unsubscribe) (archives)
 commits@spark.apache.org is for people who want to see changed made in the Kyuubi version control system. (subscribe) (unsubscribe) (archives)</description>
     </item>
     
     <item>
       <title>Kyuubi Project Improvement Proposals (KPIP)</title>
-      <link>https://kyuubi.apache.org/improvement-proposals.html</link>
+      <link>https://www.turbofei.wang/improvement-proposals.html</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/improvement-proposals.html</guid>
+      <guid>https://www.turbofei.wang/improvement-proposals.html</guid>
       <description>The purpose of a KBIP is to inform and involve the user community in significant improvements to the Kyuubi codebase throughout the development process to increase user needs.
 KBIPs should be used for significant user-facing or cross-cutting changes, not minor incremental improvements. When in doubt, if a committer thinks a change needs a KBIP, it does.
 What is a KBIP? A KBIP is similar to a product requirement document commonly used in product management.</description>
@@ -89,10 +89,10 @@ What is a KBIP? A KBIP is similar to a product requirement document commonly use
     
     <item>
       <title>Kyuubi Usage</title>
-      <link>https://kyuubi.apache.org/usage.html</link>
+      <link>https://www.turbofei.wang/usage.html</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/usage.html</guid>
+      <guid>https://www.turbofei.wang/usage.html</guid>
       <description>Kyuubi provides a pure SQL gateway through Thrift JDBC/ODBC interface for end-users to manipulate large-scale data with pre-programmed and extensible Spark SQL engines.
 We are aiming to make Kyuubi an &amp;ldquo;out-of-the-box&amp;rdquo; tool for data warehouses and data lakes.
 This &amp;ldquo;out-of-the-box&amp;rdquo; model minimizes the barriers and costs for end-users to use Spark at the client side.
@@ -101,39 +101,39 @@ At the server-side, Kyuubi server and engines&#39; multi-tenant architecture pro
     
     <item>
       <title>Kyuubi Version Control System</title>
-      <link>https://kyuubi.apache.org/version_control.html</link>
+      <link>https://www.turbofei.wang/version_control.html</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/version_control.html</guid>
+      <guid>https://www.turbofei.wang/version_control.html</guid>
       <description>Overview The Kyuubi source code resides in the Apache git repository, and available from here: https://gitbox.apache.org/repos/asf?p=incubator-kyuubi.git
 The changes are also mirrored to the github repository https://github.com/apache/incubator-kyuubi</description>
     </item>
     
     <item>
       <title>Privacy</title>
-      <link>https://kyuubi.apache.org/privacy_policy.html</link>
+      <link>https://www.turbofei.wang/privacy_policy.html</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/privacy_policy.html</guid>
+      <guid>https://www.turbofei.wang/privacy_policy.html</guid>
       <description>Information about your use of this website is collected using server access logs and a tracking cookie. The collected information consists of the following:
  The IP address from which you access the website; The type of browser and operating system you use to access our site; The date and time you access our site; The pages you visit; and The addresses of pages from where you followed a link to our site.</description>
     </item>
     
     <item>
       <title>The Kyuubi Ecosystem (present and future)</title>
-      <link>https://kyuubi.apache.org/ecosystems.html</link>
+      <link>https://www.turbofei.wang/ecosystems.html</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/ecosystems.html</guid>
+      <guid>https://www.turbofei.wang/ecosystems.html</guid>
       <description>The figure below shows our vision for the Kyuubi Ecosystem. Some of them have been realized, some in development, and others would not be possible without your help.</description>
     </item>
     
     <item>
       <title>Useful Developer Tools</title>
-      <link>https://kyuubi.apache.org/developer-tools.html</link>
+      <link>https://www.turbofei.wang/developer-tools.html</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://kyuubi.apache.org/developer-tools.html</guid>
+      <guid>https://www.turbofei.wang/developer-tools.html</guid>
       <description>Building Kyuubi Building Kyuubi with Apache Maven Kyuubi is built based on Apache Maven,
 ./build/mvn clean package -DskipTests This results in the creation of all sub-modules of Kyuubi project without running any unit test.
 If you want to test it manually, you can start Kyuubi directly from the Kyuubi project root by running
