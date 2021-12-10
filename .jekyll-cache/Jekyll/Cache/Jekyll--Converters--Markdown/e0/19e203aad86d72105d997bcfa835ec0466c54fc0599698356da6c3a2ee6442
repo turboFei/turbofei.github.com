@@ -1,4 +1,4 @@
-I"IY
+I"�n
 <ul>
   <li>
     <h3 id="ebay-spark-test-framework-woody"><a href="/spark/2020/10/29/eBay-Spark-Test-Framework-Woody">Ebay Spark Test Framework Woody</a></h3>
@@ -336,6 +336,15 @@
     <p><a href="/spark/2018/07/12/rdd-basics">Read more »</a></p>
   </li>
   <li>
+    <h3 id="spark-security面面观"><a href="/2018/01/15/spark-security-overview">Spark Security面面观</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2018-01-15</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#"></a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#cloud">cloud</a> <a href="/tags.html#security">security</a></p>
+
+    <p><a href="/2018/01/15/spark-security-overview">Read more »</a></p>
+  </li>
+  <li>
     <h3 id="deca项目总结"><a href="/essay/2017/07/01/deca%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93">Deca项目总结</a></h3>
     <p><i class="fa fa-calendar "></i> <time>2017-07-01</time>
 <i class="icon-folder-open"></i> <a href="/categories.html#essay">essay</a>
@@ -411,6 +420,78 @@
     <p>最近帮大菠萝安装ganglia，记录下，方便以后安装。</p>
 
     <p><a href="/bigdata/2016/08/17/ganglia-%E5%AE%89%E8%A3%85">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="转载-详细探究spark的shuffle实现"><a href="/spark/2014/01/04/spark-shuffle-detail-investigation">[转载] 详细探究Spark的shuffle实现</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2014-01-04</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#mapreduce">mapreduce</a> <a href="/tags.html#shuffle">shuffle</a> <a href="/tags.html#cloud">cloud</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2014/01/04/spark-shuffle-detail-investigation">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="转载-spark源码分析之-storage模块"><a href="/spark/2013/10/08/spark-storage-module-analysis">[转载] Spark源码分析之-Storage模块</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-10-08</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2013/10/08/spark-storage-module-analysis">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="转载-序列的函数式抽象-spark-api设计"><a href="/spark/2013/08/30/Functional-Abstraction-of-Sequence-Spark-API-Design">[转载] 序列的函数式抽象-Spark API设计</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-08-30</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#scheme">scheme</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#lisp">lisp</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2013/08/30/Functional-Abstraction-of-Sequence-Spark-API-Design">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="reprint-spark-streaming-job-troubleshooting-of-dependency-chain"><a href="/spark/2013/05/22/SparkStreaming-Job-Troubleshooting-of-Dependency-Chain">[REPRINT] Spark Streaming Job Troubleshooting of Dependency Chain</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-05-22</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#spark streaming">spark streaming</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2013/05/22/SparkStreaming-Job-Troubleshooting-of-Dependency-Chain">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="转载-spark源码分析之-deploy模块"><a href="/spark/2013/04/30/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-deploy%E6%A8%A1%E5%9D%97">[转载] Spark源码分析之-deploy模块</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-04-30</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2013/04/30/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-deploy%E6%A8%A1%E5%9D%97">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="转载-spark源码分析之-scheduler模块"><a href="/spark/2013/04/21/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-scheduler%E6%A8%A1%E5%9D%97">[转载] Spark源码分析之-scheduler模块</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-04-21</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2013/04/21/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-scheduler%E6%A8%A1%E5%9D%97">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="reprint-spark-streaming-introduction"><a href="/spark/2013/04/02/spark-streaming-introduction">[REPRINT] Spark Streaming Introduction</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-04-02</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#spark streaming">spark streaming</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2013/04/02/spark-streaming-introduction">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="reprint-spark-overview"><a href="/spark/2013/03/29/spark-overview">[REPRINT] Spark Overview</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-03-29</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#Spark">Spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#reprint">reprint</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2013/03/29/spark-overview">Read more »</a></p>
   </li>
 </ul>
 

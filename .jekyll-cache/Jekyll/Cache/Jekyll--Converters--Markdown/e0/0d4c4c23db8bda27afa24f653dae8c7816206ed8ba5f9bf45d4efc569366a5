@@ -1,0 +1,348 @@
+I"�P<h3 id="背景">背景</h3>
+
+<p>作为一款成熟的商业软件，安全往往鲜少被提及但又不可忽略，大数据软件也是如此。在生产环境中，对于一款成熟的大数据软件的考量，不仅需要考虑其功能完备性和性能，同时安全也是不可缺少的一环。为什么安全如此重要呢？</p>
+
+<ul>
+  <li>首先，商业环境通常是多租户环境，不同的用户/组对于不同的数据/应用有不同的安全考量。我们需要保证相应的用户不能做出超越权限的操作。</li>
+  <li>
+    <p>同时，分布式架构会将端口、数据暴露出去，如果没有相应的认证、加密措施，这会大大增加了匿名攻击的概率。</p>
+
+    <p>举个简单的例子，Spark通过RPC通信协调<code class="language-plaintext highlighter-rouge">driver</code>和<code class="language-plaintext highlighter-rouge">executor</code>之间的任务分发，如果一个匿名用户通过伪造协议与<code class="language-plaintext highlighter-rouge">executor</code>进行通信，会产生什么后果呢？</p>
+
+    <p>在一个可控的环境下（比如防火墙物理隔离）这样的风险相对可控。但是随着越来越多的云计算厂商提供EMR类似产品，这样的风险不可谓不存在。</p>
+  </li>
+  <li>
+    <p>再者，对于一个完整的大数据生态系统，安全往往是相互衔接的。如果中间有一款软件没有相应的支持，那么它就会成为整体的薄弱点，或者说会造成整体完备性的缺失。</p>
+
+    <p>比方说，Hadoop系统的认证体系是建立在Kerberos基础上的，一款软件要融入Hadoop生态系统，它必定也要支持Kerberos认证，不然它是无法与其他系统进行交互的。</p>
+  </li>
+</ul>
+
+<p>当然还有很多其他的原因，在这就不一一赘述了。</p>
+
+<p>回到我们今天的话题上来，Spark作为大数据生态圈中的重要一环，许多厂商已经在其生产环境中大量部署了Spark集群，Spark本身在安全上面有哪些点值得我们关注呢？</p>
+
+<h2 id="spark-security">Spark Security</h2>
+
+<p><a href="https://spark.apache.org/docs/latest/security.html">Apache Spark</a>在其演化过程中，安全的支持也是逐渐添加和完善的。在Spark开发的早期，是没有任何安全上面的考量的，随着各大厂商在生产环境中的部署，对于安全的支持也是在逐步的完善。</p>
+
+<p>总结前面提到的三个方面，对于Spark本身，我们需要考虑的三个方面是：</p>
+
+<ol>
+  <li>权限管理</li>
+  <li>数据/链路加密</li>
+  <li>与其他安全系统交互</li>
+</ol>
+
+<p>下文会就以上3点进行讨论，来看看在Spark中安全是如何实现的。</p>
+
+<h3 id="权限管理">权限管理</h3>
+
+<p>上文所提到的第一个问题是<strong>保证相应的用户不能做出超越权限的操作</strong>，那么在Spark中如何做到这一点呢？</p>
+
+<h4 id="acl">ACL</h4>
+
+<p>Spark支持基本的ACL(Access Control List)，通过配置不同用户的角色，能为不同的用户赋予不同的权限范围。</p>
+
+<p>为了启动ACL机制，用户需要配置<code class="language-plaintext highlighter-rouge">spark.acls.enable</code>为<code class="language-plaintext highlighter-rouge">true</code>。然后将不同的用户名置于不同的配置中：</p>
+
+<p><code class="language-plaintext highlighter-rouge">spark.ui.view.acls</code></p>
+
+<p><code class="language-plaintext highlighter-rouge">spark.modify.acls</code></p>
+
+<p><code class="language-plaintext highlighter-rouge">spark.admin.acls</code></p>
+
+<p>这3个配置分别对应了可读、可改、和可管理三种不同的权限。集群管理者可将用户名置于相应的列表以赋予不同的权限。</p>
+
+<p>对于大型集群来说，按用户来配置过于繁琐，Spark也可以支持按组进行配置，如：</p>
+
+<p><code class="language-plaintext highlighter-rouge">spark.ui.view.acls.groups</code></p>
+
+<p><code class="language-plaintext highlighter-rouge">spark.modify.acls.groups</code></p>
+
+<p><code class="language-plaintext highlighter-rouge">spark.admin.acls.groups</code></p>
+
+<p>那么进行了上述这些配置以后会带来什么变化呢？</p>
+
+<ul>
+  <li>首先，只有具有相应权限的用户才能在UI上浏览每个Spark应用的具体内容，包括配置、作业、任务等等。</li>
+  <li>其次，只要具有可改权限的用户才能在UI上停止作业。</li>
+  <li>最后，默认当前spark应用启动用户具有可读和可改的权限。</li>
+</ul>
+
+<p>当前Spark的ACL主要用于UI权限的管理，以保证用户只能浏览相应权限的内容。对于HistoryServer，则有另一套类似的配置，如<code class="language-plaintext highlighter-rouge">spark.history.ui.acls.enable</code>，<code class="language-plaintext highlighter-rouge">spark.history.ui.admin.acls</code>，在这就不具体展开了。</p>
+
+<h4 id="spnego-authentication">Spnego Authentication</h4>
+
+<p>开启了ACL就能对UI进行权限隔离了吗？其实我们还只走了一半路。为了使web server（Spark内嵌Jetty）能够对用户进行隔离，首先Jetty需要知道是谁发起了HTTP请求，换句话说，只有用户的HTTP请求中包含了用户信息，UI和ACL才能根据用户信息进行正确的隔离。但是不幸的是，普通的HTTP请求是不包含用户信息。</p>
+
+<p>为此需要为Jetty servlet加入authentication filter以获取认证用户的信息。在这之中，最常用的就是<a href="https://en.wikipedia.org/wiki/SPNEGO">Spnego authentication</a>.</p>
+
+<p>Spnego是一套以Kerberos为基础的HTTP认证机制，只有经过Kerberos授权的HTTP请求才能被web server所接受。Hadoop生态系统下的各个组件的UI大都采用Spnego作为认证机制，如HDFS，YARN等。</p>
+
+<p>为了使Spark UI能够使用Spnego认证，用户需要实现相应的authentication filter并将其添加到Jetty中。幸运的是Hadoop已经帮我们实现了相应的filter，只需将其配置就可使用。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>spark.ui.filters=org.apache.hadoop.security.authentication.server.AuthenticationFilter
+
+spark.org.apache.hadoop.security.authentication.server.AuthenticationFilter.params=type=kerberos,kerberos.pricipal=&lt;kerberos-principal&gt;,kerberos.keytab=&lt;kerberos-keytab&gt;
+</code></pre></div></div>
+
+<p>在这里，需要为Spark UI创建Kerberos principal和keytab。这样Spark UI就有了Spnego authentication的能力了，任何用户在发起HTTP请求之前必须先获得Kerberos tgt。使用curl的话，如：</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="nv">$ </span>kinit
+<span class="nv">$ </span>curl <span class="nt">--negotiate</span> <span class="nt">-u</span> : &lt;host&gt;:&lt;port&gt;/&lt;xxx&gt;
+
+</code></pre></div></div>
+
+<p>经过Spnego认证的HTTP请求在其HTTP头部包含用户信息，Spark UI和ACL机制会从其中获取用户名并在相应的权限列表中进行比对。</p>
+
+<h4 id="ldap-and-others">LDAP and Others</h4>
+
+<p>当然，Spengo认证只是众多authentication中的一种，其他还有如<a href="https://www.ldap.com/getting-started-with-ldap">LDAP</a>或是basic authentication等等。其中LDAP已经在<a href="https://issues.apache.org/jira/browse/HADOOP-12082">Hadoop 2.8</a>中实现了，用户可以采用以上类似的配置实现LDAP认证。</p>
+
+<p>同样，用户可以是实现并配置自己的authentication filter，只要依照servlet和Jetty的规范即可。</p>
+
+<h3 id="数据链路加密">数据/链路加密</h3>
+
+<p>数据/链路加密是Spark安全中最为重要的一块，它主要是为了防止匿名用户通过端口获取报文，发送malicious数据，同时也需要防止用户伪造spilled数据（如shuffle数据）以破坏运行作业。下文就将数据和链路加密分别进行介绍。</p>
+
+<h4 id="数据加密">数据加密</h4>
+
+<p>在Spark中，往local disk上写的数据主要包含：</p>
+
+<ol>
+  <li>Shuffle数据，包括shuffle data和shuffle index file。</li>
+  <li>Shuffle spill数据，当内存无法容纳时向disk spill的数据。</li>
+  <li>BlockManager存储在disk的block数据。</li>
+  <li>等等。。。</li>
+</ol>
+
+<p>所有这些数据都是以二进制的方式将序列化（压缩后）的数据写入到local文件系统中。举例来说，比如匿名用户知道了Spark中shuffle数据的命名方式和映射规律，那么他就能伪造一份新的shuffle数据。为了防止此种情况的发生，我们需要对写到disk上的数据进行加密。</p>
+
+<p>为此我们需要配置如下：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Property</th>
+      <th>Default</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>spark.io.encryption.enabled</td>
+      <td>false</td>
+      <td>Enable IO encryption. Currently supported by all modes except Mesos. It’s recommended that RPC encryption be enabled when using this feature.</td>
+    </tr>
+    <tr>
+      <td>spark.io.encryption.keySizeBits</td>
+      <td>128</td>
+      <td>IO encryption key size in bits. Supported values are 128, 192 and 256.</td>
+    </tr>
+    <tr>
+      <td>spark.io.encryption.keygen.algorithm</td>
+      <td>HmacSHA1</td>
+      <td>The algorithm to use when generating the IO encryption key. The supported algorithms are described in the KeyGenerator section of the Java Cryptography Architecture Standard Algorithm Name Documentation.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>当配置了这些选项以后，所有写入local disk的数据都会以加密方式写入。</p>
+
+<h4 id="链路加密">链路加密</h4>
+
+<p>链路加密，就是所谓的wire encryption，在Spark中主要包含两种类型的链路：</p>
+
+<ol>
+  <li>HTTP连接。Spark的live UI和History UI提供了WEB UI供用户浏览应用的具体细节。我们希望HTTP链路能够加密以防止匿名用户的劫持。</li>
+  <li>Binary连接。主要包含RPC链路、Shuffle链路和Block传输。在Spark中这一部分是由Netty实现的。我们希望所有的端到端的传输都是可信赖的，一个不被信赖的链接是无法发送数据的。</li>
+</ol>
+
+<p>根据上面两种类型的链路，我们来看看应该如何配置Spark使链路能得到加密。</p>
+
+<h5 id="httpsssl">HTTPS/SSL</h5>
+
+<p>在Spark中，包含HTTP的链路分别有：</p>
+
+<ul>
+  <li>Live UI，Spark应用的WEB UI。</li>
+  <li>History UI，Spark history Server的WEB UI。</li>
+  <li>Standalone UI，Spark Standalone cluster manager中master和worker node的WEB UI</li>
+</ul>
+
+<p>为此Spark可以以统一的SSL配置来配置所有的HTTPS endpoint，也可以对每一个组件分别进行配置.</p>
+
+<p>当用户配置了<code class="language-plaintext highlighter-rouge">spark.ssl.enabled</code>，这表示所有HTTPS endpoint都启动了SSL并使用相同的配置。用户也可以通过配置<code class="language-plaintext highlighter-rouge">spark.ssl.ui.xxxx</code>只启动和配置Live UI的SSL。当前支持的component包括<code class="language-plaintext highlighter-rouge">ui</code>，<code class="language-plaintext highlighter-rouge">standalone</code>和<code class="language-plaintext highlighter-rouge">historyServer</code>。</p>
+
+<p>在配置之前，用户需要生成相应的keystore和truststore，可以通过使用Java keytool工具来生成相应的keystore和truststore，具体可以参考Oracle的<a href="https://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html">官方文档</a>。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Property Name</th>
+      <th>Default</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>spark.ssl.enabled</td>
+      <td>false</td>
+      <td>Whether to enable SSL connections on all supported protocols. When spark.ssl.enabled is configured, spark.ssl.protocol is required. All the SSL settings like spark.ssl.xxx where xxx is a particular configuration property, denote the global configuration for all the supported protocols. In order to override the global configuration for the particular protocol, the properties must be overwritten in the protocol-specific namespace. Use spark.ssl.YYY.XXX settings to overwrite the global configuration for particular protocol denoted by YYY. Example values for YYY include fs, ui, standalone, and historyServer. See SSL Configuration for details on hierarchical SSL configuration for services.</td>
+    </tr>
+    <tr>
+      <td>spark.ssl.[namespace].port</td>
+      <td>None</td>
+      <td>The port where the SSL service will listen on. The port must be defined within a namespace configuration; see SSL Configuration for the available namespaces. When not set, the SSL port will be derived from the non-SSL port for the same service. A value of “0” will make the service bind to an ephemeral port.</td>
+    </tr>
+    <tr>
+      <td>spark.ssl.enabledAlgorithms</td>
+      <td>Empty</td>
+      <td>A comma separated list of ciphers. The specified ciphers must be supported by JVM. The reference list of protocols one can find on this page. Note: If not set, it will use the default cipher suites of JVM.</td>
+    </tr>
+    <tr>
+      <td>spark.ssl.keyPassword</td>
+      <td>None</td>
+      <td>A password to the private key in key-store.</td>
+    </tr>
+    <tr>
+      <td>spark.ssl.keyStore</td>
+      <td>None</td>
+      <td>A path to a key-store file. The path can be absolute or relative to the directory where the component is started in.</td>
+    </tr>
+    <tr>
+      <td>spark.ssl.keyStorePassword</td>
+      <td>None</td>
+      <td>A password to the key-store.</td>
+    </tr>
+    <tr>
+      <td>spark.ssl.keyStoreType</td>
+      <td>JKS</td>
+      <td>The type of the key-store.</td>
+    </tr>
+    <tr>
+      <td>spark.ssl.protocol</td>
+      <td>None</td>
+      <td>A protocol name. The protocol must be supported by JVM. The reference list of protocols one can find on this page.</td>
+    </tr>
+    <tr>
+      <td>spark.ssl.needClientAuth</td>
+      <td>false</td>
+      <td>Set true if SSL needs client authentication.</td>
+    </tr>
+    <tr>
+      <td>spark.ssl.trustStore</td>
+      <td>None</td>
+      <td>A path to a trust-store file. The path can be absolute or relative to the directory where the component is started in.</td>
+    </tr>
+    <tr>
+      <td>spark.ssl.trustStorePassword</td>
+      <td>None</td>
+      <td>A password to the trust-store.</td>
+    </tr>
+    <tr>
+      <td>spark.ssl.trustStoreType</td>
+      <td>JKS</td>
+      <td>The type of the trust-store.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>需要注意的是：</p>
+
+<ul>
+  <li>keystore和truststore是保存在本地文件系统中的，这意味着当你需要为standalone cluster manager启动SSL时，需要在所有的节点上生成和保存相应的keystore，truststore。</li>
+  <li>当前YARN并不支持proxy HTTPS request，所以在使用YARN的时候enable SSL会带来一定的问题。</li>
+  <li>当你在需要mutual authentication的时候才需要enable <code class="language-plaintext highlighter-rouge">spark.ssl.needClientAuth</code>。</li>
+</ul>
+
+<h5 id="sasl">SASL</h5>
+
+<p>说完了HTTPS/SSL之后，让我们来看看另一种类型的链路，Netty连接。在Spark中Netty连接也可以进行<a href="https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer">SASL认证</a>。用户只需要进行如下的配置，所有的Netty链路，包括RPC和Block transfer，都会进行认证。</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Property Name</th>
+      <th>Default</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>spark.authenticate</td>
+      <td>false</td>
+      <td>Whether Spark authenticates its internal connections. See spark.authenticate.secret if not running on YARN.</td>
+    </tr>
+    <tr>
+      <td>spark.authenticate.secret</td>
+      <td>None</td>
+      <td>Set the secret key used for Spark to authenticate between components. This needs to be set if not running on YARN and authentication is enabled.</td>
+    </tr>
+    <tr>
+      <td>spark.authenticate.enableSaslEncryption</td>
+      <td>false</td>
+      <td>Enable encrypted communication when authentication is enabled. This is supported by the block transfer service and the RPC endpoints.</td>
+    </tr>
+    <tr>
+      <td>spark.network.sasl.serverAlwaysEncrypt</td>
+      <td>false</td>
+      <td>Disable unencrypted connections for services that support SASL authentication.</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>需要注意的是，当用户使用的不是YARN cluster manager运行Spark应用，用户需要配置<code class="language-plaintext highlighter-rouge">spark.authenticate.secret</code>。</p>
+
+<p>另外，当前Spark SASL所使用的认证方式是<a href="https://en.wikipedia.org/wiki/Digest_access_authentication">DIGEST-MD5</a>，它是一种比较弱的认证方式，容易被暴力破解，因此现在并不推荐使用（<a href="https://tools.ietf.org/html/rfc6331">Moving DIGEST-MD5 to Historic</a>）。在Spark中提供了另一种较强的认证方式，可以通过配置开启：</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Property Name</th>
+      <th>Default</th>
+      <th>Meaning</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>spark.network.crypto.enabled</td>
+      <td>false</td>
+      <td>Enable encryption using the commons-crypto library for RPC and block transfer service. Requires spark.authenticate to be enabled.</td>
+    </tr>
+    <tr>
+      <td>spark.network.crypto.keyLength</td>
+      <td>128</td>
+      <td>The length in bits of the encryption key to generate. Valid values are 128, 192 and 256.</td>
+    </tr>
+    <tr>
+      <td>spark.network.crypto.keyFactoryAlgorithm</td>
+      <td>PBKDF2WithHmacSHA1</td>
+      <td>The key factory algorithm to use when generating encryption keys. Should be one of the algorithms supported by the javax.crypto.SecretKeyFactory class in the JRE being used.</td>
+    </tr>
+    <tr>
+      <td>spark.network.crypto.saslFallback</td>
+      <td>true</td>
+      <td>Whether to fall back to SASL authentication if authentication fails using Spark’s internal mechanism. This is useful when the application is connecting to old shuffle services that do not support the internal Spark authentication protocol. On the server side, this can be used to block older clients from authenticating against a new shuffle service.</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="与其他安全系统交互">与其他安全系统交互</h3>
+
+<p>在一个完整的生产环境集群中，Spark并不是唯一的系统，通常还需要与其他的调度、存储系统进行交互，如HDFS，YARN等。如果其他的系统都是需要安全认证的，Spark作为其他系统的使用方，如何进行交互呢？</p>
+
+<p>每种系统的认证方式各不相同，没有一个普适的框架能够满足所有的认证方式，在这就以最常见的认证方式Kerberos来解释Spark是如何与其他Kerberized系统机型交互的。</p>
+
+<p>首先每个Spark应用的提交者都需要通过Kerberos的认证，获取Kerberos的TGT。以HDFS为例，当Spark应用拿到TGT后就可以与HDFS进行交互，HDFS在通过验证后会给予Spark应用一个有效的Delegation Token来代表此用户，后续的交互都是采用Delegation Token验证的方式，而无需在进行Kerberos认证。</p>
+
+<p>但是Delegation Token会过期，当它过期后就不再能够使用，为此Spark应用需要重新获得新的Delegation Token，获取的方式与上面介绍的一样（首先获得Kerberos TGT，通过Kerberos TGT获得Delegation Token）。当然TGT也会过期，过期后需要用户重新kinit，或是使用keytab和principal的方式让应用自己去更新TGT。</p>
+
+<p>对于Kerberos和Delegation Token，在这就不做过多的介绍。关于Hadoop Security的设计，有一个非常好的<a href="http://www.carfield.com.hk/document/distributed/hadoop-security-design.pdf?">设计文档</a>，对于分布式系统安全设计有非常大的指导意义。</p>
+
+<h2 id="总结">总结</h2>
+
+<p>本文从总体上介绍了Spark中关于安全的各个方面，以及如何开启和配置这些安全机制。本文并未从原理和代码上阐述所有这些安全机制背后的原理以及实现，因为对于每一种安全机制都可以长篇大论赘述其由来。相反的是，相比于原理，怎么去使用它更为重要，毕竟绝大多数的用户/开发者不会涉及到里面真正的细节。</p>
+:ET

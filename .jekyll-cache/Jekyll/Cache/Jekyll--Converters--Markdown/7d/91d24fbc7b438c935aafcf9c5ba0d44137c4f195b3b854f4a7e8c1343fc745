@@ -1,0 +1,162 @@
+I"\-<p>本文转自<a href="https://github.com/jerryshao/jerryshao.github.com">Jerryshao Blog</a></p>
+
+<p>This blog is a summary of Spark Streaming, to introduce the basic concepts of Spark Streaming, as well as the internals of Spark Streaming, comparison to Storm, also in-production usage of Spark Streaming and important JIRAs in the history of Spark Streaming evolution.</p>
+
+<h2 id="what-is-spark-streaming">What is Spark Streaming</h2>
+
+<p>Spark Streaming is a component based on Spark for doing large-scale stream processing.</p>
+
+<ul>
+  <li>
+    <p>It Extends Spark for doing large scale stream processing</p>
+  </li>
+  <li>
+    <p>Scales to 100s of nodes and achieves second scale latencies</p>
+  </li>
+  <li>
+    <p>Efficient and fault-tolerant stateful stream processing</p>
+  </li>
+  <li>
+    <p>Simple batch-like API for implementing complex algorithms</p>
+  </li>
+</ul>
+
+<h3 id="discretized-stream-processing">Discretized Stream Processing</h3>
+
+<blockquote>
+  <p>Run a Streaming computation as a <strong>series of very small, deterministic batch jobs</strong>.</p>
+</blockquote>
+
+<p>Spark Streaming chops the live stream in to batches of X seconds, Spark treats each batch of data as RDDs and process them using RDD operations.</p>
+
+<p>Essentially Spark Streaming is <strong>micro-batching</strong> system, by chopping the live stream into a series of very small batches, it could achieve the similar behavior as real-time streaming framework. You could simply simulate the behavior of Spark Streaming by writing a Spark batch job to process a mount of live data, and adding this job to a crontab to get called at a period of time.</p>
+
+<p><img src="http://spark.apache.org/docs/latest/img/streaming-flow.png" alt="spark streaming" width="640" /></p>
+
+<h3 id="dstream">DStream</h3>
+
+<p>Similar to RDD on Spark, Spark Streaming provides a high-level abstraction called <strong>DStream</strong>, which represents a continuous stream of data. Internally DStream is represented as a sequence of RDDs.</p>
+
+<p>Like RDD, DStream can be got from input dstream like Kafka, Flume and so on, also transformation could be applied on the existing DStream to get a new DStream.</p>
+
+<p>Here is the code snippet of streaming word count:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>val lines = KafkaUtils.createStream(ssc, zkQuorum, group, topicMap).map(_._2)
+val words = lines.flatMap(_.split(" "))
+    val wordCounts = words.map(x =&gt; (x, 1L))
+  .reduceByKeyAndWindow(_ + _, _ - _, Minutes(10), Seconds(2), 2)
+wordCounts.print()
+</code></pre></div></div>
+
+<ol>
+  <li>Get the input DStream from Kafka input source.</li>
+  <li>Apply high-level transformations on the input DStream to get the new DStreams.</li>
+  <li>Trigger the action <code class="language-plaintext highlighter-rouge">print()</code> on the DStream to finalize this job DAG.</li>
+</ol>
+
+<p>So basically Spark Streaming’s programming pattern is quite similar to Spark, so it is simple and low learning curve for users to get started with Spark Streaming.</p>
+
+<p>The basics of Spark Streaming can be found in <a href="http://spark.apache.org/docs/latest/streaming-programming-guide.html"><strong>Streaming doc</strong></a> and <a href="http://ampcamp.berkeley.edu/wp-content/uploads/2013/07/Spark-Streaming-AMPCamp-3.pptx"><strong>Ampcamp traning materials</strong></a></p>
+
+<h3 id="what-additionally-spark-streaming-provides">What Additionally Spark Streaming Provides</h3>
+
+<p>So you may wonder why not directly write a Spark program and get called periodically to simulate streaming program? Yes you could, but you should also handle some problems where Spark Streaming already have done for you.</p>
+
+<ol>
+  <li>Spark Streaming offers various of connectors like Kafka, Flume, Kinesis and so on, it is necessary for a streaming program and Spark Streaming is well supported.</li>
+  <li>Fault tolerance. Fault tolerance is quite important for a distributed program. Spark Streaming provides several ways to guarantee this: two copies of received data, WAL mechanism, metadata checkpoint and recovery.</li>
+  <li>Instrumentation. Spark Streaming provides several instrumentation tools for you to better know the run-time internals of Spark Streaming.</li>
+</ol>
+
+<p>There are some materials for you to better understand the internals of Spark Streaming:</p>
+
+<ul>
+  <li><a href="http://www.slideshare.net/spark-project/deep-divewithsparkstreaming-tathagatadassparkmeetup20130617?qid=f875139e-920b-47bb-88f4-67cc3554858e&amp;v=default&amp;b=&amp;from_search=6"><strong>Deep dive into Spark Streaming</strong></a></li>
+  <li><a href="https://databricks.com/blog/2015/01/15/improved-driver-fault-tolerance-and-zero-data-loss-in-spark-streaming.html"><strong>Improved Fault-tolerance and Zero Data Loss in Spark Streaming</strong></a></li>
+  <li><a href="https://databricks.com/blog/2015/03/30/improvements-to-kafka-integration-of-spark-streaming.html"><strong>Improvements to Kafka integration of Spark Streaming</strong></a></li>
+  <li><a href="http://www.michael-noll.com/blog/2014/10/01/kafka-spark-streaming-integration-example-tutorial/"><strong>Integrating Kafka and Spark Streaming: Code Examples and State of the Game</strong></a></li>
+</ul>
+
+<h3 id="pros-and-cons-of-spark-streaming">Pros and Cons of Spark Streaming</h3>
+
+<p><strong>Pros:</strong></p>
+
+<ol>
+  <li>Ease of use, low learning curve, no additional effort when you already understand Spark.</li>
+  <li>Highly integrated in the Spark ecosystem, mutual-operability between different Spark components.</li>
+  <li>High throughput with fast fault recovery.</li>
+  <li>Batch like high-level abstracted API for you to focus on the processing logic.</li>
+</ol>
+
+<p><strong>Cons:</strong></p>
+
+<ol>
+  <li>Micro-batch processing model makes latency relatively higher than other record-based system.</li>
+  <li>Checkpoint mechanism is not so robust and upgradable.</li>
+</ol>
+
+<h2 id="whats-the-difference-compared-to-storm">What’s the difference compared to Storm</h2>
+
+<p>The major difference between Spark Streaming and Storm is the process engine. Spark Streaming uses Spark internally as its process engine, so this restricts Spark Streaming to be a micro-batching model. Whereas Storm is a streaming model, in which data is come and processed as water flow.</p>
+
+<p>This model difference makes Spark Streaming as a micro-batching system and Storm as a event-driven system.</p>
+
+<p>Another difference is fault recovery. Spark Streaming as what I mentioned before is driven by Spark internally, so the fault mitigation is relying on Spark’s mechanism like straggler, task rerun. On the other side Storm uses a upstream recovery mechanism, in which it provides a anchoring system to monitor the data loss and notify the upstream<strong>*</strong>, to do fault recovery.</p>
+
+<p>* <a href="https://storm.apache.org/documentation/Guaranteeing-message-processing.html"><strong>Guaranteeing Message Processing</strong></a></p>
+
+<p>Anchoring system requires more cpu and network resources to track each message, this will effect the total throughput, so generally the throughput of Storm is lower than Spark Streaming.</p>
+
+<p>From user’s point, Storm provides low-level primitives, whereas Spark Streaming offers high-level abstractions. On the one side high-level API is easy to use, but low-level primitives offers strong operability.</p>
+
+<p>Here are some materials to compare Spark Streaming with Storm:</p>
+
+<ul>
+  <li><a href="http://www.slideshare.net/ptgoetz/apache-storm-vs-spark-streaming?qid=9570aa50-7fcd-4716-9dc6-b86ba0a01270&amp;v=default&amp;b=&amp;from_search=1"><strong>Apache Storm and Spark Streaming Compared</strong></a></li>
+  <li><a href="http://www.slideshare.net/gschmutz/apache-stoapache-storm-vs-spark-streaming-two-stream-processing-platforms-comparedrm-vsapachesparkv11?qid=9570aa50-7fcd-4716-9dc6-b86ba0a01270&amp;v=default&amp;b=&amp;from_search=2"><strong>Apache Storm vs. Spark Streaming – two Stream Processing Platforms compared</strong></a></li>
+</ul>
+
+<h2 id="history-and-key-improvements-of-spark-streaming">History and Key Improvements of Spark Streaming</h2>
+
+<p>Spark Streaming was first brought into Spark at version 0.7 with papers <a href="http://people.csail.mit.edu/matei/papers/2013/sosp_spark_streaming.pdf"><strong>Discretized Streams: Fault-Tolerant Streaming Computation at Scale</strong></a>. At that time, Spark Streaming is very rudimentary with many functionalities missed, also not so stable to put into in-production use.</p>
+
+<p><a href="https://issues.apache.org/jira/browse/SPARK-1332"><strong>[SPARK-1332] Improve Spark Streaming’s Network Receiver and InputDStream API for future stability</strong></a></p>
+
+<p>In the version 1.0, Spark Streaming refactor the receiver and input stream part to make it more stable and extendable for feature use and user extension.</p>
+
+<p><a href="https://issues.apache.org/jira/browse/SPARK-1386"><strong>[SPARK-1386] Spark Streaming UI</strong></a></p>
+
+<p>Add the UI for Spark Streaming to better monitoring the running status of Spark Streaming.</p>
+
+<p><a href="https://issues.apache.org/jira/browse/SPARK-2377"><strong>[SPARK-2377] Create a Python API for Spark Streaming</strong></a></p>
+
+<p>Add the Python API support for Spark Streaming.</p>
+
+<p><a href="https://issues.apache.org/jira/browse/SPARK-3129"><strong>[SPARK-3129] Prevent data loss in Spark Streaming on driver failure using Write Ahead Logs</strong></a></p>
+
+<p>Spark’s implementation makes it suffer from data loss when driver and executor lost. This Patch introduces a write ahead log mechanism to make sure no data lost when driver is failed. The basic implementation is to write data into HDFS as a reliable storage when received from external source.</p>
+
+<p><a href="https://issues.apache.org/jira/browse/SPARK-4964"><strong>[SPARK-4964] Exactly-once + WAL-free Kafka Support in Spark Streaming</strong></a></p>
+
+<p>Spark Streaming WAL mechanism brought additional overhead for Kafka input stream, since data is persisted in Kafka, no need to put into HDFS again, this patch provides another way of fetching data from Kafka with Spark Streaming.</p>
+
+<p><a href="https://issues.apache.org/jira/browse/SPARK-6702"><strong>[SPARK-6702] Update the Streaming Tab in Spark UI to show more batch information</strong></a></p>
+
+<p>Provides a better UI visualization for Spark Streaming.</p>
+
+<p><a href="https://issues.apache.org/jira/browse/SPARK-7398"><strong>[SPARK-7398] Add back-pressure to Spark Streaming</strong></a></p>
+
+<p>Add a back pressure mechanism in Spark Streaming for better flow control.</p>
+
+<h2 id="adoption-of-spark-streaming">Adoption of Spark Streaming</h2>
+
+<p>Spark Streaming in Netflix: <a href="http://www.slideshare.net/PrasannaPadmanabhan/spark-streaming-resiliency-bay-area-spark-meetup?qid=19f96e48-78d6-4679-842e-4eebbf8af45b&amp;v=qf1&amp;b=&amp;from_search=18"><strong>Spark Streaming Resiliency</strong></a>.</p>
+
+<p>Spark Streaming in Alibaba: <a href="http://www.slideshare.net/SparkSummit/dynamic-community-detection-ming-huang?qid=19f96e48-78d6-4679-842e-4eebbf8af45b&amp;v=qf1&amp;b=&amp;from_search=21"><strong>Dynamic Community Detection for Large-scale e-Commerce data with Spark Streaming and GraphX</strong></a></p>
+
+<p>…</p>
+
+<h2 id="conclusion">Conclusion</h2>
+
+<p>Compared to the early version of Spark Streaming, its stability and maturity is increased a lot. Now more and more companies use Spark Streaming in their in-production environment as a replacement of Storm in some scenarios.</p>
+:ET

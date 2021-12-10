@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2020-11-08T08:49:20+08:00</lastBuildDate>
-        <pubDate>2020-11-08T08:49:20+08:00</pubDate>
+        <lastBuildDate>2021-12-10T15:12:04+08:00</lastBuildDate>
+        <pubDate>2021-12-10T15:12:04+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -9415,6 +9415,361 @@ protected def doExecute(): RDD[InternalRow]
         </item>
 
         <item>
+                <title>Spark Security面面观</title>
+                <description>&lt;h3 id=&quot;背景&quot;&gt;背景&lt;/h3&gt;
+
+&lt;p&gt;作为一款成熟的商业软件，安全往往鲜少被提及但又不可忽略，大数据软件也是如此。在生产环境中，对于一款成熟的大数据软件的考量，不仅需要考虑其功能完备性和性能，同时安全也是不可缺少的一环。为什么安全如此重要呢？&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;首先，商业环境通常是多租户环境，不同的用户/组对于不同的数据/应用有不同的安全考量。我们需要保证相应的用户不能做出超越权限的操作。&lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;同时，分布式架构会将端口、数据暴露出去，如果没有相应的认证、加密措施，这会大大增加了匿名攻击的概率。&lt;/p&gt;
+
+    &lt;p&gt;举个简单的例子，Spark通过RPC通信协调&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;driver&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;executor&lt;/code&gt;之间的任务分发，如果一个匿名用户通过伪造协议与&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;executor&lt;/code&gt;进行通信，会产生什么后果呢？&lt;/p&gt;
+
+    &lt;p&gt;在一个可控的环境下（比如防火墙物理隔离）这样的风险相对可控。但是随着越来越多的云计算厂商提供EMR类似产品，这样的风险不可谓不存在。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;再者，对于一个完整的大数据生态系统，安全往往是相互衔接的。如果中间有一款软件没有相应的支持，那么它就会成为整体的薄弱点，或者说会造成整体完备性的缺失。&lt;/p&gt;
+
+    &lt;p&gt;比方说，Hadoop系统的认证体系是建立在Kerberos基础上的，一款软件要融入Hadoop生态系统，它必定也要支持Kerberos认证，不然它是无法与其他系统进行交互的。&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;当然还有很多其他的原因，在这就不一一赘述了。&lt;/p&gt;
+
+&lt;p&gt;回到我们今天的话题上来，Spark作为大数据生态圈中的重要一环，许多厂商已经在其生产环境中大量部署了Spark集群，Spark本身在安全上面有哪些点值得我们关注呢？&lt;/p&gt;
+
+&lt;h2 id=&quot;spark-security&quot;&gt;Spark Security&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://spark.apache.org/docs/latest/security.html&quot;&gt;Apache Spark&lt;/a&gt;在其演化过程中，安全的支持也是逐渐添加和完善的。在Spark开发的早期，是没有任何安全上面的考量的，随着各大厂商在生产环境中的部署，对于安全的支持也是在逐步的完善。&lt;/p&gt;
+
+&lt;p&gt;总结前面提到的三个方面，对于Spark本身，我们需要考虑的三个方面是：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;权限管理&lt;/li&gt;
+  &lt;li&gt;数据/链路加密&lt;/li&gt;
+  &lt;li&gt;与其他安全系统交互&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;下文会就以上3点进行讨论，来看看在Spark中安全是如何实现的。&lt;/p&gt;
+
+&lt;h3 id=&quot;权限管理&quot;&gt;权限管理&lt;/h3&gt;
+
+&lt;p&gt;上文所提到的第一个问题是&lt;strong&gt;保证相应的用户不能做出超越权限的操作&lt;/strong&gt;，那么在Spark中如何做到这一点呢？&lt;/p&gt;
+
+&lt;h4 id=&quot;acl&quot;&gt;ACL&lt;/h4&gt;
+
+&lt;p&gt;Spark支持基本的ACL(Access Control List)，通过配置不同用户的角色，能为不同的用户赋予不同的权限范围。&lt;/p&gt;
+
+&lt;p&gt;为了启动ACL机制，用户需要配置&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.acls.enable&lt;/code&gt;为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;true&lt;/code&gt;。然后将不同的用户名置于不同的配置中：&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.ui.view.acls&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.modify.acls&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.admin.acls&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;这3个配置分别对应了可读、可改、和可管理三种不同的权限。集群管理者可将用户名置于相应的列表以赋予不同的权限。&lt;/p&gt;
+
+&lt;p&gt;对于大型集群来说，按用户来配置过于繁琐，Spark也可以支持按组进行配置，如：&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.ui.view.acls.groups&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.modify.acls.groups&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.admin.acls.groups&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;那么进行了上述这些配置以后会带来什么变化呢？&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;首先，只有具有相应权限的用户才能在UI上浏览每个Spark应用的具体内容，包括配置、作业、任务等等。&lt;/li&gt;
+  &lt;li&gt;其次，只要具有可改权限的用户才能在UI上停止作业。&lt;/li&gt;
+  &lt;li&gt;最后，默认当前spark应用启动用户具有可读和可改的权限。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;当前Spark的ACL主要用于UI权限的管理，以保证用户只能浏览相应权限的内容。对于HistoryServer，则有另一套类似的配置，如&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.history.ui.acls.enable&lt;/code&gt;，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.history.ui.admin.acls&lt;/code&gt;，在这就不具体展开了。&lt;/p&gt;
+
+&lt;h4 id=&quot;spnego-authentication&quot;&gt;Spnego Authentication&lt;/h4&gt;
+
+&lt;p&gt;开启了ACL就能对UI进行权限隔离了吗？其实我们还只走了一半路。为了使web server（Spark内嵌Jetty）能够对用户进行隔离，首先Jetty需要知道是谁发起了HTTP请求，换句话说，只有用户的HTTP请求中包含了用户信息，UI和ACL才能根据用户信息进行正确的隔离。但是不幸的是，普通的HTTP请求是不包含用户信息。&lt;/p&gt;
+
+&lt;p&gt;为此需要为Jetty servlet加入authentication filter以获取认证用户的信息。在这之中，最常用的就是&lt;a href=&quot;https://en.wikipedia.org/wiki/SPNEGO&quot;&gt;Spnego authentication&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;Spnego是一套以Kerberos为基础的HTTP认证机制，只有经过Kerberos授权的HTTP请求才能被web server所接受。Hadoop生态系统下的各个组件的UI大都采用Spnego作为认证机制，如HDFS，YARN等。&lt;/p&gt;
+
+&lt;p&gt;为了使Spark UI能够使用Spnego认证，用户需要实现相应的authentication filter并将其添加到Jetty中。幸运的是Hadoop已经帮我们实现了相应的filter，只需将其配置就可使用。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;spark.ui.filters=org.apache.hadoop.security.authentication.server.AuthenticationFilter
+
+spark.org.apache.hadoop.security.authentication.server.AuthenticationFilter.params=type=kerberos,kerberos.pricipal=&amp;lt;kerberos-principal&amp;gt;,kerberos.keytab=&amp;lt;kerberos-keytab&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在这里，需要为Spark UI创建Kerberos principal和keytab。这样Spark UI就有了Spnego authentication的能力了，任何用户在发起HTTP请求之前必须先获得Kerberos tgt。使用curl的话，如：&lt;/p&gt;
+
+&lt;div class=&quot;language-shell highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;kinit
+&lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt;curl &lt;span class=&quot;nt&quot;&gt;--negotiate&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-u&lt;/span&gt; : &amp;lt;host&amp;gt;:&amp;lt;port&amp;gt;/&amp;lt;xxx&amp;gt;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;经过Spnego认证的HTTP请求在其HTTP头部包含用户信息，Spark UI和ACL机制会从其中获取用户名并在相应的权限列表中进行比对。&lt;/p&gt;
+
+&lt;h4 id=&quot;ldap-and-others&quot;&gt;LDAP and Others&lt;/h4&gt;
+
+&lt;p&gt;当然，Spengo认证只是众多authentication中的一种，其他还有如&lt;a href=&quot;https://www.ldap.com/getting-started-with-ldap&quot;&gt;LDAP&lt;/a&gt;或是basic authentication等等。其中LDAP已经在&lt;a href=&quot;https://issues.apache.org/jira/browse/HADOOP-12082&quot;&gt;Hadoop 2.8&lt;/a&gt;中实现了，用户可以采用以上类似的配置实现LDAP认证。&lt;/p&gt;
+
+&lt;p&gt;同样，用户可以是实现并配置自己的authentication filter，只要依照servlet和Jetty的规范即可。&lt;/p&gt;
+
+&lt;h3 id=&quot;数据链路加密&quot;&gt;数据/链路加密&lt;/h3&gt;
+
+&lt;p&gt;数据/链路加密是Spark安全中最为重要的一块，它主要是为了防止匿名用户通过端口获取报文，发送malicious数据，同时也需要防止用户伪造spilled数据（如shuffle数据）以破坏运行作业。下文就将数据和链路加密分别进行介绍。&lt;/p&gt;
+
+&lt;h4 id=&quot;数据加密&quot;&gt;数据加密&lt;/h4&gt;
+
+&lt;p&gt;在Spark中，往local disk上写的数据主要包含：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Shuffle数据，包括shuffle data和shuffle index file。&lt;/li&gt;
+  &lt;li&gt;Shuffle spill数据，当内存无法容纳时向disk spill的数据。&lt;/li&gt;
+  &lt;li&gt;BlockManager存储在disk的block数据。&lt;/li&gt;
+  &lt;li&gt;等等。。。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;所有这些数据都是以二进制的方式将序列化（压缩后）的数据写入到local文件系统中。举例来说，比如匿名用户知道了Spark中shuffle数据的命名方式和映射规律，那么他就能伪造一份新的shuffle数据。为了防止此种情况的发生，我们需要对写到disk上的数据进行加密。&lt;/p&gt;
+
+&lt;p&gt;为此我们需要配置如下：&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Property&lt;/th&gt;
+      &lt;th&gt;Default&lt;/th&gt;
+      &lt;th&gt;Meaning&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.io.encryption.enabled&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;Enable IO encryption. Currently supported by all modes except Mesos. It’s recommended that RPC encryption be enabled when using this feature.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.io.encryption.keySizeBits&lt;/td&gt;
+      &lt;td&gt;128&lt;/td&gt;
+      &lt;td&gt;IO encryption key size in bits. Supported values are 128, 192 and 256.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.io.encryption.keygen.algorithm&lt;/td&gt;
+      &lt;td&gt;HmacSHA1&lt;/td&gt;
+      &lt;td&gt;The algorithm to use when generating the IO encryption key. The supported algorithms are described in the KeyGenerator section of the Java Cryptography Architecture Standard Algorithm Name Documentation.&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;当配置了这些选项以后，所有写入local disk的数据都会以加密方式写入。&lt;/p&gt;
+
+&lt;h4 id=&quot;链路加密&quot;&gt;链路加密&lt;/h4&gt;
+
+&lt;p&gt;链路加密，就是所谓的wire encryption，在Spark中主要包含两种类型的链路：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;HTTP连接。Spark的live UI和History UI提供了WEB UI供用户浏览应用的具体细节。我们希望HTTP链路能够加密以防止匿名用户的劫持。&lt;/li&gt;
+  &lt;li&gt;Binary连接。主要包含RPC链路、Shuffle链路和Block传输。在Spark中这一部分是由Netty实现的。我们希望所有的端到端的传输都是可信赖的，一个不被信赖的链接是无法发送数据的。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;根据上面两种类型的链路，我们来看看应该如何配置Spark使链路能得到加密。&lt;/p&gt;
+
+&lt;h5 id=&quot;httpsssl&quot;&gt;HTTPS/SSL&lt;/h5&gt;
+
+&lt;p&gt;在Spark中，包含HTTP的链路分别有：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Live UI，Spark应用的WEB UI。&lt;/li&gt;
+  &lt;li&gt;History UI，Spark history Server的WEB UI。&lt;/li&gt;
+  &lt;li&gt;Standalone UI，Spark Standalone cluster manager中master和worker node的WEB UI&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;为此Spark可以以统一的SSL配置来配置所有的HTTPS endpoint，也可以对每一个组件分别进行配置.&lt;/p&gt;
+
+&lt;p&gt;当用户配置了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.ssl.enabled&lt;/code&gt;，这表示所有HTTPS endpoint都启动了SSL并使用相同的配置。用户也可以通过配置&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.ssl.ui.xxxx&lt;/code&gt;只启动和配置Live UI的SSL。当前支持的component包括&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ui&lt;/code&gt;，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;standalone&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;historyServer&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;在配置之前，用户需要生成相应的keystore和truststore，可以通过使用Java keytool工具来生成相应的keystore和truststore，具体可以参考Oracle的&lt;a href=&quot;https://docs.oracle.com/javase/8/docs/technotes/tools/unix/keytool.html&quot;&gt;官方文档&lt;/a&gt;。&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Property Name&lt;/th&gt;
+      &lt;th&gt;Default&lt;/th&gt;
+      &lt;th&gt;Meaning&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.enabled&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;Whether to enable SSL connections on all supported protocols. When spark.ssl.enabled is configured, spark.ssl.protocol is required. All the SSL settings like spark.ssl.xxx where xxx is a particular configuration property, denote the global configuration for all the supported protocols. In order to override the global configuration for the particular protocol, the properties must be overwritten in the protocol-specific namespace. Use spark.ssl.YYY.XXX settings to overwrite the global configuration for particular protocol denoted by YYY. Example values for YYY include fs, ui, standalone, and historyServer. See SSL Configuration for details on hierarchical SSL configuration for services.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.[namespace].port&lt;/td&gt;
+      &lt;td&gt;None&lt;/td&gt;
+      &lt;td&gt;The port where the SSL service will listen on. The port must be defined within a namespace configuration; see SSL Configuration for the available namespaces. When not set, the SSL port will be derived from the non-SSL port for the same service. A value of “0” will make the service bind to an ephemeral port.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.enabledAlgorithms&lt;/td&gt;
+      &lt;td&gt;Empty&lt;/td&gt;
+      &lt;td&gt;A comma separated list of ciphers. The specified ciphers must be supported by JVM. The reference list of protocols one can find on this page. Note: If not set, it will use the default cipher suites of JVM.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.keyPassword&lt;/td&gt;
+      &lt;td&gt;None&lt;/td&gt;
+      &lt;td&gt;A password to the private key in key-store.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.keyStore&lt;/td&gt;
+      &lt;td&gt;None&lt;/td&gt;
+      &lt;td&gt;A path to a key-store file. The path can be absolute or relative to the directory where the component is started in.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.keyStorePassword&lt;/td&gt;
+      &lt;td&gt;None&lt;/td&gt;
+      &lt;td&gt;A password to the key-store.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.keyStoreType&lt;/td&gt;
+      &lt;td&gt;JKS&lt;/td&gt;
+      &lt;td&gt;The type of the key-store.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.protocol&lt;/td&gt;
+      &lt;td&gt;None&lt;/td&gt;
+      &lt;td&gt;A protocol name. The protocol must be supported by JVM. The reference list of protocols one can find on this page.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.needClientAuth&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;Set true if SSL needs client authentication.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.trustStore&lt;/td&gt;
+      &lt;td&gt;None&lt;/td&gt;
+      &lt;td&gt;A path to a trust-store file. The path can be absolute or relative to the directory where the component is started in.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.trustStorePassword&lt;/td&gt;
+      &lt;td&gt;None&lt;/td&gt;
+      &lt;td&gt;A password to the trust-store.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.ssl.trustStoreType&lt;/td&gt;
+      &lt;td&gt;JKS&lt;/td&gt;
+      &lt;td&gt;The type of the trust-store.&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;需要注意的是：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;keystore和truststore是保存在本地文件系统中的，这意味着当你需要为standalone cluster manager启动SSL时，需要在所有的节点上生成和保存相应的keystore，truststore。&lt;/li&gt;
+  &lt;li&gt;当前YARN并不支持proxy HTTPS request，所以在使用YARN的时候enable SSL会带来一定的问题。&lt;/li&gt;
+  &lt;li&gt;当你在需要mutual authentication的时候才需要enable &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.ssl.needClientAuth&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h5 id=&quot;sasl&quot;&gt;SASL&lt;/h5&gt;
+
+&lt;p&gt;说完了HTTPS/SSL之后，让我们来看看另一种类型的链路，Netty连接。在Spark中Netty连接也可以进行&lt;a href=&quot;https://en.wikipedia.org/wiki/Simple_Authentication_and_Security_Layer&quot;&gt;SASL认证&lt;/a&gt;。用户只需要进行如下的配置，所有的Netty链路，包括RPC和Block transfer，都会进行认证。&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Property Name&lt;/th&gt;
+      &lt;th&gt;Default&lt;/th&gt;
+      &lt;th&gt;Meaning&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.authenticate&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;Whether Spark authenticates its internal connections. See spark.authenticate.secret if not running on YARN.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.authenticate.secret&lt;/td&gt;
+      &lt;td&gt;None&lt;/td&gt;
+      &lt;td&gt;Set the secret key used for Spark to authenticate between components. This needs to be set if not running on YARN and authentication is enabled.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.authenticate.enableSaslEncryption&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;Enable encrypted communication when authentication is enabled. This is supported by the block transfer service and the RPC endpoints.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.network.sasl.serverAlwaysEncrypt&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;Disable unencrypted connections for services that support SASL authentication.&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;需要注意的是，当用户使用的不是YARN cluster manager运行Spark应用，用户需要配置&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.authenticate.secret&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;另外，当前Spark SASL所使用的认证方式是&lt;a href=&quot;https://en.wikipedia.org/wiki/Digest_access_authentication&quot;&gt;DIGEST-MD5&lt;/a&gt;，它是一种比较弱的认证方式，容易被暴力破解，因此现在并不推荐使用（&lt;a href=&quot;https://tools.ietf.org/html/rfc6331&quot;&gt;Moving DIGEST-MD5 to Historic&lt;/a&gt;）。在Spark中提供了另一种较强的认证方式，可以通过配置开启：&lt;/p&gt;
+
+&lt;table&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;
+      &lt;th&gt;Property Name&lt;/th&gt;
+      &lt;th&gt;Default&lt;/th&gt;
+      &lt;th&gt;Meaning&lt;/th&gt;
+    &lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.network.crypto.enabled&lt;/td&gt;
+      &lt;td&gt;false&lt;/td&gt;
+      &lt;td&gt;Enable encryption using the commons-crypto library for RPC and block transfer service. Requires spark.authenticate to be enabled.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.network.crypto.keyLength&lt;/td&gt;
+      &lt;td&gt;128&lt;/td&gt;
+      &lt;td&gt;The length in bits of the encryption key to generate. Valid values are 128, 192 and 256.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.network.crypto.keyFactoryAlgorithm&lt;/td&gt;
+      &lt;td&gt;PBKDF2WithHmacSHA1&lt;/td&gt;
+      &lt;td&gt;The key factory algorithm to use when generating encryption keys. Should be one of the algorithms supported by the javax.crypto.SecretKeyFactory class in the JRE being used.&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;tr&gt;
+      &lt;td&gt;spark.network.crypto.saslFallback&lt;/td&gt;
+      &lt;td&gt;true&lt;/td&gt;
+      &lt;td&gt;Whether to fall back to SASL authentication if authentication fails using Spark’s internal mechanism. This is useful when the application is connecting to old shuffle services that do not support the internal Spark authentication protocol. On the server side, this can be used to block older clients from authenticating against a new shuffle service.&lt;/td&gt;
+    &lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h3 id=&quot;与其他安全系统交互&quot;&gt;与其他安全系统交互&lt;/h3&gt;
+
+&lt;p&gt;在一个完整的生产环境集群中，Spark并不是唯一的系统，通常还需要与其他的调度、存储系统进行交互，如HDFS，YARN等。如果其他的系统都是需要安全认证的，Spark作为其他系统的使用方，如何进行交互呢？&lt;/p&gt;
+
+&lt;p&gt;每种系统的认证方式各不相同，没有一个普适的框架能够满足所有的认证方式，在这就以最常见的认证方式Kerberos来解释Spark是如何与其他Kerberized系统机型交互的。&lt;/p&gt;
+
+&lt;p&gt;首先每个Spark应用的提交者都需要通过Kerberos的认证，获取Kerberos的TGT。以HDFS为例，当Spark应用拿到TGT后就可以与HDFS进行交互，HDFS在通过验证后会给予Spark应用一个有效的Delegation Token来代表此用户，后续的交互都是采用Delegation Token验证的方式，而无需在进行Kerberos认证。&lt;/p&gt;
+
+&lt;p&gt;但是Delegation Token会过期，当它过期后就不再能够使用，为此Spark应用需要重新获得新的Delegation Token，获取的方式与上面介绍的一样（首先获得Kerberos TGT，通过Kerberos TGT获得Delegation Token）。当然TGT也会过期，过期后需要用户重新kinit，或是使用keytab和principal的方式让应用自己去更新TGT。&lt;/p&gt;
+
+&lt;p&gt;对于Kerberos和Delegation Token，在这就不做过多的介绍。关于Hadoop Security的设计，有一个非常好的&lt;a href=&quot;http://www.carfield.com.hk/document/distributed/hadoop-security-design.pdf?&quot;&gt;设计文档&lt;/a&gt;，对于分布式系统安全设计有非常大的指导意义。&lt;/p&gt;
+
+&lt;h2 id=&quot;总结&quot;&gt;总结&lt;/h2&gt;
+
+&lt;p&gt;本文从总体上介绍了Spark中关于安全的各个方面，以及如何开启和配置这些安全机制。本文并未从原理和代码上阐述所有这些安全机制背后的原理以及实现，因为对于每一种安全机制都可以长篇大论赘述其由来。相反的是，相比于原理，怎么去使用它更为重要，毕竟绝大多数的用户/开发者不会涉及到里面真正的细节。&lt;/p&gt;
+</description>
+                <link>http://www.turbofei.wang/2018/01/15/spark-security-overview</link>
+                <guid>http://www.turbofei.wang/2018/01/15/spark-security-overview</guid>
+                <pubDate>2018-01-15T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
                 <title>Deca项目总结</title>
                 <description>
 &lt;p&gt;目录&lt;/p&gt;
@@ -11755,6 +12110,2440 @@ systemctl start gmond
                 <link>http://www.turbofei.wang/bigdata/2016/08/17/ganglia-%E5%AE%89%E8%A3%85</link>
                 <guid>http://www.turbofei.wang/bigdata/2016/08/17/ganglia-安装</guid>
                 <pubDate>2016-08-17T05:15:03+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>[转载] 详细探究Spark的shuffle实现</title>
+                <description>&lt;p&gt;本文转自&lt;a href=&quot;https://github.com/jerryshao/jerryshao.github.com&quot;&gt;Jerryshao Blog&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+
+&lt;p&gt;在MapReduce框架中，shuffle是连接Map和Reduce之间的桥梁，Map的输出要用到Reduce中必须经过shuffle这个环节，shuffle的性能高低直接影响了整个程序的性能和吞吐量。Spark作为MapReduce框架的一种实现，自然也实现了shuffle的逻辑，本文就深入研究Spark的shuffle是如何实现的，有什么优缺点，与Hadoop MapReduce的shuffle有什么不同。&lt;/p&gt;
+
+&lt;h2 id=&quot;shuffle&quot;&gt;Shuffle&lt;/h2&gt;
+
+&lt;p&gt;Shuffle是MapReduce框架中的一个特定的phase，介于Map phase和Reduce phase之间，当Map的输出结果要被Reduce使用时，输出结果需要按key哈希，并且分发到每一个Reducer上去，这个过程就是shuffle。由于shuffle涉及到了磁盘的读写和网络的传输，因此shuffle性能的高低直接影响到了整个程序的运行效率。&lt;/p&gt;
+
+&lt;p&gt;下面这幅图清晰地描述了MapReduce算法的整个流程，其中shuffle phase是介于Map phase和Reduce phase之间。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2014-01-04-spark-shuffle/mapreduce-process.jpg&quot; alt=&quot;mapreduce running process&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;概念上shuffle就是一个沟通数据连接的桥梁，那么实际上shuffle这一部分是如何实现的的呢，下面我们就以Spark为例讲一下shuffle在Spark中的实现。&lt;/p&gt;
+
+&lt;h2 id=&quot;spark-shuffle进化史&quot;&gt;Spark Shuffle进化史&lt;/h2&gt;
+
+&lt;p&gt;先以图为例简单描述一下Spark中shuffle的整一个流程：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2014-01-04-spark-shuffle/spark-shuffle.png&quot; alt=&quot;spark shuffle process&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;首先每一个Mapper会根据Reducer的数量创建出相应的bucket，bucket的数量是\(M \times R\)，其中\(M\)是Map的个数，\(R\)是Reduce的个数。&lt;/li&gt;
+  &lt;li&gt;其次Mapper产生的结果会根据设置的partition算法填充到每个bucket中去。这里的partition算法是可以自定义的，当然默认的算法是根据key哈希到不同的bucket中去。&lt;/li&gt;
+  &lt;li&gt;当Reducer启动时，它会根据自己task的id和所依赖的Mapper的id从远端或是本地的block manager中取得相应的bucket作为Reducer的输入进行处理。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;这里的bucket是一个抽象概念，在实现中每个bucket可以对应一个文件，可以对应文件的一部分或是其他等。&lt;/p&gt;
+
+&lt;p&gt;接下来我们分别从&lt;strong&gt;shuffle write&lt;/strong&gt;和&lt;strong&gt;shuffle fetch&lt;/strong&gt;这两块来讲述一下Spark的shuffle进化史。&lt;/p&gt;
+
+&lt;h3 id=&quot;shuffle-write&quot;&gt;Shuffle Write&lt;/h3&gt;
+
+&lt;p&gt;在Spark 0.6和0.7的版本中，对于shuffle数据的存储是以文件的方式存储在block manager中，与&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rdd.persist(StorageLevel.DISk_ONLY)&lt;/code&gt;采取相同的策略，可以参看：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def run(attemptId: Long): MapStatus = {
+  val numOutputSplits = dep.partitioner.numPartitions
+
+  ...
+    // Partition the map output.
+    val buckets = Array.fill(numOutputSplits)(new ArrayBuffer[(Any, Any)])
+    for (elem &amp;lt;- rdd.iterator(split, taskContext)) {
+      val pair = elem.asInstanceOf[(Any, Any)]
+      val bucketId = dep.partitioner.getPartition(pair._1)
+      buckets(bucketId) += pair
+    }
+
+    ...
+
+    val blockManager = SparkEnv.get.blockManager
+    for (i &amp;lt;- 0 until numOutputSplits) {
+      val blockId = &quot;shuffle_&quot; + dep.shuffleId + &quot;_&quot; + partition + &quot;_&quot; + i
+      // Get a Scala iterator from Java map
+      val iter: Iterator[(Any, Any)] = buckets(i).iterator
+      val size = blockManager.put(blockId, iter, StorageLevel.DISK_ONLY, false)
+      totalBytes += size
+    }
+  ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;我已经将一些干扰代码删去。可以看到Spark在每一个Mapper中为每个Reducer创建一个bucket，并将RDD计算结果放进bucket中。需要注意的是每个bucket是一个&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ArrayBuffer&lt;/code&gt;，也就是说Map的输出结果是会先存储在内存。&lt;/p&gt;
+
+&lt;p&gt;接着Spark会将ArrayBuffer中的Map输出结果写入block manager所管理的磁盘中，这里文件的命名方式为：
+&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;shuffle_ + shuffle_id + &quot;_&quot; + map partition id + &quot;_&quot; + shuffle partition id&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;早期的shuffle write有两个比较大的问题：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Map的输出必须先全部存储到内存中，然后写入磁盘。这对内存是一个非常大的开销，当内存不足以存储所有的Map output时就会出现OOM。&lt;/li&gt;
+  &lt;li&gt;每一个Mapper都会产生Reducer number个shuffle文件，如果Mapper个数是1k，Reducer个数也是1k，那么就会产生1M个shuffle文件，这对于文件系统是一个非常大的负担。同时在shuffle数据量不大而shuffle文件又非常多的情况下，随机写也会严重降低IO的性能。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;在Spark 0.8版本中，shuffle write采用了与RDD block write不同的方式，同时也为shuffle write单独创建了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShuffleBlockManager&lt;/code&gt;，部分解决了0.6和0.7版本中遇到的问题。&lt;/p&gt;
+
+&lt;p&gt;首先我们来看一下Spark 0.8的具体实现：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def run(attemptId: Long): MapStatus = {
+
+  ...
+
+  val blockManager = SparkEnv.get.blockManager
+  var shuffle: ShuffleBlocks = null
+  var buckets: ShuffleWriterGroup = null
+
+  try {
+    // Obtain all the block writers for shuffle blocks.
+    val ser = SparkEnv.get.serializerManager.get(dep.serializerClass)
+    shuffle = blockManager.shuffleBlockManager.forShuffle(dep.shuffleId, numOutputSplits, ser)
+    buckets = shuffle.acquireWriters(partition)
+
+    // Write the map output to its associated buckets.
+    for (elem &amp;lt;- rdd.iterator(split, taskContext)) {
+      val pair = elem.asInstanceOf[Product2[Any, Any]]
+      val bucketId = dep.partitioner.getPartition(pair._1)
+      buckets.writers(bucketId).write(pair)
+    }
+
+    // Commit the writes. Get the size of each bucket block (total block size).
+    var totalBytes = 0L
+    val compressedSizes: Array[Byte] = buckets.writers.map { writer:   BlockObjectWriter =&amp;gt;
+      writer.commit()
+      writer.close()
+      val size = writer.size()
+      totalBytes += size
+      MapOutputTracker.compressSize(size)
+    }
+
+    ...
+
+  } catch { case e: Exception =&amp;gt;
+    // If there is an exception from running the task, revert the partial writes
+    // and throw the exception upstream to Spark.
+    if (buckets != null) {
+      buckets.writers.foreach(_.revertPartialWrites())
+    }
+    throw e
+  } finally {
+    // Release the writers back to the shuffle block manager.
+    if (shuffle != null &amp;amp;&amp;amp; buckets != null) {
+      shuffle.releaseWriters(buckets)
+    }
+    // Execute the callbacks on task completion.
+    taskContext.executeOnCompleteCallbacks()
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在这个版本中为shuffle write添加了一个新的类&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShuffleBlockManager&lt;/code&gt;，由&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShuffleBlockManager&lt;/code&gt;来分配和管理bucket。同时&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShuffleBlockManager&lt;/code&gt;为每一个bucket分配一个&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskObjectWriter&lt;/code&gt;，每个write handler拥有默认100KB的缓存，使用这个write handler将Map output写入文件中。可以看到现在的写入方式变为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;buckets.writers(bucketId).write(pair)&lt;/code&gt;，也就是说Map output的key-value pair是逐个写入到磁盘而不是预先把所有数据存储在内存中在整体flush到磁盘中去。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShuffleBlockManager&lt;/code&gt;的代码如下所示：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private[spark]
+class ShuffleBlockManager(blockManager: BlockManager) {
+
+  def forShuffle(shuffleId: Int, numBuckets: Int, serializer: Serializer): ShuffleBlocks = {
+    new ShuffleBlocks {
+      // Get a group of writers for a map task.
+      override def acquireWriters(mapId: Int): ShuffleWriterGroup = {
+        val bufferSize = System.getProperty(&quot;spark.shuffle.file.buffer.kb&quot;, &quot;100&quot;).toInt * 1024
+        val writers = Array.tabulate[BlockObjectWriter](numBuckets) { bucketId =&amp;gt;
+          val blockId = ShuffleBlockManager.blockId(shuffleId, bucketId, mapId)
+          blockManager.getDiskBlockWriter(blockId, serializer, bufferSize)
+        }
+        new ShuffleWriterGroup(mapId, writers)
+      }
+
+      override def releaseWriters(group: ShuffleWriterGroup) = {
+        // Nothing really to release here.
+      }
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Spark 0.8显著减少了shuffle的内存压力，现在Map output不需要先全部存储在内存中，再flush到硬盘，而是record-by-record写入到磁盘中。同时对于shuffle文件的管理也独立出新的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShuffleBlockManager&lt;/code&gt;进行管理，而不是与rdd cache文件在一起了。&lt;/p&gt;
+
+&lt;p&gt;但是这一版Spark 0.8的shuffle write仍然有两个大的问题没有解决：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;首先依旧是shuffle文件过多的问题，shuffle文件过多一是会造成文件系统的压力过大，二是会降低IO的吞吐量。&lt;/li&gt;
+  &lt;li&gt;其次虽然Map output数据不再需要预先在内存中evaluate显著减少了内存压力，但是新引入的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskObjectWriter&lt;/code&gt;所带来的buffer开销也是一个不容小视的内存开销。假定我们有1k个Mapper和1k个Reducer，那么就会有1M个bucket，于此同时就会有1M个write handler，而每一个write handler默认需要100KB内存，那么总共需要100GB的内存。这样的话仅仅是buffer就需要这么多的内存，内存的开销是惊人的。当然实际情况下这1k个Mapper是分时运行的话，所需的内存就只有&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cores * reducer numbers * 100KB&lt;/code&gt;大小了。但是reducer数量很多的话，这个buffer的内存开销也是蛮厉害的。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;为了解决shuffle文件过多的情况，Spark 0.8.1引入了新的shuffle consolidation，以期显著减少shuffle文件的数量。&lt;/p&gt;
+
+&lt;p&gt;首先我们以图例来介绍一下shuffle consolidation的原理。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2014-01-04-spark-shuffle/spark-shuffle-consolidate.png&quot; alt=&quot;spark shuffle  consolidation process&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;假定该job有4个Mapper和4个Reducer，有2个core，也就是能并行运行两个task。我们可以算出Spark的shuffle write共需要16个bucket，也就有了16个write handler。在之前的Spark版本中，每一个bucket对应的是一个文件，因此在这里会产生16个shuffle文件。&lt;/p&gt;
+
+&lt;p&gt;而在shuffle consolidation中每一个bucket并非对应一个文件，而是对应文件中的一个segment，同时shuffle consolidation所产生的shuffle文件数量与Spark core的个数也有关系。在上面的图例中，job的4个Mapper分为两批运行，在第一批2个Mapper运行时会申请8个bucket，产生8个shuffle文件；而在第二批Mapper运行时，申请的8个bucket并不会再产生8个新的文件，而是追加写到之前的8个文件后面，这样一共就只有8个shuffle文件，而在文件内部这有16个不同的segment。因此从理论上讲shuffle consolidation所产生的shuffle文件数量为\(C \times R\)，其中\(C\)是Spark集群的core number，\(R\)是Reducer的个数。&lt;/p&gt;
+
+&lt;p&gt;需要注意的是当 \(M=C\)时shuffle consolidation所产生的文件数和之前的实现是一样的。&lt;/p&gt;
+
+&lt;p&gt;Shuffle consolidation显著减少了shuffle文件的数量，解决了之前版本一个比较严重的问题，但是writer handler的buffer开销过大依然没有减少，若要减少writer handler的buffer开销，我们只能减少Reducer的数量，但是这又会引入新的问题，下文将会有详细介绍。&lt;/p&gt;
+
+&lt;p&gt;讲完了shuffle write的进化史，接下来要讲一下shuffle fetch了，同时还要讲一下Spark的aggregator，这一块对于Spark实际应用的性能至关重要。&lt;/p&gt;
+
+&lt;h3 id=&quot;shuffle-fetch-and-aggregator&quot;&gt;Shuffle Fetch and Aggregator&lt;/h3&gt;
+
+&lt;p&gt;Shuffle write写出去的数据要被Reducer使用，就需要shuffle fetcher将所需的数据fetch过来，这里的fetch包括本地和远端，因为shuffle数据有可能一部分是存储在本地的。Spark对shuffle fetcher实现了两套不同的框架：NIO通过socket连接去fetch数据；OIO通过netty server去fetch数据。分别对应的类是&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BasicBlockFetcherIterator&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;NettyBlockFetcherIterator&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;在Spark 0.7和更早的版本中，只支持&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BasicBlockFetcherIterator&lt;/code&gt;，而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BasicBlockFetcherIterator&lt;/code&gt;在shuffle数据量比较大的情况下performance始终不是很好，无法充分利用网络带宽，为了解决这个问题，添加了新的shuffle fetcher来试图取得更好的性能。对于早期shuffle性能的评测可以参看&lt;a href=&quot;https://groups.google.com/forum/#!msg/shark-users/IHOb2u5HXSk/huTWyosI1n4J&quot;&gt;Spark usergroup&lt;/a&gt;。当然现在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BasicBlockFetcherIterator&lt;/code&gt;的性能也已经好了很多，使用的时候可以对这两种实现都进行测试比较。&lt;/p&gt;
+
+&lt;p&gt;接下来说一下aggregator。我们都知道在Hadoop MapReduce的shuffle过程中，shuffle fetch过来的数据会进行merge sort，使得相同key下的不同value按序归并到一起供Reducer使用，这个过程可以参看下图：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2014-01-04-spark-shuffle/mapreduce-shuffle.png&quot; alt=&quot;mapreduce shuffle process&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;所有的merge sort都是在磁盘上进行的，有效地控制了内存的使用，但是代价是更多的磁盘IO。&lt;/p&gt;
+
+&lt;p&gt;那么Spark是否也有merge sort呢，还是以别的方式实现，下面我们就细细说明。&lt;/p&gt;
+
+&lt;p&gt;首先虽然Spark属于MapReduce体系，但是对传统的MapReduce算法进行了一定的改变。Spark假定在大多数用户的case中，shuffle数据的sort不是必须的，比如word count，强制地进行排序只会使性能变差，因此Spark并不在Reducer端做merge sort。既然没有merge sort那Spark是如何进行reduce的呢？这就要说到aggregator了。&lt;/p&gt;
+
+&lt;p&gt;aggregator本质上是一个hashmap，它是以map output的key为key，以任意所要combine的类型为value的hashmap。当我们在做word count reduce计算count值的时候，它会将shuffle fetch到的每一个key-value pair更新或是插入到hashmap中(若在hashmap中没有查找到，则插入其中；若查找到则更新value值)。这样就不需要预先把所有的key-value进行merge sort，而是来一个处理一个，省下了外部排序这一步骤。但同时需要注意的是reducer的内存必须足以存放这个partition的所有key和count值，因此对内存有一定的要求。&lt;/p&gt;
+
+&lt;p&gt;在上面word count的例子中，因为value会不断地更新，而不需要将其全部记录在内存中，因此内存的使用还是比较少的。考虑一下如果是group by key这样的操作，Reducer需要得到key对应的所有value。在Hadoop MapReduce中，由于有了merge sort，因此给予Reducer的数据已经是group by key了，而Spark没有这一步，因此需要将key和对应的value全部存放在hashmap中，并将value合并成一个array。可以想象为了能够存放所有数据，用户必须确保每一个partition足够小到内存能够容纳，这对于内存是一个非常严峻的考验。因此Spark文档中建议用户涉及到这类操作的时候尽量增加partition，也就是增加Mapper和Reducer的数量。&lt;/p&gt;
+
+&lt;p&gt;增加Mapper和Reducer的数量固然可以减小partition的大小，使得内存可以容纳这个partition。但是我们在shuffle write中提到，bucket和对应于bucket的write handler是由Mapper和Reducer的数量决定的，task越多，bucket就会增加的更多，由此带来write handler所需的buffer也会更多。在一方面我们为了减少内存的使用采取了增加task数量的策略，另一方面task数量增多又会带来buffer开销更大的问题，因此陷入了内存使用的两难境地。&lt;/p&gt;
+
+&lt;p&gt;为了减少内存的使用，只能将aggregator的操作从内存移到磁盘上进行，Spark社区也意识到了Spark在处理数据规模远远大于内存大小时所带来的问题。因此&lt;a href=&quot;https://github.com/apache/incubator-spark/pull/303&quot;&gt;PR303&lt;/a&gt;提供了外部排序的实现方案，相信在Spark 0.9 release的时候，这个patch应该能merge进去，到时候内存的使用量可以显著地减少。&lt;/p&gt;
+
+&lt;h2 id=&quot;end&quot;&gt;End&lt;/h2&gt;
+
+&lt;p&gt;本文详细地介绍了Spark的shuffle实现是如何进化的，以及遇到问题解决问题的过程。shuffle作为Spark程序中很重要的一个环节，直接影响了Spark程序的性能，现如今的Spark版本虽然shuffle实现还存在着种种问题，但是相比于早期版本，已经有了很大的进步。开源代码就是如此不停地迭代推进，随着Spark的普及程度越来越高，贡献的人越来越多，相信后续的版本会有更大的提升。&lt;/p&gt;
+</description>
+                <link>http://www.turbofei.wang/jerryshao/2014/01/04/spark-shuffle-detail-investigation</link>
+                <guid>http://www.turbofei.wang/jerryshao/2014/01/04/spark-shuffle-detail-investigation</guid>
+                <pubDate>2014-01-04T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>[转载] Spark源码分析之-Storage模块</title>
+                <description>&lt;p&gt;本文转自&lt;a href=&quot;https://github.com/jerryshao/jerryshao.github.com&quot;&gt;Jerryshao Blog&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+
+&lt;p&gt;前段时间琐事颇多，一直没有时间整理自己的博客，Spark源码分析写到一半也搁置了。之前介绍了&lt;a href=&quot;http://jerryshao.me/architecture/2013/04/21/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-scheduler%E6%A8%A1%E5%9D%97/&quot;&gt;&lt;strong&gt;deploy&lt;/strong&gt;&lt;/a&gt;和&lt;a href=&quot;http://jerryshao.me/architecture/2013/04/21/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-scheduler%E6%A8%A1%E5%9D%97/&quot;&gt;&lt;strong&gt;scheduler&lt;/strong&gt;&lt;/a&gt;两大模块，这次介绍Spark中的另一大模块 - storage模块。&lt;/p&gt;
+
+&lt;p&gt;在写Spark程序的时候我们常常和&lt;strong&gt;RDD&lt;/strong&gt; ( &lt;em&gt;Resilient Distributed Dataset&lt;/em&gt; ) 打交道，通过RDD为我们提供的各种transformation和action接口实现我们的应用，RDD的引入提高了抽象层次，在接口和实现上进行有效地隔离，使用户无需关心底层的实现。但是RDD提供给我们的仅仅是一个“&lt;strong&gt;形&lt;/strong&gt;”, 我们所操作的数据究竟放在哪里，如何存取？它的“&lt;strong&gt;体&lt;/strong&gt;”是怎么样的？这是由storage模块来实现和管理的，接下来我们就要剖析一下storage模块。&lt;/p&gt;
+
+&lt;h2 id=&quot;storage模块整体架构&quot;&gt;Storage模块整体架构&lt;/h2&gt;
+
+&lt;p&gt;Storage模块主要分为两层：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;通信层：storage模块采用的是master-slave结构来实现通信层，master和slave之间传输控制信息、状态信息，这些都是通过通信层来实现的。&lt;/li&gt;
+  &lt;li&gt;存储层：storage模块需要把数据存储到disk或是memory上面，有可能还需replicate到远端，这都是由存储层来实现和提供相应接口。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;而其他模块若要和storage模块进行交互，storage模块提供了统一的操作类&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;，外部类与storage模块打交道都需要通过调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;相应接口来实现。&lt;/p&gt;
+
+&lt;h2 id=&quot;storage模块通信层&quot;&gt;Storage模块通信层&lt;/h2&gt;
+
+&lt;p&gt;首先来看一下通信层的UML类图:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-10-08-storage/communication_layer.png&quot; alt=&quot;communication layer class chart&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;其次我们来看看各个类在master和slave上所扮演的不同角色：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-10-08-storage/communication_character.png&quot; alt=&quot;communication character class chart&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;对于master和slave，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;的创建有所不同：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;Master (client driver)&lt;/p&gt;
+
+    &lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMaster&lt;/code&gt;拥有&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMasterActor&lt;/code&gt;的&lt;em&gt;actor&lt;/em&gt;和所有&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerSlaveActor&lt;/code&gt;的&lt;em&gt;ref&lt;/em&gt;。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Slave (executor)&lt;/p&gt;
+
+    &lt;p&gt;对于slave，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMaster&lt;/code&gt;则拥有&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMasterActor&lt;/code&gt;的&lt;em&gt;ref&lt;/em&gt;和自身&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerSlaveActor&lt;/code&gt;的&lt;em&gt;actor&lt;/em&gt;。&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMasterActor&lt;/code&gt;在&lt;em&gt;ref&lt;/em&gt;和&lt;em&gt;actor&lt;/em&gt;之间进行通信；&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerSlaveActor&lt;/code&gt;在&lt;em&gt;ref&lt;/em&gt;和&lt;em&gt;actor&lt;/em&gt;之间通信。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;em&gt;actor&lt;/em&gt;和&lt;em&gt;ref&lt;/em&gt;:&lt;/p&gt;
+
+  &lt;p&gt;&lt;em&gt;actor&lt;/em&gt;和&lt;em&gt;ref&lt;/em&gt;是&lt;a href=&quot;http://akka.io/&quot;&gt;&lt;strong&gt;Akka&lt;/strong&gt;&lt;/a&gt;中的两个不同的actor reference，分别由&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;actorOf&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;actorFor&lt;/code&gt;所创建。&lt;em&gt;actor&lt;/em&gt;类似于网络服务中的server端，它保存所有的状态信息，接收client端的请求执行并返回给客户端；&lt;em&gt;ref&lt;/em&gt;类似于网络服务中的client端，通过向server端发起请求获取结果。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt; wrap了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMaster&lt;/code&gt;，通过&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMaster&lt;/code&gt;进行通信。Spark会在client driver和executor端创建各自的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;，通过&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;对storage模块进行操作。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;对象在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkEnv&lt;/code&gt;中被创建，创建的过程如下所示：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def registerOrLookup(name: String, newActor: =&amp;gt; Actor): ActorRef = {
+  if (isDriver) {
+    logInfo(&quot;Registering &quot; + name)
+    actorSystem.actorOf(Props(newActor), name = name)
+  } else {
+    val driverHost: String = System.getProperty(&quot;spark.driver.host&quot;, &quot;localhost&quot;)
+    val driverPort: Int = System.getProperty(&quot;spark.driver.port&quot;, &quot;7077&quot;).toInt
+    Utils.checkHost(driverHost, &quot;Expected hostname&quot;)
+    val url = &quot;akka://spark@%s:%s/user/%s&quot;.format(driverHost, driverPort, name)
+    logInfo(&quot;Connecting to &quot; + name + &quot;: &quot; + url)
+    actorSystem.actorFor(url)
+  }
+}
+
+val blockManagerMaster = new BlockManagerMaster(registerOrLookup(
+  &quot;BlockManagerMaster&quot;,
+  new BlockManagerMasterActor(isLocal)))
+val blockManager = new BlockManager(executorId, actorSystem, blockManagerMaster, serializer)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;可以看到对于client driver和executor，Spark分别创建了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMasterActor&lt;/code&gt; &lt;em&gt;actor&lt;/em&gt;和&lt;em&gt;ref&lt;/em&gt;，并被wrap到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;中。&lt;/p&gt;
+
+&lt;h3 id=&quot;通信层传递的消息&quot;&gt;通信层传递的消息&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;BlockManagerMasterActor&lt;/strong&gt;&lt;/p&gt;
+
+    &lt;ul&gt;
+      &lt;li&gt;
+        &lt;p&gt;&lt;strong&gt;executor&lt;/strong&gt;  to &lt;strong&gt;client driver&lt;/strong&gt;&lt;/p&gt;
+
+        &lt;p&gt;RegisterBlockManager (executor创建BlockManager以后向client driver发送请求注册自身)
+  HeartBeat
+  UpdateBlockInfo (更新block信息)
+  GetPeers (请求获得其他BlockManager的id)
+  GetLocations (获取block所在的BlockManager的id)
+  GetLocationsMultipleBlockIds (获取一组block所在的BlockManager id)&lt;/p&gt;
+      &lt;/li&gt;
+      &lt;li&gt;
+        &lt;p&gt;&lt;strong&gt;client driver&lt;/strong&gt;  to &lt;strong&gt;client driver&lt;/strong&gt;&lt;/p&gt;
+
+        &lt;p&gt;GetLocations (获取block所在的BlockManager的id)
+  GetLocationsMultipleBlockIds (获取一组block所在的BlockManager id)
+  RemoveExecutor (删除所保存的已经死亡的executor上的BlockManager)
+  StopBlockManagerMaster (停止client driver上的BlockManagerMasterActor)&lt;/p&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;有些消息例如&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;GetLocations&lt;/code&gt;在executor端和client driver端都会向&lt;em&gt;actor&lt;/em&gt;请求，而其他的消息比如&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RegisterBlockManager&lt;/code&gt;只会由executor端的&lt;em&gt;ref&lt;/em&gt;向client driver端的&lt;em&gt;actor&lt;/em&gt;发送，于此同时例如&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RemoveExecutor&lt;/code&gt;则只会由client driver端的&lt;em&gt;ref&lt;/em&gt;向client driver端的&lt;em&gt;actor&lt;/em&gt;发送。&lt;/p&gt;
+
+  &lt;p&gt;具体消息是从哪里发送，哪里接收和处理请看代码细节，在这里就不再赘述了。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;BlockManagerSlaveActor&lt;/strong&gt;&lt;/p&gt;
+
+    &lt;ul&gt;
+      &lt;li&gt;
+        &lt;p&gt;&lt;strong&gt;client driver&lt;/strong&gt; to &lt;strong&gt;executor&lt;/strong&gt;&lt;/p&gt;
+
+        &lt;p&gt;RemoveBlock (删除block)
+  RemoveRdd (删除RDD)&lt;/p&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;通信层中涉及许多控制消息和状态消息的传递以及处理，这些细节可以直接查看源码，这里就不在一一罗列。下面就只简单介绍一下exeuctor端的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;是如何启动以及向client driver发送注册请求完成注册。&lt;/p&gt;
+
+&lt;h3 id=&quot;register-blockmanager&quot;&gt;Register BlockManager&lt;/h3&gt;
+
+&lt;p&gt;前面已经介绍了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;对象是如何被创建出来的，当&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;被创建出来以后需要向client driver注册自己，下面我们来看一下这个流程：&lt;/p&gt;
+
+&lt;p&gt;首先&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;initialize()&lt;/code&gt;初始化自己&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def initialize() {
+  master.registerBlockManager(blockManagerId, maxMemory, slaveActor)
+  ...
+  if (!BlockManager.getDisableHeartBeatsForTesting) {
+    heartBeatTask = actorSystem.scheduler.schedule(0.seconds, heartBeatFrequency.milliseconds) {
+      heartBeat()
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;initialized()&lt;/code&gt;函数中首先调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMaster&lt;/code&gt;向client driver注册自己，同时设置heartbeat定时器，定时发送heartbeat报文。可以看到在注册自身的时候向client driver传递了自身的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;slaveActor&lt;/code&gt;，client driver收到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;slaveActor&lt;/code&gt;以后会将其与之对应的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerInfo&lt;/code&gt;存储到hash map中，以便后续通过&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;slaveActor&lt;/code&gt;向executor发送命令。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMaster&lt;/code&gt;会将注册请求包装成&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RegisterBlockManager&lt;/code&gt;报文发送给client driver的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMasterActor&lt;/code&gt;，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerMasterActor&lt;/code&gt;调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;register()&lt;/code&gt;函数注册&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def register(id: BlockManagerId, maxMemSize: Long, slaveActor: ActorRef) {
+  if (id.executorId == &quot;&amp;lt;driver&amp;gt;&quot; &amp;amp;&amp;amp; !isLocal) {
+    // Got a register message from the master node; don't register it
+  } else if (!blockManagerInfo.contains(id)) {
+    blockManagerIdByExecutor.get(id.executorId) match {
+      case Some(manager) =&amp;gt;
+        // A block manager of the same executor already exists.
+        // This should never happen. Let's just quit.
+        logError(&quot;Got two different block manager registrations on &quot; + id.executorId)
+        System.exit(1)
+      case None =&amp;gt;
+        blockManagerIdByExecutor(id.executorId) = id
+    }
+    blockManagerInfo(id) = new BlockManagerMasterActor.BlockManagerInfo(
+      id, System.currentTimeMillis(), maxMemSize, slaveActor)
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;需要注意的是在client driver端也会执行上述过程，只是在最后注册的时候如果判断是&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&quot;&amp;lt;driver&amp;gt;&quot;&lt;/code&gt;就不进行任何操作。可以看到对应的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerInfo&lt;/code&gt;对象被创建并保存在hash map中。&lt;/p&gt;
+
+&lt;h2 id=&quot;storage模块存储层&quot;&gt;Storage模块存储层&lt;/h2&gt;
+
+&lt;p&gt;在RDD层面上我们了解到RDD是由不同的partition组成的，我们所进行的transformation和action是在partition上面进行的；而在storage模块内部，RDD又被视为由不同的block组成，对于RDD的存取是以block为单位进行的，本质上partition和block是等价的，只是看待的角度不同。在Spark storage模块中中存取数据的最小单位是block，所有的操作都是以block为单位进行的。&lt;/p&gt;
+
+&lt;p&gt;首先我们来看一下存储层的UML类图:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-10-08-storage/storage_layer.png&quot; alt=&quot;storage layer class chart&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;对象被创建的时候会创建出&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MemoryStore&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;对象用以存取block，同时在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;initialize()&lt;/code&gt;函数中创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManagerWorker&lt;/code&gt;对象用以监听远程的block存取请求来进行相应处理。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private[storage] val memoryStore: BlockStore = new MemoryStore(this, maxMemory)
+private[storage] val diskStore: DiskStore =
+  new DiskStore(this, System.getProperty(&quot;spark.local.dir&quot;, System.getProperty(&quot;java.io.tmpdir&quot;)))
+
+private def initialize() {
+  ...
+  BlockManagerWorker.startBlockManagerWorker(this)
+  ...
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;下面就具体介绍一下对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MemoryStore&lt;/code&gt;，block的存取操作是怎样进行的。&lt;/p&gt;
+
+&lt;h3 id=&quot;diskstore如何存取block&quot;&gt;DiskStore如何存取block&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;可以配置多个folder，Spark会在不同的folder下面创建Spark文件夹，文件夹的命名方式为(spark-local-yyyyMMddHHmmss-xxxx, xxxx是一个随机数)，所有的block都会存储在所创建的folder里面。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;会在对象被创建时调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;createLocalDirs()&lt;/code&gt;来创建文件夹：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def createLocalDirs(): Array[File] = {
+  logDebug(&quot;Creating local directories at root dirs '&quot; + rootDirs + &quot;'&quot;)
+  val dateFormat = new SimpleDateFormat(&quot;yyyyMMddHHmmss&quot;)
+  rootDirs.split(&quot;,&quot;).map { rootDir =&amp;gt;
+    var foundLocalDir = false
+    var localDir: File = null
+    var localDirId: String = null
+    var tries = 0
+    val rand = new Random()
+    while (!foundLocalDir &amp;amp;&amp;amp; tries &amp;lt; MAX_DIR_CREATION_ATTEMPTS) {
+      tries += 1
+      try {
+        localDirId = &quot;%s-%04x&quot;.format(dateFormat.format(new Date), rand.nextInt(65536))
+        localDir = new File(rootDir, &quot;spark-local-&quot; + localDirId)
+        if (!localDir.exists) {
+          foundLocalDir = localDir.mkdirs()
+        }
+      } catch {
+        case e: Exception =&amp;gt;
+          logWarning(&quot;Attempt &quot; + tries + &quot; to create local dir &quot; + localDir + &quot; failed&quot;, e)
+      }
+    }
+    if (!foundLocalDir) {
+      logError(&quot;Failed &quot; + MAX_DIR_CREATION_ATTEMPTS +
+        &quot; attempts to create local dir in &quot; + rootDir)
+      System.exit(ExecutorExitCode.DISK_STORE_FAILED_TO_CREATE_DIR)
+    }
+    logInfo(&quot;Created local directory at &quot; + localDir)
+    localDir
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;里面，每一个block都被存储为一个file，通过计算block id的hash值将block映射到文件中，block id与文件路径的映射关系如下所示：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def getFile(blockId: String): File = {
+  logDebug(&quot;Getting file for block &quot; + blockId)
+
+  // Figure out which local directory it hashes to, and which subdirectory in that
+  val hash = Utils.nonNegativeHash(blockId)
+  val dirId = hash % localDirs.length
+  val subDirId = (hash / localDirs.length) % subDirsPerLocalDir
+
+  // Create the subdirectory if it doesn't already exist
+  var subDir = subDirs(dirId)(subDirId)
+  if (subDir == null) {
+    subDir = subDirs(dirId).synchronized {
+      val old = subDirs(dirId)(subDirId)
+      if (old != null) {
+        old
+      } else {
+        val newDir = new File(localDirs(dirId), &quot;%02x&quot;.format(subDirId))
+        newDir.mkdir()
+        subDirs(dirId)(subDirId) = newDir
+        newDir
+      }
+    }
+  }
+
+  new File(subDir, blockId)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;根据block id计算出hash值，将hash取模获得&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dirId&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;subDirId&lt;/code&gt;，在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;subDirs&lt;/code&gt;中找出相应的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;subDir&lt;/code&gt;，若没有则新建一个&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;subDir&lt;/code&gt;，最后以&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;subDir&lt;/code&gt;为路径、block id为文件名创建file handler，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;使用此file handler将block写入文件内，代码如下所示：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def putBytes(blockId: String, _bytes: ByteBuffer, level: StorageLevel) {
+  // So that we do not modify the input offsets !
+  // duplicate does not copy buffer, so inexpensive
+  val bytes = _bytes.duplicate()
+  logDebug(&quot;Attempting to put block &quot; + blockId)
+  val startTime = System.currentTimeMillis
+  val file = createFile(blockId)
+  val channel = new RandomAccessFile(file, &quot;rw&quot;).getChannel()
+  while (bytes.remaining &amp;gt; 0) {
+    channel.write(bytes)
+  }
+  channel.close()
+  val finishTime = System.currentTimeMillis
+  logDebug(&quot;Block %s stored as %s file on disk in %d ms&quot;.format(
+    blockId, Utils.bytesToString(bytes.limit), (finishTime - startTime)))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;而获取block则非常简单，找到相应的文件并读取出来即可：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def getBytes(blockId: String): Option[ByteBuffer] = {
+  val file = getFile(blockId)
+  val bytes = getFileBytes(file)
+  Some(bytes)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;因此在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;中存取block首先是要将block id映射成相应的文件路径，接着存取文件就可以了。&lt;/p&gt;
+
+&lt;h3 id=&quot;memorystore如何存取block&quot;&gt;MemoryStore如何存取block&lt;/h3&gt;
+
+&lt;p&gt;相对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;需要根据block id hash计算出文件路径并将block存放到对应的文件里面，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MemoryStore&lt;/code&gt;管理block就显得非常简单：&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MemoryStore&lt;/code&gt;内部维护了一个hash map来管理所有的block，以block id为key将block存放到hash map中。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;case class Entry(value: Any, size: Long, deserialized: Boolean)
+
+private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MemoryStore&lt;/code&gt;中存放block必须确保内存足够容纳下该block，若内存不足则会将block写到文件中，具体的代码如下所示：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def putBytes(blockId: String, _bytes: ByteBuffer, level: StorageLevel) {
+  // Work on a duplicate - since the original input might be used elsewhere.
+  val bytes = _bytes.duplicate()
+  bytes.rewind()
+  if (level.deserialized) {
+    val values = blockManager.dataDeserialize(blockId, bytes)
+    val elements = new ArrayBuffer[Any]
+    elements ++= values
+    val sizeEstimate = SizeEstimator.estimate(elements.asInstanceOf[AnyRef])
+    tryToPut(blockId, elements, sizeEstimate, true)
+  } else {
+    tryToPut(blockId, bytes, bytes.limit, false)
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;tryToPut()&lt;/code&gt;中，首先调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ensureFreeSpace()&lt;/code&gt;确保空闲内存是否足以容纳block，若可以则将该block放入hash map中进行管理；若不足以容纳则通过调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;dropFromMemory()&lt;/code&gt;将block写入文件。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def tryToPut(blockId: String, value: Any, size: Long, deserialized: Boolean): Boolean = {
+  // TODO: Its possible to optimize the locking by locking entries only when selecting blocks
+  // to be dropped. Once the to-be-dropped blocks have been selected, and lock on entries has been
+  // released, it must be ensured that those to-be-dropped blocks are not double counted for
+  // freeing up more space for another block that needs to be put. Only then the actually dropping
+  // of blocks (and writing to disk if necessary) can proceed in parallel.
+  putLock.synchronized {
+    if (ensureFreeSpace(blockId, size)) {
+      val entry = new Entry(value, size, deserialized)
+      entries.synchronized {
+        entries.put(blockId, entry)
+        currentMemory += size
+      }
+      if (deserialized) {
+        logInfo(&quot;Block %s stored as values to memory (estimated size %s, free %s)&quot;.format(
+          blockId, Utils.bytesToString(size), Utils.bytesToString(freeMemory)))
+      } else {
+        logInfo(&quot;Block %s stored as bytes to memory (size %s, free %s)&quot;.format(
+          blockId, Utils.bytesToString(size), Utils.bytesToString(freeMemory)))
+      }
+      true
+    } else {
+      // Tell the block manager that we couldn't put it in memory so that it can drop it to
+      // disk if the block allows disk storage.
+      val data = if (deserialized) {
+        Left(value.asInstanceOf[ArrayBuffer[Any]])
+      } else {
+        Right(value.asInstanceOf[ByteBuffer].duplicate())
+      }
+      blockManager.dropFromMemory(blockId, data)
+      false
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;而从&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MemoryStore&lt;/code&gt;中取得block则非常简单，只需从hash map中取出block id对应的value即可。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def getValues(blockId: String): Option[Iterator[Any]] = {
+  val entry = entries.synchronized {
+    entries.get(blockId)
+  }
+  if (entry == null) {
+    None
+  } else if (entry.deserialized) {
+    Some(entry.value.asInstanceOf[ArrayBuffer[Any]].iterator)
+  } else {
+    val buffer = entry.value.asInstanceOf[ByteBuffer].duplicate() // Doesn't actually copy data
+    Some(blockManager.dataDeserialize(blockId, buffer))
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;put-or-get-block-through-blockmanager&quot;&gt;Put or Get block through BlockManager&lt;/h3&gt;
+
+&lt;p&gt;上面介绍了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MemoryStore&lt;/code&gt;对于block的存取操作，那么我们是要直接与它们交互存取数据吗，还是封装了更抽象的接口使我们无需关心底层？&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;为我们提供了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;put()&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;get()&lt;/code&gt;函数，用户可以使用这两个函数对block进行存取而无需关心底层实现。&lt;/p&gt;
+
+&lt;p&gt;首先我们来看一下&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;put()&lt;/code&gt;函数的实现：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def put(blockId: String, values: ArrayBuffer[Any], level: StorageLevel,
+  tellMaster: Boolean = true) : Long = {
+
+  ...
+
+  // Remember the block's storage level so that we can correctly drop it to disk if it needs
+  // to be dropped right after it got put into memory. Note, however, that other threads will
+  // not be able to get() this block until we call markReady on its BlockInfo.
+  val myInfo = {
+    val tinfo = new BlockInfo(level, tellMaster)
+    // Do atomically !
+    val oldBlockOpt = blockInfo.putIfAbsent(blockId, tinfo)
+
+    if (oldBlockOpt.isDefined) {
+      if (oldBlockOpt.get.waitForReady()) {
+        logWarning(&quot;Block &quot; + blockId + &quot; already exists on this machine; not re-adding it&quot;)
+        return oldBlockOpt.get.size
+      }
+
+      // TODO: So the block info exists - but previous attempt to load it (?) failed. What do we do now ? Retry on it ?
+      oldBlockOpt.get
+    } else {
+      tinfo
+    }
+  }
+
+  val startTimeMs = System.currentTimeMillis
+
+  // If we need to replicate the data, we'll want access to the values, but because our
+  // put will read the whole iterator, there will be no values left. For the case where
+  // the put serializes data, we'll remember the bytes, above; but for the case where it
+  // doesn't, such as deserialized storage, let's rely on the put returning an Iterator.
+  var valuesAfterPut: Iterator[Any] = null
+
+  // Ditto for the bytes after the put
+  var bytesAfterPut: ByteBuffer = null
+
+  // Size of the block in bytes (to return to caller)
+  var size = 0L
+
+  myInfo.synchronized {
+    logTrace(&quot;Put for block &quot; + blockId + &quot; took &quot; + Utils.getUsedTimeMs(startTimeMs)
+      + &quot; to get into synchronized block&quot;)
+
+    var marked = false
+    try {
+      if (level.useMemory) {
+        // Save it just to memory first, even if it also has useDisk set to true; we will later
+        // drop it to disk if the memory store can't hold it.
+        val res = memoryStore.putValues(blockId, values, level, true)
+        size = res.size
+        res.data match {
+          case Right(newBytes) =&amp;gt; bytesAfterPut = newBytes
+          case Left(newIterator) =&amp;gt; valuesAfterPut = newIterator
+        }
+      } else {
+        // Save directly to disk.
+        // Don't get back the bytes unless we replicate them.
+        val askForBytes = level.replication &amp;gt; 1
+        val res = diskStore.putValues(blockId, values, level, askForBytes)
+        size = res.size
+        res.data match {
+          case Right(newBytes) =&amp;gt; bytesAfterPut = newBytes
+          case _ =&amp;gt;
+        }
+      }
+
+      // Now that the block is in either the memory or disk store, let other threads read it,
+      // and tell the master about it.
+      marked = true
+      myInfo.markReady(size)
+      if (tellMaster) {
+        reportBlockStatus(blockId, myInfo)
+      }
+    } finally {
+      // If we failed at putting the block to memory/disk, notify other possible readers
+      // that it has failed, and then remove it from the block info map.
+      if (! marked) {
+        // Note that the remove must happen before markFailure otherwise another thread
+        // could've inserted a new BlockInfo before we remove it.
+        blockInfo.remove(blockId)
+        myInfo.markFailure()
+        logWarning(&quot;Putting block &quot; + blockId + &quot; failed&quot;)
+      }
+    }
+  }
+  logDebug(&quot;Put block &quot; + blockId + &quot; locally took &quot; + Utils.getUsedTimeMs(startTimeMs))
+
+  // Replicate block if required
+  if (level.replication &amp;gt; 1) {
+    val remoteStartTime = System.currentTimeMillis
+    // Serialize the block if not already done
+    if (bytesAfterPut == null) {
+      if (valuesAfterPut == null) {
+        throw new SparkException(
+          &quot;Underlying put returned neither an Iterator nor bytes! This shouldn't happen.&quot;)
+      }
+      bytesAfterPut = dataSerialize(blockId, valuesAfterPut)
+    }
+    replicate(blockId, bytesAfterPut, level)
+    logDebug(&quot;Put block &quot; + blockId + &quot; remotely took &quot; + Utils.getUsedTimeMs(remoteStartTime))
+  }
+  BlockManager.dispose(bytesAfterPut)
+
+  return size
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;put()&lt;/code&gt;操作，主要分为以下3个步骤：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;为block创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockInfo&lt;/code&gt;结构体存储block相关信息，同时将其加锁使其不能被访问。&lt;/li&gt;
+  &lt;li&gt;根据block的storage level将block存储到memory或是disk上，同时解锁标识该block已经ready，可被访问。&lt;/li&gt;
+  &lt;li&gt;根据block的replication数决定是否将该block replicate到远端。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;接着我们来看一下&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;get()&lt;/code&gt;函数的实现：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def get(blockId: String): Option[Iterator[Any]] = {
+  val local = getLocal(blockId)
+  if (local.isDefined) {
+    logInfo(&quot;Found block %s locally&quot;.format(blockId))
+    return local
+  }
+  val remote = getRemote(blockId)
+  if (remote.isDefined) {
+    logInfo(&quot;Found block %s remotely&quot;.format(blockId))
+    return remote
+  }
+  None
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;get()&lt;/code&gt;首先会从local的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;中查找block，如果找到则返回相应的block，若local没有找到该block，则发起请求从其他的executor上的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;中查找block。在通常情况下Spark任务的分配是根据block的分布决定的，任务往往会被分配到拥有block的节点上，因此&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getLocal()&lt;/code&gt;就能找到所需的block；但是在资源有限的情况下，Spark会将任务调度到与block不同的节点上，这样就必须通过&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getRemote()&lt;/code&gt;来获得block。&lt;/p&gt;
+
+&lt;p&gt;我们先来看一下&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getLocal()&lt;/code&gt;:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def getLocal(blockId: String): Option[Iterator[Any]] = {
+  logDebug(&quot;Getting local block &quot; + blockId)
+  val info = blockInfo.get(blockId).orNull
+  if (info != null) {
+    info.synchronized {
+
+      // In the another thread is writing the block, wait for it to become ready.
+      if (!info.waitForReady()) {
+        // If we get here, the block write failed.
+        logWarning(&quot;Block &quot; + blockId + &quot; was marked as failure.&quot;)
+        return None
+      }
+
+      val level = info.level
+      logDebug(&quot;Level for block &quot; + blockId + &quot; is &quot; + level)
+
+      // Look for the block in memory
+      if (level.useMemory) {
+        logDebug(&quot;Getting block &quot; + blockId + &quot; from memory&quot;)
+        memoryStore.getValues(blockId) match {
+          case Some(iterator) =&amp;gt;
+            return Some(iterator)
+          case None =&amp;gt;
+            logDebug(&quot;Block &quot; + blockId + &quot; not found in memory&quot;)
+        }
+      }
+
+      // Look for block on disk, potentially loading it back into memory if required
+      if (level.useDisk) {
+        logDebug(&quot;Getting block &quot; + blockId + &quot; from disk&quot;)
+        if (level.useMemory &amp;amp;&amp;amp; level.deserialized) {
+          diskStore.getValues(blockId) match {
+            case Some(iterator) =&amp;gt;
+              // Put the block back in memory before returning it
+              // TODO: Consider creating a putValues that also takes in a iterator ?
+              val elements = new ArrayBuffer[Any]
+              elements ++= iterator
+              memoryStore.putValues(blockId, elements, level, true).data match {
+                case Left(iterator2) =&amp;gt;
+                  return Some(iterator2)
+                case _ =&amp;gt;
+                  throw new Exception(&quot;Memory store did not return back an iterator&quot;)
+              }
+            case None =&amp;gt;
+              throw new Exception(&quot;Block &quot; + blockId + &quot; not found on disk, though it should be&quot;)
+          }
+        } else if (level.useMemory &amp;amp;&amp;amp; !level.deserialized) {
+          // Read it as a byte buffer into memory first, then return it
+          diskStore.getBytes(blockId) match {
+            case Some(bytes) =&amp;gt;
+              // Put a copy of the block back in memory before returning it. Note that we can't
+              // put the ByteBuffer returned by the disk store as that's a memory-mapped file.
+              // The use of rewind assumes this.
+              assert (0 == bytes.position())
+              val copyForMemory = ByteBuffer.allocate(bytes.limit)
+              copyForMemory.put(bytes)
+              memoryStore.putBytes(blockId, copyForMemory, level)
+              bytes.rewind()
+              return Some(dataDeserialize(blockId, bytes))
+            case None =&amp;gt;
+              throw new Exception(&quot;Block &quot; + blockId + &quot; not found on disk, though it should be&quot;)
+          }
+        } else {
+          diskStore.getValues(blockId) match {
+            case Some(iterator) =&amp;gt;
+              return Some(iterator)
+            case None =&amp;gt;
+              throw new Exception(&quot;Block &quot; + blockId + &quot; not found on disk, though it should be&quot;)
+          }
+        }
+      }
+    }
+  } else {
+    logDebug(&quot;Block &quot; + blockId + &quot; not registered locally&quot;)
+  }
+  return None
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getLocal()&lt;/code&gt;首先会根据block id获得相应的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockInfo&lt;/code&gt;并从中取出该block的storage level，根据storage level的不同&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getLocal()&lt;/code&gt;又进入以下不同分支：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;level.useMemory == true：从memory中取出block并返回，若没有取到则进入分支2。&lt;/li&gt;
+  &lt;li&gt;level.useDisk == true:
+    &lt;ul&gt;
+      &lt;li&gt;level.useMemory == true: 将block从disk中读出并写入内存以便下次使用时直接从内存中获得，同时返回该block。&lt;/li&gt;
+      &lt;li&gt;level.useMemory == false: 将block从disk中读出并返回&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;level.useDisk == false: 没有在本地找到block，返回None。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;接下来我们来看一下&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getRemote()&lt;/code&gt;：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def getRemote(blockId: String): Option[Iterator[Any]] = {
+  if (blockId == null) {
+    throw new IllegalArgumentException(&quot;Block Id is null&quot;)
+  }
+  logDebug(&quot;Getting remote block &quot; + blockId)
+  // Get locations of block
+  val locations = master.getLocations(blockId)
+
+  // Get block from remote locations
+  for (loc &amp;lt;- locations) {
+    logDebug(&quot;Getting remote block &quot; + blockId + &quot; from &quot; + loc)
+    val data = BlockManagerWorker.syncGetBlock(
+      GetBlock(blockId), ConnectionManagerId(loc.host, loc.port))
+    if (data != null) {
+      return Some(dataDeserialize(blockId, data))
+    }
+    logDebug(&quot;The value of block &quot; + blockId + &quot; is null&quot;)
+  }
+  logDebug(&quot;Block &quot; + blockId + &quot; not found&quot;)
+  return None
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getRemote()&lt;/code&gt;首先取得该block的所有location信息，然后根据location向远端发送请求获取block，只要有一个远端返回block该函数就返回而不继续发送请求。&lt;/p&gt;
+
+&lt;p&gt;至此我们简单介绍了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;类中的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;get()&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;put()&lt;/code&gt;函数，使用这两个函数外部类可以轻易地存取block数据。&lt;/p&gt;
+
+&lt;h3 id=&quot;partition如何转化为block&quot;&gt;Partition如何转化为Block&lt;/h3&gt;
+
+&lt;p&gt;在storage模块里面所有的操作都是和block相关的，但是在RDD里面所有的运算都是基于partition的，那么partition是如何与block对应上的呢？&lt;/p&gt;
+
+&lt;p&gt;RDD计算的核心函数是&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;iterator()&lt;/code&gt;函数：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;final def iterator(split: Partition, context: TaskContext): Iterator[T] = {
+  if (storageLevel != StorageLevel.NONE) {
+    SparkEnv.get.cacheManager.getOrCompute(this, split, context, storageLevel)
+  } else {
+    computeOrReadCheckpoint(split, context)
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;如果当前RDD的storage level不是NONE的话，表示该RDD在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;中有存储，那么调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CacheManager&lt;/code&gt;中的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getOrCompute()&lt;/code&gt;函数计算RDD，在这个函数中partition和block发生了关系：&lt;/p&gt;
+
+&lt;p&gt;首先根据RDD id和partition index构造出block id (rdd_xx_xx)，接着从&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;中取出相应的block。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;如果该block存在，表示此RDD在之前已经被计算过和存储在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;中，因此取出即可，无需再重新计算。&lt;/li&gt;
+  &lt;li&gt;如果该block不存在则需要调用RDD的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;computeOrReadCheckpoint()&lt;/code&gt;函数计算出新的block，并将其存储到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;中。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;需要注意的是block的计算和存储是阻塞的，若另一线程也需要用到此block则需等到该线程block的loading结束。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def getOrCompute[T](rdd: RDD[T], split: Partition, context: TaskContext, storageLevel: StorageLevel)
+    : Iterator[T] = {
+  val key = &quot;rdd_%d_%d&quot;.format(rdd.id, split.index)
+  logDebug(&quot;Looking for partition &quot; + key)
+  blockManager.get(key) match {
+    case Some(values) =&amp;gt;
+      // Partition is already materialized, so just return its values
+      return values.asInstanceOf[Iterator[T]]
+
+    case None =&amp;gt;
+      // Mark the split as loading (unless someone else marks it first)
+      loading.synchronized {
+        if (loading.contains(key)) {
+          logInfo(&quot;Another thread is loading %s, waiting for it to finish...&quot;.format (key))
+          while (loading.contains(key)) {
+            try {loading.wait()} catch {case _ : Throwable =&amp;gt;}
+          }
+          logInfo(&quot;Finished waiting for %s&quot;.format(key))
+          // See whether someone else has successfully loaded it. The main way this would fail
+          // is for the RDD-level cache eviction policy if someone else has loaded the same RDD
+          // partition but we didn't want to make space for it. However, that case is unlikely
+          // because it's unlikely that two threads would work on the same RDD partition. One
+          // downside of the current code is that threads wait serially if this does happen.
+          blockManager.get(key) match {
+            case Some(values) =&amp;gt;
+              return values.asInstanceOf[Iterator[T]]
+            case None =&amp;gt;
+              logInfo(&quot;Whoever was loading %s failed; we'll try it ourselves&quot;.format  (key))
+              loading.add(key)
+          }
+        } else {
+          loading.add(key)
+        }
+      }
+      try {
+        // If we got here, we have to load the split
+        logInfo(&quot;Partition %s not found, computing it&quot;.format(key))
+        val computedValues = rdd.computeOrReadCheckpoint(split, context)
+        // Persist the result, so long as the task is not running locally
+        if (context.runningLocally) { return computedValues }
+        val elements = new ArrayBuffer[Any]
+        elements ++= computedValues
+        blockManager.put(key, elements, storageLevel, true)
+        return elements.iterator.asInstanceOf[Iterator[T]]
+      } finally {
+        loading.synchronized {
+          loading.remove(key)
+          loading.notifyAll()
+        }
+      }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这样RDD的transformation、action就和block数据建立了联系，虽然抽象上我们的操作是在partition层面上进行的，但是partition最终还是被映射成为block，因此实际上我们的所有操作都是对block的处理和存取。&lt;/p&gt;
+
+&lt;h2 id=&quot;end&quot;&gt;End&lt;/h2&gt;
+
+&lt;p&gt;本文就storage模块的两个层面进行了介绍-通信层和存储层。通信层中简单介绍了类结构和组成以及类在通信层中所扮演的不同角色，还有不同角色之间通信的报文，同时简单介绍了通信层的启动和注册细节。存储层中分别介绍了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MemoryStore&lt;/code&gt;中对于block的存和取的实现代码，同时分析了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;中&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;put()&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;get()&lt;/code&gt;接口，最后简单介绍了Spark RDD中的partition与&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;BlockManager&lt;/code&gt;中的block之间的关系，以及如何交互存取block的。&lt;/p&gt;
+
+&lt;p&gt;本文从整体上分析了storage模块的实现，并未就具体实现做非常细节的分析，相信在看完本文对storage模块有一个整体的印象以后再去分析细节的实现会有事半功倍的效果。&lt;/p&gt;
+</description>
+                <link>http://www.turbofei.wang/jerryshao/2013/10/08/spark-storage-module-analysis</link>
+                <guid>http://www.turbofei.wang/jerryshao/2013/10/08/spark-storage-module-analysis</guid>
+                <pubDate>2013-10-08T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>[转载] 序列的函数式抽象-Spark API设计</title>
+                <description>&lt;p&gt;本文转自&lt;a href=&quot;https://github.com/jerryshao/jerryshao.github.com&quot;&gt;Jerryshao Blog&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+
+&lt;p&gt;最近钻研于SICP (&lt;em&gt;Structure and Interpretation of Computer Programs&lt;/em&gt;)，深为lisp所抽象出的公共模式所吸引，联系一直以来所使用的Spark，想到两者对于公共模式提炼的相同之处，有感而发，记下自己的所想。&lt;/p&gt;
+
+&lt;h2 id=&quot;公共模式的提炼&quot;&gt;公共模式的提炼&lt;/h2&gt;
+
+&lt;p&gt;思考程序设计中如下几种场景:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;将一个表里的所有元素按给定因子做一次缩放&lt;/li&gt;
+  &lt;li&gt;将一个表里的所有元素进行平方&lt;/li&gt;
+  &lt;li&gt;将一个表里的所有元素加上一个给定值&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;可以看到以上三种场景可以抽象为将表内的所有元素进行某种运算得到一个新的表，本质上都是表的映射，我们可以将这种公共模式表述为一个高阶过程&lt;strong&gt;map&lt;/strong&gt;，它的参数一个运算过程参数和一个表参数，返回值是将这个运算过程作用于表中每一个元素后形成的新表。可以参看场景1的例子：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(define (scale-list items factor)
+  (if (null? items)
+    nil
+    (cons (* (car items) factor)
+          (scale-list (cdr items) factor))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;对于它的抽象如下：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(define (map proc items)
+  (if (null? items))
+    nil
+    (cons (proc (car items))
+          (map proc (cdr items)))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;因此&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;scale-list&lt;/code&gt;可以简化为如下:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(define (scale-list items factor)
+  (map (lambda (x) (* x factor))
+        items))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;strong&gt;map&lt;/strong&gt;不仅定义了一种公共模式，同时也设置了抽象屏障，将表变换过程的实现，与如何提取表中元素及组合结果的细节隔离开来，提升了抽象层次。&lt;/p&gt;
+
+&lt;p&gt;函数式语言提供了许多诸如&lt;strong&gt;map&lt;/strong&gt;的公共模式，如&lt;strong&gt;reduce&lt;/strong&gt;，&lt;strong&gt;foreach&lt;/strong&gt;，&lt;strong&gt;filter&lt;/strong&gt;，&lt;strong&gt;accumulate&lt;/strong&gt;，利用这些公共模式，我们可以摆脱底层细节的纠缠，专注于算法的实现。&lt;/p&gt;
+
+&lt;h2 id=&quot;过程的公共模式拆解&quot;&gt;过程的公共模式拆解&lt;/h2&gt;
+
+&lt;p&gt;同样思考以下两种场景:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;计算出树中所有叶子节点值为奇数的平方和&lt;/li&gt;
+  &lt;li&gt;构造出所有偶数的斐波那契数Fib(k)的一个表，其中k小于给定整数n&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;乍看之下上面描述的两个场景毫无共同点，无法进行抽象，实际对于复合过程的拆解会发现它们有极大的相似性，对于过程的分解可以参考下图：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-08-30-functional-programming-spark-api/algo-signal-chart.png&quot; alt=&quot;algorithm signal chart&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;类似于信号流图，通过一些级联的步骤对过程进行子过程分解和抽象，上述两个场景都可以用一些公共模式的串联来解决。我们来看一下场景1是如何利用公共模式构造和串联的。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;map&lt;/strong&gt;模式在之前已经构造出来了，接下来我们首先是要构造&lt;strong&gt;filter&lt;/strong&gt;模式:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(define (filter predicate sequence)
+  (cond ((null? sequence) nil)
+         ((predicate (car sequence))
+           (cons (car sequence)
+                 (filter predicate (cdr sequence))))
+         (else (filter predicate (cdr sequence)))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;同样我们还需要&lt;strong&gt;accumulate&lt;/strong&gt;累加器对序列进行累加:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(define (accumulate op initial sequence)
+  (if (null? sequence)
+     initial
+     (op (car sequence)
+         (accumulate op initial (cdr sequence)))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;最后我们需要有一个输入序列:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(define (enumerate-tree tree)
+  (cond ((null? tree) nil)
+        ((not (pair? tree)) (list tree))
+        (else (append (enumerate-tree (car tree))
+                      (enumerate-tree (cdr tree))))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;将上面这些子过程串联起来我们就可以得出场景1的复合过程:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;(define (sum-odd-square tree)
+  (accumulate +
+              0
+              (map square
+                   (filter odd?
+                           (enumerate-tree tree)))))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;由此我们可以看到，如果语言或者库为我们提供了抽象的公共模式，我们可以利用公共模式将我们的复杂算法分解为基本的公共模式并进行串联，这样可以使算法描述更为清晰、模块化。&lt;/p&gt;
+
+&lt;h2 id=&quot;spark-api设计&quot;&gt;Spark API设计&lt;/h2&gt;
+
+&lt;p&gt;我们知道Spark将数据集合抽象为RDD (&lt;em&gt;Resilient Distributed Dataset&lt;/em&gt;)，所有的操作过程都是基于RDD的，而RDD本质上就是一个序列，因此Spark也提供了诸如&lt;strong&gt;map&lt;/strong&gt;，&lt;strong&gt;reduce&lt;/strong&gt;，&lt;strong&gt;filter&lt;/strong&gt;等公共模式。&lt;/p&gt;
+
+&lt;p&gt;Spark提供了两大类公共模式: Transformations和Actions。Transformations是将一个RDD转换为另一个RDD，是一种映射。而Actions则提供了RDD计算结果的聚合和获得。我们以word count为例简单地表述一下如何利用公共模式的复合来表述算法。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-08-30-functional-programming-spark-api/wordcount-signal-chart.png&quot; alt=&quot;word count signal chart&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;可以看到复杂的算法被分解为信号流图的表述方式，并且将不同的公共模式应用于各阶段，清晰明白地描述出了算法的构成，而程序语言的构成如下所示：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;rdd.flatMap(_.split(&quot; &quot;)).map(r =&amp;gt; (r, 1)).reduceByKey(_ + _).foreach(println)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Spark屏蔽了RDD的转换和实现细节，设置了抽象屏障，使我们只需关注RDD如何转换并提供行为函数，并且Spark以统一且公认的函数式公共模式提供了API，使得熟悉函数式语言的用户可以轻松地了解这些公共模式的作用。同时由于提供了众多的公共模式，因此可以将算法清晰地分解为不同模式的组合，表述更为清晰和简洁。同样是基于map-reduce的算法框架，相比于Hadoop Spark提供了更精炼的API和更高的抽象模式，使得用户可以更清晰简单地描述其算法。&lt;/p&gt;
+</description>
+                <link>http://www.turbofei.wang/jerryshao/2013/08/30/Functional-Abstraction-of-Sequence-Spark-API-Design</link>
+                <guid>http://www.turbofei.wang/jerryshao/2013/08/30/Functional-Abstraction-of-Sequence-Spark-API-Design</guid>
+                <pubDate>2013-08-30T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>[REPRINT] Spark Streaming Job Troubleshooting of Dependency Chain</title>
+                <description>&lt;p&gt;本文转自&lt;a href=&quot;https://github.com/jerryshao/jerryshao.github.com&quot;&gt;Jerryshao Blog&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+
+&lt;p&gt;Spark Streaming has many commons compared with Spark, it abstracts DStream which based on RDD, its transformations and outputs are similar to Spark. But due to its periodically running property, some problems which may not be serious in Spark will become a big deal in Spark Streaming. This article introduce a dependency chain problem which will delay streaming job gradually and make the job crash.&lt;/p&gt;
+
+&lt;h2 id=&quot;why-streaming-job-runs-gradually-slower&quot;&gt;Why Streaming job runs gradually slower&lt;/h2&gt;
+
+&lt;h3 id=&quot;problem-statement&quot;&gt;Problem statement&lt;/h3&gt;
+
+&lt;p&gt;Spark Streaming job’s running time gradually slows while input data size is almost the same. You can see the job’s running time chart as below.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-05-22-streaming-troubleshooting/job_delay.png&quot; alt=&quot;job_delay&quot; width=&quot;480&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;my job is like this:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;newGenRdd = input.filer(...).map(...).join(...).countByValue()
+oldRdd.zipPartition(..., newGenRdd)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Here &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;newGenRdd&lt;/code&gt; will be calculated in each batch duration, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;oldRdd&lt;/code&gt; is cached in Shark’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;memoryMetadataManager&lt;/code&gt;. Then &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;oldRdd&lt;/code&gt; will be zipped with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;newGenRdd&lt;/code&gt; to get a zipped RDD, this zipped RDD will be next round’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;oldRdd&lt;/code&gt;. So in each batch duration, job runs as above code shows.&lt;/p&gt;
+
+&lt;p&gt;In my &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;zipPartition&lt;/code&gt;, I will filter out some records which are older than a specific time, to make sure that the total record numbers in the RDD will be stable.&lt;/p&gt;
+
+&lt;p&gt;So in a common sense, while the input data size is almost the same, the job’s running time of each batch duration should be stable as expected. But as above chart shows, running time gradually increase as time passes by.&lt;/p&gt;
+
+&lt;h3 id=&quot;phenomenon&quot;&gt;Phenomenon&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;ClientDriver host’s network output grows gradually, and StandaloneExecutorBackend hosts’ network input grows gradually. You can see the below network graph of the whole cluster, in which sr412 is ClientDriver and others are StandaloneExecutorBackend&lt;/p&gt;
+
+    &lt;p&gt;&lt;img src=&quot;/img/2013-05-22-streaming-troubleshooting/network.png&quot; alt=&quot;network_report&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+    &lt;p&gt;This graph shows that only ClientDriver’s network output and StandaloneExecutorBackends’ network input increases, which indicates that in each batch duration ClientDriver transmit data to all slaves, there might exists several possibilities:&lt;/p&gt;
+
+    &lt;ul&gt;
+      &lt;li&gt;data structure created in ClientDriver transmit to slaves for closure to use.&lt;/li&gt;
+      &lt;li&gt;some dependent static data structures transmit to slaves when static functions are called on slaves’ closure.&lt;/li&gt;
+      &lt;li&gt;some control diagram transmit to slaves in Akka.&lt;/li&gt;
+    &lt;/ul&gt;
+
+    &lt;p&gt;Also the growth of network traffic should be noticed, some data structures that transmited to slaves might be cumulative.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;Serialized task size grows gradually. According to network traffic phenomenon, furtherly I dig out all the serialized task size in each job’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;zipPartition&lt;/code&gt; stage, as the blow chart shows, task size gradually grows while the input data size of each batch duration is almost the same.&lt;/p&gt;
+
+    &lt;p&gt;&lt;img src=&quot;/img/2013-05-22-streaming-troubleshooting/task_size.png&quot; alt=&quot;network_report&quot; width=&quot;480&quot; /&gt;&lt;/p&gt;
+
+    &lt;p&gt;Also this &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;zipPartition&lt;/code&gt; stage running time is increased, as blow chart shows:&lt;/p&gt;
+
+    &lt;p&gt;&lt;img src=&quot;/img/2013-05-22-streaming-troubleshooting/stage_delay.png&quot; alt=&quot;network_report&quot; width=&quot;480&quot; /&gt;&lt;/p&gt;
+
+    &lt;p&gt;After carefully examing my implementation in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;zipPartition&lt;/code&gt;, in which data structure is invariant in each batch duration job, so I think it might be the Spark framework introduced problem.&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;I dig out all the dependencies of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;oldRdd&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;newGenRdd&lt;/code&gt; recursively, I found that as job runs periodically, dependencies of &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;oldRdd&lt;/code&gt; increase rapidly, while dependencies of the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;newGenRdd&lt;/code&gt; maintains the same, as below chart shows.&lt;/p&gt;
+
+    &lt;p&gt;&lt;img src=&quot;/img/2013-05-22-streaming-troubleshooting/dependency_number.png&quot; alt=&quot;network_report&quot; width=&quot;480&quot; /&gt;&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;reason&quot;&gt;Reason&lt;/h3&gt;
+
+&lt;p&gt;According to the above phenomena, it is obviously that the growth of dependency chain makes job being gradually slower, by investigating Spark’s code, in each batch duration, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;oldRdd&lt;/code&gt; will add &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;newGenRdd&lt;/code&gt;’s dependency chain to itself, after several rounds, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;oldRdd&lt;/code&gt;’s dependency chain becomes huge, serialization and deserialization which previously is trivial now becomes a time-consuming work. Taking below code as a example:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;var rdd = ...
+for (i &amp;lt;- 0 to 100)
+  rdd = rdd.map(x =&amp;gt; x)
+
+rdd = rdd.cache
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Here as you iteratively use &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;oldRdd&lt;/code&gt; to do transformation, each iteration’s dependency chain will be added to recently used rdd, lastly this &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rdd&lt;/code&gt; will have a long dependency chain including all the iterative’s dependency. Also thls transformation will run gradually slower.&lt;/p&gt;
+
+&lt;p&gt;So as included, the growth of dependencies makes serialization and deserialization of each task be a main burden when job runs. Also this reason can explain why task deserialization will meet stack overflow exception even job is not so complicated.&lt;/p&gt;
+
+&lt;p&gt;I also tested without &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;oldRdd&lt;/code&gt; combined, each time &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;newGenRdd&lt;/code&gt; will be put in Shark’s memoryMetadataManager but without zip with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;oldRdd&lt;/code&gt;, now the job running time becomes stable.&lt;/p&gt;
+
+&lt;p&gt;So I think for all the iterative job which will use previously calculated RDD will meet this problem. This problem will sometimes be hidden as GC problem or shuffle problem. For small iteratives this is not a big deal, but if you want to do some machine learning works that will iterate jobs for many times, this should be a problem.&lt;/p&gt;
+
+&lt;p&gt;This issue is also stated in Spark User Group:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://groups.google.com/forum/?fromgroups#!searchin/spark-users/dependency/spark-users/-Cyfe3G6VwY/PFFnslzWn6AJ&quot;&gt;Is there some way to break down the RDD dependency
+chain?&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://groups.google.com/forum/?fromgroups#!searchin/spark-users/dependency/spark-users/NkxcmmS-DbM/c9qvuShbHEUJ&quot;&gt;Spark Memory
+Question&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;One way to break down this RDD dependency chain is to write RDD to file and read it back to memory, this will clean all the dependencies of this RDD. Maybe a way to clean dependencies might also be a solution, but it is hard to implment.&lt;/p&gt;
+</description>
+                <link>http://www.turbofei.wang/jerryshao/2013/05/22/SparkStreaming-Job-Troubleshooting-of-Dependency-Chain</link>
+                <guid>http://www.turbofei.wang/jerryshao/2013/05/22/SparkStreaming-Job-Troubleshooting-of-Dependency-Chain</guid>
+                <pubDate>2013-05-22T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>[转载] Spark源码分析之-deploy模块</title>
+                <description>&lt;p&gt;本文转自&lt;a href=&quot;https://github.com/jerryshao/jerryshao.github.com&quot;&gt;Jerryshao Blog&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+
+&lt;p&gt;在前文&lt;a href=&quot;http://jerryshao.me/Architecture/2013/04/21/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-scheduler%E6%A8%A1%E5%9D%97/&quot;&gt;Spark源码分析之-scheduler模块&lt;/a&gt;中提到了Spark在资源管理和调度上采用了Hadoop &lt;a href=&quot;http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html&quot;&gt;&lt;strong&gt;YARN&lt;/strong&gt;&lt;/a&gt;的方式：外层的资源管理器和应用内的任务调度器；并且分析了Spark应用内的任务调度模块。本文就Spark的外层资源管理器-deploy模块进行分析，探究Spark是如何协调应用之间的资源调度和管理的&lt;/p&gt;
+
+&lt;p&gt;Spark最初是交由&lt;a href=&quot;http://incubator.apache.org/mesos/&quot;&gt;&lt;strong&gt;Mesos&lt;/strong&gt;&lt;/a&gt;进行资源管理，为了使得更多的用户，包括没有接触过Mesos的用户使用Spark，Spark的开发者添加了Standalone的部署方式，也就是deploy模块。因此deploy模块只针对不使用Mesos进行资源管理的部署方式。&lt;/p&gt;
+
+&lt;h1 id=&quot;deploy模块整体架构&quot;&gt;Deploy模块整体架构&lt;/h1&gt;
+
+&lt;p&gt;&lt;strong&gt;deploy&lt;/strong&gt;模块主要包含3个子模块：&lt;strong&gt;master&lt;/strong&gt;, &lt;strong&gt;worker&lt;/strong&gt;, &lt;strong&gt;client&lt;/strong&gt;。他们继承于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Actor&lt;/code&gt;，通过actor实现互相之间的通信。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;Master&lt;/strong&gt;：master的主要功能是接收worker的注册并管理所有的worker，接收client提交的application，(FIFO)调度等待的application并向worker提交。&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Worker&lt;/strong&gt;：worker的主要功能是向master注册自己，根据master发送的application配置进程环境，并启动&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StandaloneExecutorBackend&lt;/code&gt;。&lt;/li&gt;
+  &lt;li&gt;&lt;strong&gt;Client&lt;/strong&gt;：client的主要功能是向master注册并监控application。当用户创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkContext&lt;/code&gt;时会实例化&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkDeploySchedulerBackend&lt;/code&gt;，而实例化&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkDeploySchedulerBackend&lt;/code&gt;的同时就会启动client，通过向client传递启动参数和application有关信息，client向master发送请求注册application并且在slave node上启动&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StandaloneExecutorBackend&lt;/code&gt;。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;下面来看一下deploy模块的类图：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-04-30-deploy/deploy_uml.png&quot; alt=&quot;Deploy moduler class chart&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;h1 id=&quot;deploy模块通信消息&quot;&gt;Deploy模块通信消息&lt;/h1&gt;
+
+&lt;p&gt;Deploy模块并不复杂，代码也不多，主要集中在各个子模块之间的消息传递和处理上，因此在这里列出了各个模块之间传递的主要消息：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;client&lt;/strong&gt; to &lt;strong&gt;master&lt;/strong&gt;&lt;/p&gt;
+
+    &lt;ol&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RegisterApplication&lt;/code&gt; (向master注册application)&lt;/li&gt;
+    &lt;/ol&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;master&lt;/strong&gt; to &lt;strong&gt;client&lt;/strong&gt;&lt;/p&gt;
+
+    &lt;ol&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RegisteredApplication&lt;/code&gt; (作为注册application的reply，回复给client)&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorAdded&lt;/code&gt; (通知client worker已经启动了Executor环境，当向worker发送&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LaunchExecutor&lt;/code&gt;后通知client)&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorUpdated&lt;/code&gt; (通知client Executor状态已经发生变化了，包括结束、异常退出等，当worker向master发送&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorStateChanged&lt;/code&gt;后通知client)&lt;/li&gt;
+    &lt;/ol&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;master&lt;/strong&gt; to &lt;strong&gt;worker&lt;/strong&gt;&lt;/p&gt;
+
+    &lt;ol&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LaunchExecutor&lt;/code&gt; (发送消息启动Executor环境)&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RegisteredWorker&lt;/code&gt; (作为worker向master注册的reply)&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RegisterWorkerFailed&lt;/code&gt; (作为worker向master注册失败的reply)&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;KillExecutor&lt;/code&gt; (发送给worker请求停止executor环境)&lt;/li&gt;
+    &lt;/ol&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;strong&gt;worker&lt;/strong&gt; to &lt;strong&gt;master&lt;/strong&gt;&lt;/p&gt;
+
+    &lt;ol&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RegisterWorker&lt;/code&gt; (向master注册自己)&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Heartbeat&lt;/code&gt; (定期向master发送心跳信息)&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorStateChanged&lt;/code&gt; (向master发送Executor状态改变信息)&lt;/li&gt;
+    &lt;/ol&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;#Deploy模块代码详解#&lt;/p&gt;
+
+&lt;p&gt;Deploy模块相比于scheduler模块简单，因此对于deploy模块的代码并不做十分细节的分析，只针对application的提交和结束过程做一定的分析。&lt;/p&gt;
+
+&lt;h2 id=&quot;client提交application&quot;&gt;Client提交application&lt;/h2&gt;
+
+&lt;p&gt;Client是由&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkDeploySchedulerBackend&lt;/code&gt;创建被启动的，因此client是被嵌入在每一个application中，只为这个applicator所服务，在client启动时首先会先master注册application：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def start() {
+  // Just launch an actor; it will call back into the listener.
+  actor = actorSystem.actorOf(Props(new ClientActor))
+}
+
+override def preStart() {
+  logInfo(&quot;Connecting to master &quot; + masterUrl)
+  try {
+    master = context.actorFor(Master.toAkkaUrl(masterUrl))
+    masterAddress = master.path.address
+    master ! RegisterApplication(appDescription) //向master注册application
+    context.system.eventStream.subscribe(self, classOf[RemoteClientLifeCycleEvent])
+    context.watch(master)  // Doesn't work with remote actors, but useful for testing
+  } catch {
+    case e: Exception =&amp;gt;
+      logError(&quot;Failed to connect to master&quot;, e)
+      markDisconnected()
+      context.stop(self)
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Master在收到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RegisterApplication&lt;/code&gt;请求后会把application加到等待队列中，等待调度：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;case RegisterApplication(description) =&amp;gt; {
+  logInfo(&quot;Registering app &quot; + description.name)
+  val app = addApplication(description, sender)
+  logInfo(&quot;Registered app &quot; + description.name + &quot; with ID &quot; + app.id)
+  waitingApps += app
+  context.watch(sender)  // This doesn't work with remote actors but helps for testing
+  sender ! RegisteredApplication(app.id)
+  schedule()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Master会在每次操作后调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;schedule()&lt;/code&gt;函数，以确保等待的application能够被及时调度。&lt;/p&gt;
+
+&lt;p&gt;在前面提到deploy模块是资源管理模块，那么Spark的deploy管理的是什么资源，资源以什么单位进行调度的呢？在当前版本的Spark中，集群的cpu数量是Spark资源管理的一个标准，每个提交的application都会标明自己所需要的资源数(也就是cpu的core数)，Master以FIFO的方式管理所有的application请求，当资源数量满足当前任务执行需求的时候该任务就会被调度，否则就继续等待，当然如果master能给予当前任务部分资源则也会启动该application。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;schedule()&lt;/code&gt;函数实现的就是此功能。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def schedule() {
+  if (spreadOutApps) {
+    for (app &amp;lt;- waitingApps if app.coresLeft &amp;gt; 0) {
+      val usableWorkers = workers.toArray.filter(_.state == WorkerState.ALIVE)
+                                 .filter(canUse(app, _)).sortBy(_.coresFree).reverse
+      val numUsable = usableWorkers.length
+      val assigned = new Array[Int](numUsable) // Number of cores to give on each node
+      var toAssign = math.min(app.coresLeft, usableWorkers.map(_.coresFree).sum)
+      var pos = 0
+      while (toAssign &amp;gt; 0) {
+        if (usableWorkers(pos).coresFree - assigned(pos) &amp;gt; 0) {
+          toAssign -= 1
+          assigned(pos) += 1
+        }
+        pos = (pos + 1) % numUsable
+      }
+      // Now that we've decided how many cores to give on each node, let's actually give them
+      for (pos &amp;lt;- 0 until numUsable) {
+        if (assigned(pos) &amp;gt; 0) {
+          val exec = app.addExecutor(usableWorkers(pos), assigned(pos))
+          launchExecutor(usableWorkers(pos), exec, app.desc.sparkHome)
+          app.state = ApplicationState.RUNNING
+        }
+      }
+    }
+  } else {
+    // Pack each app into as few nodes as possible until we've assigned all its cores
+    for (worker &amp;lt;- workers if worker.coresFree &amp;gt; 0 &amp;amp;&amp;amp; worker.state == WorkerState.ALIVE) {
+      for (app &amp;lt;- waitingApps if app.coresLeft &amp;gt; 0) {
+        if (canUse(app, worker)) {
+          val coresToUse = math.min(worker.coresFree, app.coresLeft)
+          if (coresToUse &amp;gt; 0) {
+            val exec = app.addExecutor(worker, coresToUse)
+            launchExecutor(worker, exec, app.desc.sparkHome)
+            app.state = ApplicationState.RUNNING
+          }
+        }
+      }
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;当application得到调度后就会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;launchExecutor()&lt;/code&gt;向worker发送请求，同时向client汇报状态：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def launchExecutor(worker: WorkerInfo, exec: ExecutorInfo, sparkHome: String) {
+  worker.addExecutor(exec)
+  worker.actor ! LaunchExecutor(exec.application.id, exec.id, exec.application.desc, exec.cores, exec.memory, sparkHome)
+  exec.application.driver ! ExecutorAdded(exec.id, worker.id, worker.host, exec.cores, exec.memory)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;至此client与master的交互已经转向了master与worker的交互，worker需要配置application启动环境&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;case LaunchExecutor(appId, execId, appDesc, cores_, memory_, execSparkHome_) =&amp;gt;
+  val manager = new ExecutorRunner(
+    appId, execId, appDesc, cores_, memory_, self, workerId, ip, new File(execSparkHome_), workDir)
+  executors(appId + &quot;/&quot; + execId) = manager
+  manager.start()
+  coresUsed += cores_
+  memoryUsed += memory_
+  master ! ExecutorStateChanged(appId, execId, ExecutorState.RUNNING, None, None)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Worker在接收到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LaunchExecutor&lt;/code&gt;消息后创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorRunner&lt;/code&gt;实例，同时汇报master executor环境启动。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorRunner&lt;/code&gt;在启动的过程中会创建线程，配置环境，启动新进程：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def start() {
+  workerThread = new Thread(&quot;ExecutorRunner for &quot; + fullId) {
+    override def run() { fetchAndRunExecutor() }
+  }
+  workerThread.start()
+
+  // Shutdown hook that kills actors on shutdown.
+  ...
+}
+
+def fetchAndRunExecutor() {
+  try {
+    // Create the executor's working directory
+    val executorDir = new File(workDir, appId + &quot;/&quot; + execId)
+    if (!executorDir.mkdirs()) {
+      throw new IOException(&quot;Failed to create directory &quot; + executorDir)
+    }
+
+    // Launch the process
+    val command = buildCommandSeq()
+    val builder = new ProcessBuilder(command: _*).directory(executorDir)
+    val env = builder.environment()
+    for ((key, value) &amp;lt;- appDesc.command.environment) {
+      env.put(key, value)
+    }
+    env.put(&quot;SPARK_MEM&quot;, memory.toString + &quot;m&quot;)
+    // In case we are running this from within the Spark Shell, avoid creating a &quot;scala&quot;
+    // parent process for the executor command
+    env.put(&quot;SPARK_LAUNCH_WITH_SCALA&quot;, &quot;0&quot;)
+    process = builder.start()
+
+    // Redirect its stdout and stderr to files
+    redirectStream(process.getInputStream, new File(executorDir, &quot;stdout&quot;))
+    redirectStream(process.getErrorStream, new File(executorDir, &quot;stderr&quot;))
+
+    // Wait for it to exit; this is actually a bad thing if it happens, because we expect to run
+    // long-lived processes only. However, in the future, we might restart the executor a few
+    // times on the same machine.
+    val exitCode = process.waitFor()
+    val message = &quot;Command exited with code &quot; + exitCode
+    worker ! ExecutorStateChanged(appId, execId, ExecutorState.FAILED, Some(message),
+                                  Some(exitCode))
+  } catch {
+    case interrupted: InterruptedException =&amp;gt;
+      logInfo(&quot;Runner thread for executor &quot; + fullId + &quot; interrupted&quot;)
+
+    case e: Exception =&amp;gt; {
+      logError(&quot;Error running executor&quot;, e)
+      if (process != null) {
+        process.destroy()
+      }
+      val message = e.getClass + &quot;: &quot; + e.getMessage
+      worker ! ExecutorStateChanged(appId, execId, ExecutorState.FAILED, Some(message), None)
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorRunner&lt;/code&gt;启动后worker向master汇报&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorStateChanged&lt;/code&gt;，而master则将消息重新pack成为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorUpdated&lt;/code&gt;发送给client。&lt;/p&gt;
+
+&lt;p&gt;至此整个application提交过程基本结束，提交的过程并不复杂，主要涉及到的消息的传递。&lt;/p&gt;
+
+&lt;h2 id=&quot;application的结束&quot;&gt;Application的结束&lt;/h2&gt;
+
+&lt;p&gt;由于各种原因(包括正常结束，异常返回等)会造成application的结束，我们现在就来看看applicatoin结束的整个流程。&lt;/p&gt;
+
+&lt;p&gt;application的结束往往会造成client的结束，而client的结束会被master通过&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Actor&lt;/code&gt;检测到，master检测到后会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;removeApplication()&lt;/code&gt;函数进行操作：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def removeApplication(app: ApplicationInfo) {
+  if (apps.contains(app)) {
+    logInfo(&quot;Removing app &quot; + app.id)
+    apps -= app
+    idToApp -= app.id
+    actorToApp -= app.driver
+    addressToWorker -= app.driver.path.address
+    completedApps += app   // Remember it in our history
+    waitingApps -= app
+    for (exec &amp;lt;- app.executors.values) {
+      exec.worker.removeExecutor(exec)
+      exec.worker.actor ! KillExecutor(exec.application.id, exec.id)
+    }
+    app.markFinished(ApplicationState.FINISHED)  // TODO: Mark it as FAILED if it failed
+    schedule()
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;removeApplicatoin()&lt;/code&gt;首先会将application从master自身所管理的数据结构中删除，其次它会通知每一个work，请求其&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;KillExecutor&lt;/code&gt;。worker在收到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;KillExecutor&lt;/code&gt;后调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorRunner&lt;/code&gt;的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kill()&lt;/code&gt;函数：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;case KillExecutor(appId, execId) =&amp;gt;
+  val fullId = appId + &quot;/&quot; + execId
+  executors.get(fullId) match {
+    case Some(executor) =&amp;gt;
+      logInfo(&quot;Asked to kill executor &quot; + fullId)
+      executor.kill()
+    case None =&amp;gt;
+      logInfo(&quot;Asked to kill unknown executor &quot; + fullId)
+  }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorRunner&lt;/code&gt;内部，它会结束监控线程，同时结束监控线程所启动的进程，并且向worker汇报&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorStateChanged&lt;/code&gt;：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def kill() {
+  if (workerThread != null) {
+    workerThread.interrupt()
+    workerThread = null
+    if (process != null) {
+      logInfo(&quot;Killing process!&quot;)
+      process.destroy()
+      process.waitFor()
+    }
+    worker ! ExecutorStateChanged(appId, execId, ExecutorState.KILLED, None, None)
+    Runtime.getRuntime.removeShutdownHook(shutdownHook)
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;Application结束的同时清理了master和worker上的关于该application的所有信息，这样关于application结束的整个流程就介绍完了，当然在这里我们对于许多异常处理分支没有细究，但这并不影响我们对主线的把握。&lt;/p&gt;
+
+&lt;h1 id=&quot;end&quot;&gt;End&lt;/h1&gt;
+
+&lt;p&gt;至此对于deploy模块的分析暂告一个段落。deploy模块相对来说比较简单，也没有特别复杂的逻辑结构，正如前面所说的deploy模块是为了能让更多的没有部署Mesos的集群的用户能够使用Spark而实现的一种方案。&lt;/p&gt;
+
+&lt;p&gt;当然现阶段看来还略微简陋，比如application的调度方式(FIFO)是否会造成小应用长时间等待大应用的结束，是否有更好的调度策略；资源的衡量标准是否可以更多更合理，而不单单是cpu数量，因为现实场景中有的应用是disk intensive，有的是network intensive，这样就算cpu资源有富余，调度新的application也不一定会很有意义。&lt;/p&gt;
+
+&lt;p&gt;总的来说作为Mesos的一种简单替代方式，deploy模块对于推广Spark还是有积极意义的。&lt;/p&gt;
+</description>
+                <link>http://www.turbofei.wang/jerryshao/2013/04/30/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-deploy%E6%A8%A1%E5%9D%97</link>
+                <guid>http://www.turbofei.wang/jerryshao/2013/04/30/Spark源码分析之-deploy模块</guid>
+                <pubDate>2013-04-30T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>[转载] Spark源码分析之-scheduler模块</title>
+                <description>&lt;p&gt;本文转自&lt;a href=&quot;https://github.com/jerryshao/jerryshao.github.com&quot;&gt;Jerryshao Blog&lt;/a&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;background&quot;&gt;Background&lt;/h3&gt;
+
+&lt;p&gt;Spark在资源管理和调度方式上采用了类似于Hadoop &lt;a href=&quot;http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html&quot;&gt;&lt;strong&gt;YARN&lt;/strong&gt;&lt;/a&gt;的方式，最上层是资源调度器，它负责分配资源和调度注册到Spark中的所有应用，Spark选用&lt;a href=&quot;http://incubator.apache.org/mesos/&quot;&gt;Mesos&lt;/a&gt;或是YARN等作为其资源调度框架。在每一个应用内部，Spark又实现了任务调度器，负责任务的调度和协调，类似于&lt;a href=&quot;http://hadoop.apache.org/&quot;&gt;MapReduce&lt;/a&gt;。本质上，外层的资源调度和内层的任务调度相互独立，各司其职。本文对于Spark的源码分析主要集中在内层的任务调度器上，分析Spark任务调度器的实现。&lt;/p&gt;
+
+&lt;h1 id=&quot;scheduler模块整体架构&quot;&gt;Scheduler模块整体架构&lt;/h1&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;scheduler&lt;/code&gt;模块主要分为两大部分：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskSchedulerListener&lt;/code&gt;。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskSchedulerListener&lt;/code&gt;部分的主要功能是监听用户提交的job，将job分解为不同的类型的stage以及相应的task，并向&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskScheduler&lt;/code&gt;提交task。&lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskScheduler&lt;/code&gt;。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskScheduler&lt;/code&gt;接收用户提交的task并执行。而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskScheduler&lt;/code&gt;根据部署的不同又分为三个子模块:&lt;/p&gt;
+
+    &lt;ul&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LocalScheduler&lt;/code&gt;&lt;/li&gt;
+      &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MesosScheduler&lt;/code&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;taskschedulerlistener&quot;&gt;TaskSchedulerListener&lt;/h2&gt;
+
+&lt;p&gt;Spark抽象了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskSchedulerListener&lt;/code&gt;并在其上实现了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;的主要功能是接收用户提交的job，将job根据类型划分为不同的stage，并在每一个stage内产生一系列的task，向&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskScheduler&lt;/code&gt;提交task。下面我们首先来看一下&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskSchedulerListener&lt;/code&gt;部分的类图：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-04-21-sheduler/dagscheduler.png&quot; alt=&quot;DAGScheduler class chart&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;用户所提交的job在得到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;的调度后，会被包装成&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ActiveJob&lt;/code&gt;，同时会启动&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobWaiter&lt;/code&gt;阻塞监听job的完成状况。&lt;/li&gt;
+  &lt;li&gt;于此同时依据job中&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;的dependency和dependency属性(&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;NarrowDependency&lt;/code&gt;，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShufflerDependecy&lt;/code&gt;)，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;会根据依赖关系的先后产生出不同的stage DAG(result stage, shuffle map stage)。&lt;/li&gt;
+  &lt;li&gt;在每一个stage内部，根据stage产生出相应的task，包括&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ResultTask&lt;/code&gt;或是&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShuffleMapTask&lt;/code&gt;，这些task会根据&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;中partition的数量和分布，产生出一组相应的task，并将其包装为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskSet&lt;/code&gt;提交到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskScheduler&lt;/code&gt;上去。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;blockquote&gt;
+  &lt;h4 id=&quot;rdd的依赖关系和stage的分类&quot;&gt;RDD的依赖关系和Stage的分类&lt;/h4&gt;
+  &lt;p&gt;在Spark中，每一个&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;是对于数据集在某一状态下的表现形式，而这个状态有可能是从前一状态转换而来的，因此换句话说这一个&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;有可能与之前的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD(s)&lt;/code&gt;有依赖关系。根据依赖关系的不同，可以将&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;分成两种不同的类型：&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Narrow Dependency&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Wide Dependency&lt;/code&gt;。&lt;/p&gt;
+
+  &lt;ul&gt;
+    &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Narrow Dependency&lt;/code&gt;指的是 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;child RDD&lt;/code&gt;只依赖于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;parent RDD(s)&lt;/code&gt;固定数量的partition。&lt;/li&gt;
+    &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Wide Dependency&lt;/code&gt;指的是&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;child RDD&lt;/code&gt;的每一个partition都依赖于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;parent RDD(s)&lt;/code&gt;所有partition。&lt;/li&gt;
+  &lt;/ul&gt;
+
+  &lt;p&gt;它们之间的区别可参看下图：&lt;/p&gt;
+
+  &lt;p&gt;&lt;img src=&quot;/img/2013-04-21-sheduler/rdd_dependency.png&quot; alt=&quot;RDD dependecies&quot; width=&quot;480&quot; /&gt;&lt;/p&gt;
+
+  &lt;p&gt;根据&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;依赖关系的不同，Spark也将每一个job分为不同的stage，而stage之间的依赖关系则形成了DAG。对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Narrow Dependency&lt;/code&gt;，Spark会尽量多地将&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;转换放在同一个stage中；而对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Wide Dependency&lt;/code&gt;，由于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Wide Dependency&lt;/code&gt;通常意味着shuffle操作，因此Spark会将此stage定义为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShuffleMapStage&lt;/code&gt;，以便于向&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MapOutputTracker&lt;/code&gt;注册shuffle操作。对于stage的划分可参看下图，Spark通常将shuffle操作定义为stage的边界。&lt;/p&gt;
+
+  &lt;p&gt;&lt;img src=&quot;/img/2013-04-21-sheduler/stage.png&quot; alt=&quot;different stage boundary&quot; width=&quot;480&quot; /&gt;&lt;/p&gt;
+
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;dagscheduler&quot;&gt;DAGScheduler&lt;/h3&gt;
+
+&lt;p&gt;在用户创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkContext&lt;/code&gt;对象时，Spark会在内部创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;对象，并根据用户的部署情况，绑定不同的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskSechduler&lt;/code&gt;，并启动&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGcheduler&lt;/code&gt;&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private var taskScheduler: TaskScheduler = {
+    //...
+}
+taskScheduler.start()
+
+private var dagScheduler = new DAGScheduler(taskScheduler)
+dagScheduler.start()
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;的启动会在内部创建daemon线程，daemon线程调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;run()&lt;/code&gt;从block queue中取出event进行处理。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def run() {
+  SparkEnv.set(env)
+
+  while (true) {
+    val event = eventQueue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS)
+    if (event != null) {
+      logDebug(&quot;Got event of type &quot; + event.getClass.getName)
+    }
+
+    if (event != null) {
+      if (processEvent(event)) {
+        return
+      }
+    }
+
+    val time = System.currentTimeMillis() // TODO: use a pluggable clock for testability
+    if (failed.size &amp;gt; 0 &amp;amp;&amp;amp; time &amp;gt; lastFetchFailureTime + RESUBMIT_TIMEOUT) {
+      resubmitFailedStages()
+    } else {
+      submitWaitingStages()
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;run()&lt;/code&gt;会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;processEvent&lt;/code&gt;来处理不同的event。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;处理的event包括：&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobSubmitted&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CompletionEvent&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ExecutorLost&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskFailed&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StopDAGScheduler&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;根据event的不同调用不同的方法去处理。&lt;/p&gt;
+
+&lt;p&gt;本质上&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;是一个生产者-消费者模型，用户和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskSchduler&lt;/code&gt;产生event将其放入block queue，daemon线程消费event并处理相应事件。&lt;/p&gt;
+
+&lt;h3 id=&quot;job的生与死&quot;&gt;Job的生与死&lt;/h3&gt;
+
+&lt;p&gt;既然用户提交的job最终会交由&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;去处理，那么我们就来研究一下&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;处理job的整个流程。在这里我们分析两种不同类型的job的处理流程。&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;没有shuffle和reduce的job&lt;/p&gt;
+
+ 	val textFile = sc.textFile(“README.md”)
+ 	textFile.filter(line =&amp;gt; line.contains(“Spark”)).count()
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;有shuffle和reduce的job&lt;/p&gt;
+
+ 	val textFile = sc.textFile(“README.md”)
+ 	textFile.flatMap(line =&amp;gt; line.split(“ “)).map(word =&amp;gt; (word, 1)).reduceByKey((a, b) =&amp;gt; a + b)
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;首先在对&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;count()&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;reduceByKey()&lt;/code&gt;操作都会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkContext&lt;/code&gt;的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;runJob()&lt;/code&gt;来提交job，而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkContext&lt;/code&gt;的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;runJob()&lt;/code&gt;最终会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;runJob()&lt;/code&gt;：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def runJob[T, U: ClassManifest](
+    finalRdd: RDD[T],
+    func: (TaskContext, Iterator[T]) =&amp;gt; U,
+    partitions: Seq[Int],
+    callSite: String,
+    allowLocal: Boolean,
+    resultHandler: (Int, U) =&amp;gt; Unit)
+{
+  if (partitions.size == 0) {
+    return
+  }
+  val (toSubmit, waiter) = prepareJob(
+      finalRdd, func, partitions, callSite, allowLocal, resultHandler)
+  eventQueue.put(toSubmit)
+  waiter.awaitResult() match {
+    case JobSucceeded =&amp;gt; {}
+    case JobFailed(exception: Exception) =&amp;gt;
+      logInfo(&quot;Failed to run &quot; + callSite)
+      throw exception
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;runJob()&lt;/code&gt;会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;prepareJob()&lt;/code&gt;对job进行预处理，封装成&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobSubmitted&lt;/code&gt;事件，放入queue中，并阻塞等待job完成。&lt;/p&gt;
+
+&lt;p&gt;当daemon线程的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;processEvent()&lt;/code&gt;从queue中取出&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobSubmitted&lt;/code&gt;事件后，会根据job划分出不同的stage，并且提交stage：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;case JobSubmitted(finalRDD, func, partitions, allowLocal, callSite, listener) =&amp;gt;
+  val runId = nextRunId.getAndIncrement()
+  val finalStage = newStage(finalRDD, None, runId)
+  val job = new ActiveJob(runId, finalStage, func, partitions, callSite, listener)
+  clearCacheLocs()
+  if (allowLocal &amp;amp;&amp;amp; finalStage.parents.size == 0 &amp;amp;&amp;amp; partitions.length == 1) {
+    runLocally(job)
+  } else {
+    activeJobs += job
+    resultStageToJob(finalStage) = job
+    submitStage(finalStage)
+  }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;首先，对于任何的job都会产生出一个&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;finalStage&lt;/code&gt;来产生和提交task。其次对于某些简单的job，它没有依赖关系，并且只有一个partition，这样的job会使用local thread处理而并非提交到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskScheduler&lt;/code&gt;上处理。&lt;/p&gt;
+
+&lt;p&gt;接下来产生&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;finalStage&lt;/code&gt;后，需要调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;submitStage()&lt;/code&gt;，它根据stage之间的依赖关系得出stage DAG，并以依赖关系进行处理：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def submitStage(stage: Stage) {
+  if (!waiting(stage) &amp;amp;&amp;amp; !running(stage) &amp;amp;&amp;amp; !failed(stage)) {
+    val missing = getMissingParentStages(stage).sortBy(_.id)
+    if (missing == Nil) {
+      submitMissingTasks(stage)
+      running += stage
+    } else {
+      for (parent &amp;lt;- missing) {
+        submitStage(parent)
+      }
+      waiting += stage
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;对于新提交的job，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;finalStage&lt;/code&gt;的parent stage还未获得，因此&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;submitStage&lt;/code&gt;会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getMissingParentStages()&lt;/code&gt;来获得依赖关系：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def getMissingParentStages(stage: Stage): List[Stage] = {
+  val missing = new HashSet[Stage]
+  val visited = new HashSet[RDD[_]]
+  def visit(rdd: RDD[_]) {
+    if (!visited(rdd)) {
+      visited += rdd
+      if (getCacheLocs(rdd).contains(Nil)) {
+        for (dep &amp;lt;- rdd.dependencies) {
+          dep match {
+            case shufDep: ShuffleDependency[_,_] =&amp;gt;
+              val mapStage = getShuffleMapStage(shufDep, stage.priority)
+              if (!mapStage.isAvailable) {
+                missing += mapStage
+              }
+            case narrowDep: NarrowDependency[_] =&amp;gt;
+              visit(narrowDep.rdd)
+          }
+        }
+      }
+    }
+  }
+  visit(stage.rdd)
+  missing.toList
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;这里parent stage是通过&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;的依赖关系递归遍历获得。对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Wide Dependecy&lt;/code&gt;也就是&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Shuffle Dependecy&lt;/code&gt;，Spark会产生新的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mapStage&lt;/code&gt;作为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;finalStage&lt;/code&gt;的parent，而对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Narrow Dependecy&lt;/code&gt; Spark则不会产生新的stage。这里对stage的划分是按照上面提到的作为划分依据的，因此对于本段开头提到的两种job，第一种job只会产生一个&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;finalStage&lt;/code&gt;，而第二种job会产生&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;finalStage&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mapStage&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;当stage DAG产生以后，针对每个stage需要产生task去执行，故在这会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;submitMissingTasks()&lt;/code&gt;：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def submitMissingTasks(stage: Stage) {
+  val myPending = pendingTasks.getOrElseUpdate(stage, new HashSet)
+  myPending.clear()
+  var tasks = ArrayBuffer[Task[_]]()
+  if (stage.isShuffleMap) {
+    for (p &amp;lt;- 0 until stage.numPartitions if stage.outputLocs(p) == Nil) {
+      val locs = getPreferredLocs(stage.rdd, p)
+      tasks += new ShuffleMapTask(stage.id, stage.rdd, stage.shuffleDep.get, p, locs)
+    }
+  } else {
+    val job = resultStageToJob(stage)
+    for (id &amp;lt;- 0 until job.numPartitions if (!job.finished(id))) {
+      val partition = job.partitions(id)
+      val locs = getPreferredLocs(stage.rdd, partition)
+      tasks += new ResultTask(stage.id, stage.rdd, job.func, partition, locs, id)
+    }
+  }
+  if (tasks.size &amp;gt; 0) {
+    myPending ++= tasks
+    taskSched.submitTasks(
+      new TaskSet(tasks.toArray, stage.id, stage.newAttemptId(), stage.priority))
+    if (!stage.submissionTime.isDefined) {
+      stage.submissionTime = Some(System.currentTimeMillis())
+    }
+  } else {
+    running -= stage
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;首先根据stage所依赖的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;的partition的分布，会产生出与partition数量相等的task，这些task根据partition的locality进行分布；其次对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;finalStage&lt;/code&gt;或是&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mapStage&lt;/code&gt;会产生不同的task；最后所有的task会封装到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskSet&lt;/code&gt;内提交到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskScheduler&lt;/code&gt;去执行。&lt;/p&gt;
+
+&lt;p&gt;至此job在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;内的启动过程全部完成，交由&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskScheduler&lt;/code&gt;执行task，当task执行完后会将结果返回给&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;handleTaskComplete()&lt;/code&gt;处理task返回:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def handleTaskCompletion(event: CompletionEvent) {
+  val task = event.task
+  val stage = idToStage(task.stageId)
+
+  def markStageAsFinished(stage: Stage) = {
+    val serviceTime = stage.submissionTime match {
+      case Some(t) =&amp;gt; &quot;%.03f&quot;.format((System.currentTimeMillis() - t) / 1000.0)
+      case _ =&amp;gt; &quot;Unkown&quot;
+    }
+    logInfo(&quot;%s (%s) finished in %s s&quot;.format(stage, stage.origin, serviceTime))
+    running -= stage
+  }
+  event.reason match {
+    case Success =&amp;gt;
+        ...
+      task match {
+        case rt: ResultTask[_, _] =&amp;gt;
+          ...
+        case smt: ShuffleMapTask =&amp;gt;
+          ...
+      }
+    case Resubmitted =&amp;gt;
+      ...
+
+    case FetchFailed(bmAddress, shuffleId, mapId, reduceId) =&amp;gt;
+      ...
+    case other =&amp;gt;
+      abortStage(idToStage(task.stageId), task + &quot; failed: &quot; + other)
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;每个执行完成的task都会将结果返回给&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;根据返回结果来进行进一步的动作。&lt;/p&gt;
+
+&lt;h3 id=&quot;rdd的计算&quot;&gt;RDD的计算&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;的计算是在task中完成的。我们之前提到task分为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ResultTask&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShuffleMapTask&lt;/code&gt;，我们分别来看一下这两种task具体的执行过程。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ResultTask&lt;/code&gt;&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  override def run(attemptId: Long): U = {
+    val context = new TaskContext(stageId, partition, attemptId)
+    try {
+      func(context, rdd.iterator(split, context))
+    } finally {
+      context.executeOnCompleteCallbacks()
+    }
+  }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShuffleMapTask&lt;/code&gt;&lt;/p&gt;
+
+    &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  override def run(attemptId: Long): MapStatus = {
+    val numOutputSplits = dep.partitioner.numPartitions
+    
+    val taskContext = new TaskContext(stageId, partition, attemptId)
+    try {
+      val buckets = Array.fill(numOutputSplits)(new ArrayBuffer[(Any, Any)])
+      for (elem &amp;lt;- rdd.iterator(split, taskContext)) {
+        val pair = elem.asInstanceOf[(Any, Any)]
+        val bucketId = dep.partitioner.getPartition(pair._1)
+        buckets(bucketId) += pair
+      }
+    
+      val compressedSizes = new Array[Byte](numOutputSplits)
+    
+      val blockManager = SparkEnv.get.blockManager
+      for (i &amp;lt;- 0 until numOutputSplits) {
+        val blockId = &quot;shuffle_&quot; + dep.shuffleId + &quot;_&quot; + partition + &quot;_&quot; + i
+        val iter: Iterator[(Any, Any)] = buckets(i).iterator
+        val size = blockManager.put(blockId, iter, StorageLevel.DISK_ONLY, false)
+        compressedSizes(i) = MapOutputTracker.compressSize(size)
+      }
+    
+      return new MapStatus(blockManager.blockManagerId, compressedSizes)
+    } finally {
+      taskContext.executeOnCompleteCallbacks()
+    }
+  }
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ResultTask&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShuffleMapTask&lt;/code&gt;都会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;iterator()&lt;/code&gt;来计算和转换&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;，不同的是：&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ResultTask&lt;/code&gt;转换完&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;后调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;func()&lt;/code&gt;计算结果；而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ShufflerMapTask&lt;/code&gt;则将其放入&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;blockManager&lt;/code&gt;中用来shuffle。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;的计算调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;iterator()&lt;/code&gt;，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;iterator()&lt;/code&gt;在内部调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;compute()&lt;/code&gt;从&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;依赖关系的根开始计算：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;final def iterator(split: Partition, context: TaskContext): Iterator[T] = {
+  if (storageLevel != StorageLevel.NONE) {
+    SparkEnv.get.cacheManager.getOrCompute(this, split, context, storageLevel)
+  } else {
+    computeOrReadCheckpoint(split, context)
+  }
+}
+
+private[spark] def computeOrReadCheckpoint(split: Partition, context: TaskContext): Iterator[T] = {
+  if (isCheckpointed) {
+    firstParent[T].iterator(split, context)
+  } else {
+    compute(split, context)
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;至此大致分析了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskSchedulerListener&lt;/code&gt;，包括&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;内部的结构，job生命周期内的活动，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;是何时何地计算的。接下来我们分析一下task在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskScheduler&lt;/code&gt;内干了什么。&lt;/p&gt;
+
+&lt;h2 id=&quot;taskscheduler&quot;&gt;TaskScheduler&lt;/h2&gt;
+
+&lt;p&gt;前面也提到了Spark实现了三种不同的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskScheduler&lt;/code&gt;，包括&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LocalSheduler&lt;/code&gt;、&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MesosScheduler&lt;/code&gt;。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LocalSheduler&lt;/code&gt;是一个在本地执行的线程池，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;提交的所有task会在线程池中被执行，并将结果返回给&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MesosScheduler&lt;/code&gt;依赖于Mesos进行调度，笔者对Mesos了解甚少，因此不做分析。故此章节主要分析&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;模块。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;模块与deploy模块和executor模块耦合较为紧密，因此在分析&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClUsterScheduler&lt;/code&gt;时也会顺带介绍deploy和executor模块。&lt;/p&gt;
+
+&lt;p&gt;首先我们来看一下&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;的类图：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-04-21-sheduler/cluster_scheduler.png&quot; alt=&quot;ClusterScheduler&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;的启动会伴随&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkDeploySchedulerBackend&lt;/code&gt;的启动，而backend会将自己分为两个角色：首先是driver，driver是一个local运行的actor，负责与remote的executor进行通行，提交任务，控制executor；其次是&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StandaloneExecutorBackend&lt;/code&gt;，Spark会在每一个slave node上启动一个&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StandaloneExecutorBackend&lt;/code&gt;进程，负责执行任务，返回执行结果。&lt;/p&gt;
+
+&lt;h3 id=&quot;clusterscheduler的启动&quot;&gt;ClusterScheduler的启动&lt;/h3&gt;
+
+&lt;p&gt;在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkContext&lt;/code&gt;实例化的过程中，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;被随之实例化，同时赋予其&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkDeploySchedulerBackend&lt;/code&gt;：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  master match {
+      ...
+
+    case SPARK_REGEX(sparkUrl) =&amp;gt;
+      val scheduler = new ClusterScheduler(this)
+      val backend = new SparkDeploySchedulerBackend(scheduler, this, sparkUrl, appName)
+      scheduler.initialize(backend)
+      scheduler
+
+    case LOCAL_CLUSTER_REGEX(numSlaves, coresPerSlave, memoryPerSlave) =&amp;gt;
+      ...
+    case _ =&amp;gt;
+      ...
+  }
+}
+taskScheduler.start()
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;的启动会启动&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkDeploySchedulerBackend&lt;/code&gt;，同时启动daemon进程来检查speculative task：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def start() {
+  backend.start()
+
+  if (System.getProperty(&quot;spark.speculation&quot;, &quot;false&quot;) == &quot;true&quot;) {
+    new Thread(&quot;ClusterScheduler speculation check&quot;) {
+      setDaemon(true)
+
+      override def run() {
+        while (true) {
+          try {
+            Thread.sleep(SPECULATION_INTERVAL)
+          } catch {
+            case e: InterruptedException =&amp;gt; {}
+          }
+          checkSpeculatableTasks()
+        }
+      }
+    }.start()
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkDeploySchedulerBacked&lt;/code&gt;的启动首先会调用父类的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;start()&lt;/code&gt;，接着它会启动client，并由client连接到master向每一个node的worker发送请求启动&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StandaloneExecutorBackend&lt;/code&gt;。这里的client、master、worker涉及到了deploy模块，暂时不做具体介绍。而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StandaloneExecutorBackend&lt;/code&gt;则涉及到了executor模块，它主要的功能是在每一个node创建task可以运行的环境，并让task在其环境中运行。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def start() {
+  super.start()
+
+  val driverUrl = &quot;akka://spark@%s:%s/user/%s&quot;.format(
+    System.getProperty(&quot;spark.driver.host&quot;), System.getProperty(&quot;spark.driver.port&quot;),
+    StandaloneSchedulerBackend.ACTOR_NAME)
+  val args = Seq(driverUrl, &quot;&quot;, &quot;&quot;, &quot;&quot;)
+  val command = Command(&quot;spark.executor.StandaloneExecutorBackend&quot;, args, sc.executorEnvs)
+  val sparkHome = sc.getSparkHome().getOrElse(
+    throw new IllegalArgumentException(&quot;must supply spark home for spark standalone&quot;))
+  val appDesc = new ApplicationDescription(appName, maxCores, executorMemory, command, sparkHome)
+
+  client = new Client(sc.env.actorSystem, master, appDesc, this)
+  client.start()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StandaloneSchedulerBackend&lt;/code&gt;中会创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DriverActor&lt;/code&gt;，它就是local的driver，以actor的方式与remote的executor进行通信。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def start() {
+  val properties = new ArrayBuffer[(String, String)]
+  val iterator = System.getProperties.entrySet.iterator
+  while (iterator.hasNext) {
+    val entry = iterator.next
+    val (key, value) = (entry.getKey.toString, entry.getValue.toString)
+    if (key.startsWith(&quot;spark.&quot;)) {
+      properties += ((key, value))
+    }
+  }
+  driverActor = actorSystem.actorOf(
+    Props(new DriverActor(properties)), name = StandaloneSchedulerBackend.ACTOR_NAME)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在client实例化之前，会将&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StandaloneExecutorBackend&lt;/code&gt;的启动环境作为参数传递给client，而client启动时会将此提交给master，由master分发给所有node上的worker，worker会配置环境并创建进程启动&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StandaloneExecutorBackend&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;至此&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;的启动，local driver的创建，remote executor环境的启动所有过程都已结束，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;等待&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;提交任务。&lt;/p&gt;
+
+&lt;h3 id=&quot;clusterscheduler提交任务&quot;&gt;ClusterScheduler提交任务&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DAGScheduler&lt;/code&gt;会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;提交任务，任务会被包装成&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskSetManager&lt;/code&gt;并等待调度：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def submitTasks(taskSet: TaskSet) {
+  val tasks = taskSet.tasks
+  logInfo(&quot;Adding task set &quot; + taskSet.id + &quot; with &quot; + tasks.length + &quot; tasks&quot;)
+  this.synchronized {
+    val manager = new TaskSetManager(this, taskSet)
+    activeTaskSets(taskSet.id) = manager
+    activeTaskSetsQueue += manager
+    taskSetTaskIds(taskSet.id) = new HashSet[Long]()
+
+    if (hasReceivedTask == false) {
+      starvationTimer.scheduleAtFixedRate(new TimerTask() {
+        override def run() {
+          if (!hasLaunchedTask) {
+            logWarning(&quot;Initial job has not accepted any resources; &quot; +
+              &quot;check your cluster UI to ensure that workers are registered&quot;)
+          } else {
+            this.cancel()
+          }
+        }
+      }, STARVATION_TIMEOUT, STARVATION_TIMEOUT)
+    }
+    hasReceivedTask = true;
+  }
+  backend.reviveOffers()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在任务提交的同时会启动定时器，如果任务还未被执行，定时器持续发出警告直到任务被执行。同时会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StandaloneSchedulerBackend&lt;/code&gt;的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;reviveOffers()&lt;/code&gt;，而它则会通过actor向driver发送&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ReviveOffers&lt;/code&gt;，driver收到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ReviveOffers&lt;/code&gt;后调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;makeOffers()&lt;/code&gt;：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;// Make fake resource offers on just one executor
+def makeOffers(executorId: String) {
+  launchTasks(scheduler.resourceOffers(
+    Seq(new WorkerOffer(executorId, executorHost(executorId), freeCores(executorId)))))
+}
+
+// Launch tasks returned by a set of resource offers
+def launchTasks(tasks: Seq[Seq[TaskDescription]]) {
+  for (task &amp;lt;- tasks.flatten) {
+    freeCores(task.executorId) -= 1
+    executorActor(task.executorId) ! LaunchTask(task)
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;makeOffers()&lt;/code&gt;会向&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;申请资源，并向executor提交&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LauchTask&lt;/code&gt;请求。&lt;/p&gt;
+
+&lt;p&gt;接下来&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LaunchTask&lt;/code&gt;会进入executor模块，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StandaloneExecutorBackend&lt;/code&gt;在收到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LaunchTask&lt;/code&gt;请求后会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Executor&lt;/code&gt;执行task:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;override def receive = {
+  case RegisteredExecutor(sparkProperties) =&amp;gt;
+    ...  
+  case RegisterExecutorFailed(message) =&amp;gt;
+    ...
+  case LaunchTask(taskDesc) =&amp;gt;
+    logInfo(&quot;Got assigned task &quot; + taskDesc.taskId)
+    executor.launchTask(this, taskDesc.taskId, taskDesc.serializedTask)
+
+  case Terminated(_) | RemoteClientDisconnected(_, _) | RemoteClientShutdown(_, _) =&amp;gt;
+    ...
+}
+
+def launchTask(context: ExecutorBackend, taskId: Long, serializedTask: ByteBuffer) {
+  threadPool.execute(new TaskRunner(context, taskId, serializedTask))
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Executor&lt;/code&gt;内部是一个线程池，每一个提交的task都会包装为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskRunner&lt;/code&gt;交由threadpool执行：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;class TaskRunner(context: ExecutorBackend, taskId: Long, serializedTask: ByteBuffer)
+  extends Runnable {
+
+  override def run() {
+    SparkEnv.set(env)
+    Thread.currentThread.setContextClassLoader(urlClassLoader)
+    val ser = SparkEnv.get.closureSerializer.newInstance()
+    logInfo(&quot;Running task ID &quot; + taskId)
+    context.statusUpdate(taskId, TaskState.RUNNING, EMPTY_BYTE_BUFFER)
+    try {
+      SparkEnv.set(env)
+      Accumulators.clear()
+      val (taskFiles, taskJars, taskBytes) = Task.deserializeWithDependencies(serializedTask)
+      updateDependencies(taskFiles, taskJars)
+      val task = ser.deserialize[Task[Any]](taskBytes, Thread.currentThread.getContextClassLoader)
+      logInfo(&quot;Its generation is &quot; + task.generation)
+      env.mapOutputTracker.updateGeneration(task.generation)
+      val value = task.run(taskId.toInt)
+      val accumUpdates = Accumulators.values
+      val result = new TaskResult(value, accumUpdates)
+      val serializedResult = ser.serialize(result)
+      logInfo(&quot;Serialized size of result for &quot; + taskId + &quot; is &quot; + serializedResult.limit)
+      context.statusUpdate(taskId, TaskState.FINISHED, serializedResult)
+      logInfo(&quot;Finished task ID &quot; + taskId)
+    } catch {
+      case ffe: FetchFailedException =&amp;gt; {
+        val reason = ffe.toTaskEndReason
+        context.statusUpdate(taskId, TaskState.FAILED, ser.serialize(reason))
+      }
+
+      case t: Throwable =&amp;gt; {
+        val reason = ExceptionFailure(t)
+        context.statusUpdate(taskId, TaskState.FAILED, ser.serialize(reason))
+
+        // TODO: Should we exit the whole executor here? On the one hand, the failed task may
+        // have left some weird state around depending on when the exception was thrown, but on
+        // the other hand, maybe we could detect that when future tasks fail and exit then.
+        logError(&quot;Exception in task ID &quot; + taskId, t)
+        //System.exit(1)
+      }
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;其中&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;task.run()&lt;/code&gt;则真正执行了task中的任务，如前&lt;strong&gt;RDD的计算&lt;/strong&gt;章节所述。返回值被包装成&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TaskResult&lt;/code&gt;返回。&lt;/p&gt;
+
+&lt;p&gt;至此task在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;内运行的流程有了一个大致的介绍，当然这里略掉了许多异常处理的分支，但这不影响我们对主线的了解。&lt;/p&gt;
+
+&lt;h1 id=&quot;end&quot;&gt;END&lt;/h1&gt;
+
+&lt;p&gt;至此对Spark的Scheduler模块的主线做了一个顺藤摸瓜式的介绍，Scheduler模块作为Spark最核心的模块之一，充分体现了Spark与MapReduce的不同之处，体现了Spark DAG思想的精巧和设计的优雅。&lt;/p&gt;
+
+&lt;p&gt;当然Spark的代码仍然在积极开发之中，当前的源码分析在过不久后可能会变得没有意义，但重要的是体会Spark区别于MapReduce的设计理念，以及DAG思想的应用。DAG作为对MapReduce框架的改进越来越受到大数据界的重视，&lt;a href=&quot;http://hortonworks.com/&quot;&gt;&lt;strong&gt;hortonworks&lt;/strong&gt;&lt;/a&gt;也提出了类似DAG的框架&lt;a href=&quot;http://hortonworks.com/blog/category/tez/&quot;&gt;tez&lt;/a&gt;作为对MapReduce的改进。&lt;/p&gt;
+</description>
+                <link>http://www.turbofei.wang/jerryshao/2013/04/21/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-scheduler%E6%A8%A1%E5%9D%97</link>
+                <guid>http://www.turbofei.wang/jerryshao/2013/04/21/Spark源码分析之-scheduler模块</guid>
+                <pubDate>2013-04-21T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>[REPRINT] Spark Streaming Introduction</title>
+                <description>&lt;p&gt;本文转自&lt;a href=&quot;https://github.com/jerryshao/jerryshao.github.com&quot;&gt;Jerryshao Blog&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;随着big data的发展，人们对大数据的处理要求也越来越高，传统的MapReduce等批处理框架在某些特定领域(如实时用户推荐，用户行为分析)已经无法满足人们对实时性的需求。因此诞生了一批如&lt;a href=&quot;http://incubator.apache.org/s4/&quot;&gt;&lt;strong&gt;S4&lt;/strong&gt;&lt;/a&gt;，&lt;a href=&quot;http://storm-project.net/&quot;&gt;&lt;strong&gt;Storm&lt;/strong&gt;&lt;/a&gt;这样的流式的、实时的计算框架。本文介绍的&lt;a href=&quot;http://spark-project.org/docs/latest/streaming-programming-guide.html&quot;&gt;&lt;strong&gt;Spark Streaming&lt;/strong&gt;&lt;/a&gt;也正是一个这样的流式计算框架。&lt;/p&gt;
+
+&lt;h1 id=&quot;what-is-spark-streaming&quot;&gt;What is Spark Streaming&lt;/h1&gt;
+
+&lt;p&gt;作为UC Berkeley云计算software stack的一部分，Spark Streaming是建立在Spark上的应用框架，利用Spark的底层框架作为其执行基础，并在其上构建了&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;的行为抽象。利用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;所提供的api，用户可以在数据流上实时进行count，join，aggregate等操作。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;A Spark Streaming application is very similar to a Spark application; it consists of a driver program that runs the user’s main function and continuous executes various parallel operations on input streams of data. The main abstraction Spark Streaming provides is a discretized stream (DStream), which is a continuous sequence of RDDs (distributed collections of elements) representing a continuous stream of data. DStreams can be created from live incoming data (such as data from a socket, Kafka, etc.) or can be generated by transformong existing DStreams using parallel operators like map, reduce, and window.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&quot;how-to-use-spark-streaming&quot;&gt;How to Use Spark Streaming&lt;/h1&gt;
+
+&lt;p&gt;作为构建于Spark之上的应用框架，Spark Streaming承袭了Spark的编程风格，对于了解Spark的用户来说能够快速地上手。接下来以word count为例来介绍Spark Streaming的使用方式:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;import spark.streaming.{Seconds, StreamingContext}
+import spark.streaming.StreamingContext._
+...
+
+// Create the context and set up a network input stream to receive from a host:port
+val ssc = new StreamingContext(args(0), &quot;NetworkWordCount&quot;, Seconds(1))
+val lines = ssc.socketTextStream(args(1), args(2).toInt)
+
+// Split the lines into words, count them, and print some of the counts on the master
+val words = lines.flatMap(_.split(&quot; &quot;))
+val wordCounts = words.map(x =&amp;gt; (x, 1)).reduceByKey(_ + _)
+wordCounts.print()
+
+// Start the computation
+ssc.start()
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;
+    &lt;p&gt;创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;对象&lt;/p&gt;
+
+    &lt;p&gt;同Spark初始需要创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkContext&lt;/code&gt;对象一样，使用Spark Streaming就需要创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;对象。创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;对象所需的参数与&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkContext&lt;/code&gt;基本一致，包括指明&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;master&lt;/code&gt;，设定名称(如&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;NetworkWordCount&lt;/code&gt;)。需要注意的是参数&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Seconds(1)&lt;/code&gt;，Spark Streaming需要指定处理数据的时间间隔，如上例所示的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;1s&lt;/code&gt;，那么Spark Streaming会以&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;1s&lt;/code&gt;为时间窗口进行数据处理。此参数需要根据用户的需求和集群的处理能力进行适当的设置。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;InputDStream&lt;/code&gt;&lt;/p&gt;
+
+    &lt;p&gt;如同Storm的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Spout&lt;/code&gt;，Spark Streaming需要指明数据源。如上例所示的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;socketTextStream&lt;/code&gt;，Spark Streaming以socket连接作为数据源读取数据。当然Spark Streaming支持多种不同的数据源，包括&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kafkaStream&lt;/code&gt;，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;flumeStream&lt;/code&gt;，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fileStream&lt;/code&gt;，	&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;networkStream&lt;/code&gt;等。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;操作&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;&lt;/p&gt;
+
+    &lt;p&gt;对于从数据源得到的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;，用户可以在其基础上进行各种操作，如上例所示的操作就是一个典型的word count执行流程：对于当前时间窗口内从数据源得到的数据首先进行分割，然后利用MapReduce算法映射和计算，当然最后还有&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;print()&lt;/code&gt;输出结果。&lt;/p&gt;
+  &lt;/li&gt;
+  &lt;li&gt;
+    &lt;p&gt;启动Spark Streaming&lt;/p&gt;
+
+    &lt;p&gt;之前所作的所有步骤只是创建了执行流程，程序没有真正连接上数据源，也没有对数据进行任何操作，只是设定好了所有的执行计划，当&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ssc.start()&lt;/code&gt;启动后程序才真正进行所有预期的操作。&lt;/p&gt;
+  &lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;至此对于Spark Streaming的如何使用有了一个大概的印象，接下来我们来探究一下Spark Streaming背后的代码。&lt;/p&gt;
+
+&lt;hr /&gt;
+&lt;h1 id=&quot;spark-streaming-源码分析&quot;&gt;Spark Streaming 源码分析#&lt;/h1&gt;
+
+&lt;h2 id=&quot;streamingcontext&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;&lt;/h2&gt;
+
+&lt;p&gt;Spark Streaming使用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;提供对外接口，用户可以使用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;提供的api来构建自己的Spark Streaming应用程序。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;内部维护&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkContext&lt;/code&gt;实例，通过&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;SparkContext&lt;/code&gt;进行&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;的操作。&lt;/li&gt;
+  &lt;li&gt;在实例化&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;时需要指定&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;batchDuration&lt;/code&gt;,用来指示Spark Streaming recurring job的重复时间。&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;提供了多种不同的接口，可以从多种数据源创建&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;。&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;提供了起停streaming job的api。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;dstream&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;&lt;/h2&gt;
+
+&lt;p&gt;Spark Streaming是建立在Spark基础上的，它封装了Spark的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;并在其上抽象了流式的数据表现形式&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;：&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;A Discretized Stream (DStream), the basic abstraction in Spark Streaming, is a continuous sequence of RDDs (of the same type) representing a continuous stream of data. DStreams can either be created from live data (such as, data from HDFS, Kafka or Flume) or it can be generated by transformation existing DStreams using operations such as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;map&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;window&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;reduceByKeyAndWindow&lt;/code&gt;. While a Spark Streaming program is running, each DStream periodically generates a RDD, either from live data or by transforming the RDD generated by a parent DStream.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-04-02-spark-streaming-introduction/dstream_hierarchy.png&quot; alt=&quot;DStream Class Hierarchy&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;内部主要结构如下所示:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;abstract class DStream[T: ClassManifest] (
+    @transient protected[streaming] var ssc: StreamingContext
+	) extends Serializable with Logging {
+
+  initLogging()
+
+  // =======================================================================
+  // Methods that should be implemented by subclasses of DStream
+  // =======================================================================
+
+  /** Time interval after which the DStream generates a RDD */
+  def slideDuration: Duration
+
+  /** List of parent DStreams on which this DStream depends on */
+  def dependencies: List[DStream[_]]
+
+  /** Method that generates a RDD for the given time */
+  /** DStream的核心函数，每一个继承于此的子类都需要实现此compute()函数。而根据不同的
+      DStream， compute()函数都需要实现其特定功能，而计算的结果则是返回计算好的RDD*/
+  def compute (validTime: Time): Option[RDD[T]]
+
+  // =======================================================================
+  // Methods and fields available on all DStreams
+  // =======================================================================
+
+  // RDDs generated, marked as protected[streaming] so that testsuites can access it
+  /** 每一个DStream内部维护的RDD HashMap，DStream本质上封装了一组以Time为key的RDD，而对于
+      DStream的各种操作在内部映射为对RDD的操作 */
+  @transient
+  protected[streaming] var generatedRDDs = new HashMap[Time, RDD[T]] ()
+
+  // Time zero for the DStream
+  protected[streaming] var zeroTime: Time = null
+
+  // Duration for which the DStream will remember each RDD created
+  protected[streaming] var rememberDuration: Duration = null
+
+  // Storage level of the RDDs in the stream
+  protected[streaming] var storageLevel: StorageLevel = StorageLevel.NONE
+
+  // Checkpoint details
+  protected[streaming] val mustCheckpoint = false
+  protected[streaming] var checkpointDuration: Duration = null
+  protected[streaming] val checkpointData = new DStreamCheckpointData(this)
+
+  // Reference to whole DStream graph
+  /** 所有的DStream都注册到DStreamGraph中，调用DStreamGraph来执行所有的DStream和所有的dependencies */
+  protected[streaming] var graph: DStreamGraph = null
+
+  protected[streaming] def isInitialized = (zeroTime != null)
+
+  // Duration for which the DStream requires its parent DStream to remember each RDD created
+  protected[streaming] def parentRememberDuration = rememberDuration
+
+  ...
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;在内部维护了一组时间序列的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;，对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;的transformation和output在内部都转化为对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;的transformation和output。&lt;/p&gt;
+
+&lt;p&gt;下面来看一下对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;的计算是如何映射到对于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;RDD&lt;/code&gt;的计算上去的。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;protected[streaming] def getOrCompute(time: Time): Option[RDD[T]] = {
+  // If this DStream was not initialized (i.e., zeroTime not set), then do it
+  // If RDD was already generated, then retrieve it from HashMap
+  generatedRDDs.get(time) match {
+
+    // If an RDD was already generated and is being reused, then
+    // probably all RDDs in this DStream will be reused and hence should be cached
+    case Some(oldRDD) =&amp;gt; Some(oldRDD)
+
+    // if RDD was not generated, and if the time is valid
+    // (based on sliding time of this DStream), then generate the RDD
+    case None =&amp;gt; {
+      if (isTimeValid(time)) {
+        /** 对于每一次的计算，DStream会调用子类所实现的compute()函数来计算产生新的RDD */
+        compute(time) match {
+          case Some(newRDD) =&amp;gt;
+            if (storageLevel != StorageLevel.NONE) {
+              newRDD.persist(storageLevel)
+              logInfo(&quot;Persisting RDD &quot; + newRDD.id + &quot; for time &quot; + time + &quot; to &quot; + storageLevel + &quot; at time &quot; + time)
+            }
+            if (checkpointDuration != null &amp;amp;&amp;amp; (time - zeroTime).isMultipleOf (checkpointDuration)) {
+              newRDD.checkpoint()
+              logInfo(&quot;Marking RDD &quot; + newRDD.id + &quot; for time &quot; + time + &quot; for checkpointing at time &quot; + time)
+            }
+			/** 新产生的RDD会放入Hash Map中 */
+            generatedRDDs.put(time, newRDD)
+            Some(newRDD)
+          case None =&amp;gt;
+            None
+        }
+      } else {
+        None
+      }
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;通过每次提交的job，调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getOrCompute()&lt;/code&gt;来计算:&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;protected[streaming] def generateJob(time: Time): Option[Job] = {
+ getOrCompute(time) match {
+    case Some(rdd) =&amp;gt; {
+      val jobFunc = () =&amp;gt; {
+        val emptyFunc = { (iterator: Iterator[T]) =&amp;gt; {} }
+        context.sparkContext.runJob(rdd, emptyFunc)
+      }
+      Some(new Job(time, jobFunc))
+    }
+    case None =&amp;gt; None
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;job--scheduler&quot;&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Job&lt;/code&gt; &amp;amp; &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Scheduler&lt;/code&gt;&lt;/h2&gt;
+
+&lt;p&gt;从&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;可知，在调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;generateJob()&lt;/code&gt;时，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;会通过&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;getOrCompute()&lt;/code&gt;函数来计算或是转换&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;，那么Spark Streaming会在何时调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;generateJob()&lt;/code&gt;呢?&lt;/p&gt;
+
+&lt;p&gt;在实例化&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;时，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;会要求用户设置&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;batchDuration&lt;/code&gt;，而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;batchDuration&lt;/code&gt;则指明了recurring job的重复时间，在每个&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;batchDuration&lt;/code&gt;到来时都会产生一个新的job来计算&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;，从&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Scheduler&lt;/code&gt;的代码里可以看到：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;val clockClass = System.getProperty(&quot;spark.streaming.clock&quot;, &quot;spark.streaming.util.SystemClock&quot;)
+val clock = Class.forName(clockClass).newInstance().asInstanceOf[Clock]
+
+/** Spark streaming在Scheduler内部创建了recurring timer，recurring timer的超时时间
+    则是用户设置的batchDuration，在超时后调用Scheduler的generateJob */
+val timer = new RecurringTimer(clock, ssc.graph.batchDuration.milliseconds,
+longTime =&amp;gt; generateJobs(new Time(longTime)))
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;generateJobs()&lt;/code&gt;的代码如下所示，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Scheduler&lt;/code&gt;的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;generateJobs()&lt;/code&gt;会调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStreamGraph&lt;/code&gt;的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;generateJobs&lt;/code&gt;，并对于每一个job使用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;JobManager&lt;/code&gt;来run job。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def generateJobs(time: Time) {
+  SparkEnv.set(ssc.env)
+  logInfo(&quot;\n-----------------------------------------------------\n&quot;)
+  graph.generateJobs(time).foreach(jobManager.runJob)
+  latestTime = time
+  doCheckpoint(time)
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;在&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStreamGraph&lt;/code&gt;中，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;generateJobs()&lt;/code&gt;如下所示：&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def generateJobs(time: Time): Seq[Job] = {
+  this.synchronized {
+    logInfo(&quot;Generating jobs for time &quot; + time)
+    val jobs = outputStreams.flatMap(outputStream =&amp;gt; outputStream.generateJob(time))
+    logInfo(&quot;Generated &quot; + jobs.length + &quot; jobs for time &quot; + time)
+    jobs
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;对于每一个&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;outputStream&lt;/code&gt;调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;generateJob()&lt;/code&gt;来转换或计算&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DStream&lt;/code&gt;，output的计算会依赖于dependecy的计算，因此最后会对所有dependency都进行计算，得出最后的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;outputStream&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;而所有的这些操作，都在调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;StreamingContext&lt;/code&gt;的启动函数后进行执行。&lt;/p&gt;
+
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;def start() {
+  if (checkpointDir != null &amp;amp;&amp;amp; checkpointDuration == null &amp;amp;&amp;amp; graph != null) {
+    checkpointDuration = graph.batchDuration
+  }
+
+  validate()
+
+  /** StreamingContext注册和启动所有的input stream */
+  val networkInputStreams = graph.getInputStreams().filter(s =&amp;gt; s match {
+      case n: NetworkInputDStream[_] =&amp;gt; true
+      case _ =&amp;gt; false
+    }).map(_.asInstanceOf[NetworkInputDStream[_]]).toArray
+
+  if (networkInputStreams.length &amp;gt; 0) {
+    // Start the network input tracker (must start before receivers)
+    networkInputTracker = new NetworkInputTracker(this, networkInputStreams)
+    networkInputTracker.start()
+  }
+
+  Thread.sleep(1000)
+
+  // 启动scheduler进行streaming的操作
+  scheduler = new Scheduler(this)
+  scheduler.start()
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;至此，对于Spark Streaming的使用和内部结构应该有了一个基本的了解，以一副Spark Streaming启动后的流程图来结束这篇文章。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-04-02-spark-streaming-introduction/flowchart.png&quot; alt=&quot;DStream Class Hierarchy&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;reference&quot;&gt;Reference&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://spark-project.org/docs/latest/streaming-programming-guide.html&quot;&gt;&lt;strong&gt;Spark Streaming Documentation&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
+</description>
+                <link>http://www.turbofei.wang/jerryshao/2013/04/02/spark-streaming-introduction</link>
+                <guid>http://www.turbofei.wang/jerryshao/2013/04/02/spark-streaming-introduction</guid>
+                <pubDate>2013-04-02T00:00:00+08:00</pubDate>
+        </item>
+
+        <item>
+                <title>[REPRINT] Spark Overview</title>
+                <description>&lt;p&gt;本文转自&lt;a href=&quot;https://github.com/jerryshao/jerryshao.github.com&quot;&gt;Jerryshao Blog&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;Overview&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;本文章主要对Spark,Spark的基本架构和重要模块作基本介绍，文章不会涉及Spark的安装部署以及使用，对此可以参考&lt;a href=&quot;http://spark-project.org/documentation/&quot;&gt;Spark官方文档&lt;/a&gt;。&lt;/p&gt;
+
+&lt;h1 id=&quot;what-is-spark&quot;&gt;What is Spark&lt;/h1&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://spark-project.org&quot;&gt;&lt;strong&gt;Spark&lt;/strong&gt;&lt;/a&gt;是UC Berkeley AMP lab所开源的类Hadoop MapReduce
+框架，都是基于map reduce算法所实现的分布式计算框架，拥有Hadoop MapReduce所具有的
+优点；不同于MapReduce的是Job中间输出和结果可以保存在内存中，而不需要读写HDFS，因
+此Spark能更好地适用于machine learning等需要迭代的map reduce算法。&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;Spark is an open source cluster computing system that aims to make data
+analytics fast — both fast to run and fast to write.&lt;/p&gt;
+
+  &lt;p&gt;To run programs faster, Spark provides primitives for in-memory cluster
+computing: your job can load data into memory and query it repeatedly much
+quicker than with disk-based systems like Hadoop MapReduce.&lt;/p&gt;
+
+  &lt;p&gt;To make programming faster, Spark provides clean, concise APIs in Scala, Java
+and Python. You can also use Spark interactively from the Scala and Python
+shells to rapidly query big datasets.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&quot;spark-architecture&quot;&gt;Spark Architecture&lt;/h1&gt;
+
+&lt;p&gt;援引&lt;a href=&quot;http://weibo.com/jerrylead&quot;&gt;@JerryLead&lt;/a&gt;的系统架构图作为Spark整体结构的一个
+birdview：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/2013-03-29-spark-overview/architecture-birdview.jpg&quot; alt=&quot;Spark birdview&quot; width=&quot;640&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;整体上Spark分为以下几个主要的子模块:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;deploy&lt;/code&gt;: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;deply&lt;/code&gt;模块包括&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Master&lt;/code&gt;，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Work&lt;/code&gt;和&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Client&lt;/code&gt;，参见architecture图的最上
+部分。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;deploy&lt;/code&gt;主要负责启动和调度用户实现的Spark application并且分配资源给用户
+application，类似于Hadoop YARN框架。&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;scheduler&lt;/code&gt;: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;scheduler&lt;/code&gt;主要负责调度用户application内的tasks，根据部署方式的不
+同Spark实现了多种不同的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;scheduler&lt;/code&gt;，包括&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;LocalScheduler&lt;/code&gt;，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;ClusterScheduler&lt;/code&gt;等
+。&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rdd&lt;/code&gt;: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rdd&lt;/code&gt;类似于一个分布式的数据集，用户可以根据&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rdd&lt;/code&gt;所提供的api进行数据集的
+操作，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rdd&lt;/code&gt;模块是用户交互的主要模块。&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;storage&lt;/code&gt;: &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;storage&lt;/code&gt;模块主要负责数据集，也就是&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rdd&lt;/code&gt;的存取。根据设定的不同，数
+据可以保存在内存、磁盘或是两者。Spark与Hadoop MapReduce最大的不同在于MapReduce
+将数据保存在HDFS上，而Spark则由自己的存储系统。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;当然还有一些其他的子模块，可以参考上图。&lt;/p&gt;
+
+&lt;p&gt;Spark采用了Actor的设计方式，整体架构，包括各子模块的设计上都是采用master-slave模
+式，master和slave之间通信的主要协议可以参见上图。&lt;/p&gt;
+
+&lt;h1 id=&quot;end&quot;&gt;End&lt;/h1&gt;
+&lt;p&gt;以上大致地介绍了Spark的architecture，之后会陆续对各子模块作详细的介绍&lt;/p&gt;
+</description>
+                <link>http://www.turbofei.wang/jerryshao/2013/03/29/spark-overview</link>
+                <guid>http://www.turbofei.wang/jerryshao/2013/03/29/spark-overview</guid>
+                <pubDate>2013-03-29T00:00:00+08:00</pubDate>
         </item>
 
 

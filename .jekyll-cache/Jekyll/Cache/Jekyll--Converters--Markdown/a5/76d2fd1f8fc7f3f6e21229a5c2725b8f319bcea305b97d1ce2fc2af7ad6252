@@ -1,0 +1,498 @@
+I"�n
+<ul>
+  <li>
+    <h3 id="ebay-spark-test-framework-woody"><a href="/spark/2020/10/29/eBay-Spark-Test-Framework-Woody">Ebay Spark Test Framework Woody</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2020-10-29</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a></p>
+
+    <p><a href="/spark/2020/10/29/eBay-Spark-Test-Framework-Woody">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="记一次与spark-bucket-table相关的小文件问题"><a href="/spark/2020/03/28/%E8%AE%B0%E4%B8%80%E6%AC%A1%E4%B8%8ESpark-bucket-table%E7%9B%B8%E5%85%B3%E7%9A%84%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98">记一次与spark bucket table相关的小文件问题</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2020-03-28</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#sql">sql</a> <a href="/tags.html#bucket">bucket</a></p>
+
+    <p>记一次与bucket table相关的小文件问题，百万级小文件。</p>
+
+    <p><a href="/spark/2020/03/28/%E8%AE%B0%E4%B8%80%E6%AC%A1%E4%B8%8ESpark-bucket-table%E7%9B%B8%E5%85%B3%E7%9A%84%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark-timeout-parameters"><a href="/spark/2020/03/10/spark-timeout-parameters">Spark Timeout Parameters</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2020-03-10</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a></p>
+
+    <p>记录Spark中的timeout参数</p>
+
+    <p><a href="/spark/2020/03/10/spark-timeout-parameters">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="重新了解数字类型"><a href="/essay/2020/01/10/%E9%87%8D%E6%96%B0%E4%BA%86%E8%A7%A3%E6%95%B0%E5%AD%97%E7%B1%BB%E5%9E%8B">重新了解数字类型</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2020-01-10</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#essay">essay</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#data">data</a> <a href="/tags.html#spark">spark</a></p>
+
+    <p>最近遇到了一些数字类型有关的问题，重新了解一下数字类型</p>
+
+    <p><a href="/essay/2020/01/10/%E9%87%8D%E6%96%B0%E4%BA%86%E8%A7%A3%E6%95%B0%E5%AD%97%E7%B1%BB%E5%9E%8B">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="about-hdfs-lease"><a href="/hadoop/2019/12/28/About-Hdfs-Lease">About Hdfs Lease</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-12-28</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#hadoop">hadoop</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#hadoop">hadoop</a> <a href="/tags.html#hdfs">hdfs</a></p>
+
+    <p>关于Hdfs的租约机制</p>
+
+    <p><a href="/hadoop/2019/12/28/About-Hdfs-Lease">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark随笔"><a href="/spark/2019/12/04/Spark%E9%9A%8F%E7%AC%94">Spark随笔</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-12-04</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a></p>
+
+    <p>写点Spark相关的随笔</p>
+
+    <p><a href="/spark/2019/12/04/Spark%E9%9A%8F%E7%AC%94">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="a-broadcastjoin-issue-in-spark"><a href="/spark/2019/10/29/A-BroadCastJoin-Issue-in-spark">A Broadcastjoin Issue In Spark</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-10-29</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#sql">sql</a></p>
+
+    <p>Spark中有三种Join, BroadcastJoin, ShuffleHashJoin, SortMergeJoin。而BroadcastJoin通常认为是一种较为轻量的Join，因为其不走shuffle，本文描述一个与BroadcastJoin相关比较诡异的Issue。</p>
+
+    <p><a href="/spark/2019/10/29/A-BroadCastJoin-Issue-in-spark">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="关于spark数据计算结果异常的场景分析"><a href="/spark/2019/09/30/%E5%85%B3%E4%BA%8ESpark%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E5%BC%82%E5%B8%B8%E7%9A%84%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90">关于spark数据计算结果异常的场景分析</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-09-30</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a></p>
+
+    <p>关于Spark中读取，计算和写入造成结果异常的场景分析</p>
+
+    <p><a href="/spark/2019/09/30/%E5%85%B3%E4%BA%8ESpark%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E5%BC%82%E5%B8%B8%E7%9A%84%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark-sql-decimal-precision-overflow-analysis"><a href="/spark/2019/09/09/Spark-SQL-Decimal-Precision-Overflow-Analysis">Spark Sql Decimal Precision Overflow Analysis</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-09-09</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#sql">sql</a></p>
+
+    <p>An analysis of Spark data quality issue and relative solution.</p>
+
+    <p><a href="/spark/2019/09/09/Spark-SQL-Decimal-Precision-Overflow-Analysis">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark-blacklist-mechanism-introduction"><a href="/spark/2019/08/30/Spark-Blacklist-Mechanism-Introduction">Spark Blacklist Mechanism Introduction</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-08-30</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#scheduler">scheduler</a></p>
+
+    <p>本文讲Spark的Blacklist机制</p>
+
+    <p><a href="/spark/2019/08/30/Spark-Blacklist-Mechanism-Introduction">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="linux-ops-commands"><a href="/bigdata/2019/08/16/Linux-Ops-Commands">Linux Ops Commands</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-08-16</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#bigData">bigData</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#linux">linux</a> <a href="/tags.html#Ops">Ops</a></p>
+
+    <p>作为一个大数据平台从业人员，会操作线上服务器是必备的技能，因此必须要会一些常见的Linux运维命令。</p>
+
+    <p><a href="/bigdata/2019/08/16/Linux-Ops-Commands">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark-catalyst-添加自己的规则"><a href="/spark/2019/07/06/spark-catalyst-%E6%B7%BB%E5%8A%A0%E8%87%AA%E5%B7%B1%E7%9A%84%E8%A7%84%E5%88%99">Spark Catalyst 添加自己的规则</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-07-06</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#sql">sql</a></p>
+
+    <p>本文讲如何在Spark sql Catalyst里面添加自己的Rule，来进行一些优化或者check操作。</p>
+
+    <p><a href="/spark/2019/07/06/spark-catalyst-%E6%B7%BB%E5%8A%A0%E8%87%AA%E5%B7%B1%E7%9A%84%E8%A7%84%E5%88%99">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="jvm-tools-usage"><a href="/coding/2019/06/29/jvm-tools-usage">Jvm Tools Usage</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-06-29</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#coding">coding</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#jvm">jvm</a> <a href="/tags.html#java">java</a></p>
+
+    <p>简单介绍jvm的相关工具，例如 jps, jstack, jstat, jmap, jinfo.</p>
+
+    <p><a href="/coding/2019/06/29/jvm-tools-usage">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark-sql-参数调优"><a href="/spark/2019/06/26/spark-sql-%E5%8F%82%E6%95%B0%E8%B0%83%E4%BC%98">Spark Sql 参数调优</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-06-26</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#sql">sql</a> <a href="/tags.html#tunning">tunning</a></p>
+
+    <p>关于spark sql的一些参数的用法和调优.</p>
+
+    <p><a href="/spark/2019/06/26/spark-sql-%E5%8F%82%E6%95%B0%E8%B0%83%E4%BC%98">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="about-threadlocal"><a href="/coding/2019/06/20/about-threadLocal">About Threadlocal</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-06-20</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#coding">coding</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#java">java</a> <a href="/tags.html#jvm">jvm</a> <a href="/tags.html#concurrent">concurrent</a></p>
+
+    <p>本文讲ThreadLocal的使用场景，注意事项以及源码实现。</p>
+
+    <p><a href="/coding/2019/06/20/about-threadLocal">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="about-jvm"><a href="/essay/2019/06/07/about-jvm">About Jvm</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-06-07</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#essay">essay</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#jvm">jvm</a> <a href="/tags.html#java">java</a></p>
+
+    <p>简单总结下最近关于jvm的知识，只保证自己能看懂。</p>
+
+    <p><a href="/essay/2019/06/07/about-jvm">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="optimization-for-spark-shuffle-in-netease"><a href="/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease">Optimization For Spark Shuffle In Netease</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-05-30</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#shuffle">shuffle</a></p>
+
+    <p>本文讲在网易工作将近一年来关于Spark Shuffle方面所做的三点优化。</p>
+
+    <p><a href="/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="java-concurrent-collection"><a href="/coding/2019/05/26/java-concurrent-collection">Java Concurrent Collection</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-05-26</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#coding">coding</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#java">java</a> <a href="/tags.html#concurrent">concurrent</a></p>
+
+    <p><a href="/coding/2019/05/26/java-concurrent-collection">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="about-spark-streaming"><a href="/spark/2019/05/26/about-spark-streaming">About Spark Streaming</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-05-26</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#streaming">streaming</a></p>
+
+    <p>简单讲解下spark streaming, structed streaming</p>
+
+    <p><a href="/spark/2019/05/26/about-spark-streaming">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="scala-match-and-regex"><a href="/coding/2019/05/25/scala-match-and-regex">Scala Match And Regex</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-05-25</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#coding">coding</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#scala">scala</a> <a href="/tags.html#coding">coding</a></p>
+
+    <p><a href="/coding/2019/05/25/scala-match-and-regex">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark-sql-execution"><a href="/spark/2019/05/20/spark-sql-execution">Spark Sql Execution</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-05-20</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#sql">sql</a></p>
+
+    <p>关于spark sql 的execution部分源码解析</p>
+
+    <p><a href="/spark/2019/05/20/spark-sql-execution">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="scala-concurrent-programming-future-and-thread"><a href="/coding/2019/05/19/scala-concurrent-programming-Future-And-Thread">Scala Concurrent Programming: Future And Thread</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-05-19</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#coding">coding</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#coding">coding</a> <a href="/tags.html#essay">essay</a> <a href="/tags.html#scala">scala</a> <a href="/tags.html#concurrent">concurrent</a></p>
+
+    <p>简单写下scala中的Future以及对Thread的认识</p>
+
+    <p><a href="/coding/2019/05/19/scala-concurrent-programming-Future-And-Thread">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="转载-raft译文"><a href="/bigdata/2019/05/19/%E8%BD%AC%E8%BD%BD-Raft%E8%AF%91%E6%96%87">[转载] Raft译文</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-05-19</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#bigData">bigData</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#bigData">bigData</a> <a href="/tags.html#theory">theory</a></p>
+
+    <p>Raft的译文</p>
+
+    <p><a href="/bigdata/2019/05/19/%E8%BD%AC%E8%BD%BD-Raft%E8%AF%91%E6%96%87">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="about-maven"><a href="/coding/2019/05/19/About-Maven">About Maven</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-05-19</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#coding">coding</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#coding">coding</a> <a href="/tags.html#maven">maven</a></p>
+
+    <p>关于maven的使用</p>
+
+    <p><a href="/coding/2019/05/19/About-Maven">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="scala-concurrent-programing-promise-and-forkjoinpool"><a href="/coding/2019/05/18/scala-concurrent-programing-Promise-And-ForkJoinPool">Scala Concurrent Programing: Promise And Forkjoinpool</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-05-18</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#coding">coding</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#concurrent">concurrent</a> <a href="/tags.html#scala">scala</a> <a href="/tags.html#future">future</a></p>
+
+    <p>关于并发编程的一些总结与思考，包括promise, forkJoinPool, and etc.</p>
+
+    <p><a href="/coding/2019/05/18/scala-concurrent-programing-Promise-And-ForkJoinPool">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="transactions-suuport-for-spark-greenlum"><a href="/spark/2019/05/12/transactions-suuport-for-spark-greenlum">Transactions Suuport For Spark Greenlum</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2019-05-12</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#greenplum">greenplum</a></p>
+
+    <p>spark-greenplum是一个spark DataSource为greenplum的实现。通过使用postgresql copy命令的方式从dataframe分区向greenplum拷贝数据，相较于spark sql本身jbdc DataSource的速度提升了上百倍。本文讲解关于实现从spark sql向gp拷贝数据事务的实现。</p>
+
+    <p><a href="/spark/2019/05/12/transactions-suuport-for-spark-greenlum">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark-external-shuffle-service"><a href="/spark/2018/12/10/spark-external-shuffle-service">Spark External Shuffle Service</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2018-12-10</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#shuffle">shuffle</a></p>
+
+    <p>External shuffle service(ESS)是独立运行一个外部shuffle服务，用于管理spark的shuffle数据，本文讲解为什么要使用ESS，以及需要注意的地方.此处特指yarnShuffleService.</p>
+
+    <p><a href="/spark/2018/12/10/spark-external-shuffle-service">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark-cbo-code-analysis"><a href="/spark/2018/12/04/spark-cbo-code-analysis">Spark Cbo Code Analysis</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2018-12-04</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#cbo">cbo</a></p>
+
+    <p>对Spark的CBO(cost based optimization) 进行源码分析</p>
+
+    <p><a href="/spark/2018/12/04/spark-cbo-code-analysis">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark-sql-catalyst"><a href="/spark/2018/08/01/spark-sql-catalyst">Spark Sql Catalyst</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2018-08-01</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#sql">sql</a> <a href="/tags.html#catalyst">catalyst</a></p>
+
+    <p>关于spark的catalyst</p>
+
+    <p><a href="/spark/2018/08/01/spark-sql-catalyst">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark-sql-analysis"><a href="/spark/2018/07/27/Spark-Sql-Analysis">Spark Sql Analysis</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2018-07-27</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#sql">sql</a> <a href="/tags.html#源码">源码</a></p>
+
+    <p>从源码层面解释一个sparkSql语句是如何执行的，从sql到与底层RDD如何对接</p>
+
+    <p><a href="/spark/2018/07/27/Spark-Sql-Analysis">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="rdd-basics"><a href="/spark/2018/07/12/rdd-basics">Rdd Basics</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2018-07-12</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#rdd">rdd</a></p>
+
+    <p>从RDD入手, 对Spark进行深入理解</p>
+
+    <p><a href="/spark/2018/07/12/rdd-basics">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark-security面面观"><a href="/2018/01/15/spark-security-overview">Spark Security面面观</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2018-01-15</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#"></a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#cloud">cloud</a> <a href="/tags.html#security">security</a></p>
+
+    <p><a href="/2018/01/15/spark-security-overview">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="deca项目总结"><a href="/essay/2017/07/01/deca%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93">Deca项目总结</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2017-07-01</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#essay">essay</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#项目">项目</a></p>
+
+    <p>Deca项目是研究生期间参加的重要科研项目，项目主要是采用去对象化的思想，减少大数据平台在运行过程中，数据的占有空间与对象的数量，从而减小内存的压力，也减小GC的压力。</p>
+
+    <p><a href="/essay/2017/07/01/deca%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark源码分析shuffle实现"><a href="/spark/2016/12/26/spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90Shuffle%E5%AE%9E%E7%8E%B0">Spark源码分析shuffle实现</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2016-12-26</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#shuffle">shuffle</a></p>
+
+    <p>spark shuff部分是spark源码的重要组成部分，shuffle发生在stage的交界处，对于spark的性能有重要影响，源码更新后，spark的shuffle机制也不一样，本文分析spark2.0的shuffle实现。</p>
+
+    <p><a href="/spark/2016/12/26/spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90Shuffle%E5%AE%9E%E7%8E%B0">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark内存预测"><a href="/spark/2016/12/26/spark%E5%86%85%E5%AD%98%E9%A2%84%E6%B5%8B">Spark内存预测</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2016-12-26</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#内存">内存</a></p>
+
+    <p>spark是一个内存计算框架，因此内存是重要的资源，合理的使用的内存在spark应用在执行过程中非常重要。在使用内存的过程，spark会采用抽样的方法预测出所需要的内存，并预先分配内存。本文会就内存预测机制进行源码的解读。</p>
+
+    <p><a href="/spark/2016/12/26/spark%E5%86%85%E5%AD%98%E9%A2%84%E6%B5%8B">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark应用执行流程"><a href="/spark/2016/12/22/spark%E5%BA%94%E7%94%A8%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B">Spark应用执行流程</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2016-12-22</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a></p>
+
+    <p>从最简单的spark应用WordCount入手，分析rdd链，分析job如何提交，task如何提交，从全局了解spark应用的执行流程。</p>
+
+    <p><a href="/spark/2016/12/22/spark%E5%BA%94%E7%94%A8%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="spark统一内存管理"><a href="/spark/2016/12/19/spark%E7%BB%9F%E4%B8%80%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86">spark统一内存管理</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2016-12-19</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a></p>
+
+    <p>spark统一内存管理是spark1.6.0的新特性，是对shuffle memory 和 storage memory 进行统一的管理，打破了以往的参数限制。</p>
+
+    <p><a href="/spark/2016/12/19/spark%E7%BB%9F%E4%B8%80%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="java-unsafe类的使用"><a href="/coding/2016/11/13/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8">java unsafe类的使用</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2016-11-13</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#coding">coding</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#java">java</a></p>
+
+    <p>最近在写堆外操作的代码，需要用到unsafe 类，记录下。</p>
+
+    <p><a href="/coding/2016/11/13/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="ganglia-安装"><a href="/bigdata/2016/08/17/ganglia-%E5%AE%89%E8%A3%85">ganglia 安装</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2016-08-17</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#bigData">bigData</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#env">env</a></p>
+
+    <p>最近帮大菠萝安装ganglia，记录下，方便以后安装。</p>
+
+    <p><a href="/bigdata/2016/08/17/ganglia-%E5%AE%89%E8%A3%85">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="转载-详细探究spark的shuffle实现"><a href="/spark/2014/01/04/spark-shuffle-detail-investigation">[转载] 详细探究Spark的shuffle实现</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2014-01-04</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#spark">spark</a> <a href="/tags.html#mapreduce">mapreduce</a> <a href="/tags.html#shuffle">shuffle</a> <a href="/tags.html#cloud">cloud</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2014/01/04/spark-shuffle-detail-investigation">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="转载-spark源码分析之-storage模块"><a href="/spark/2013/10/08/spark-storage-module-analysis">[转载] Spark源码分析之-Storage模块</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-10-08</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2013/10/08/spark-storage-module-analysis">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="转载-序列的函数式抽象-spark-api设计"><a href="/spark/2013/08/30/Functional-Abstraction-of-Sequence-Spark-API-Design">[转载] 序列的函数式抽象-Spark API设计</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-08-30</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#scheme">scheme</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#lisp">lisp</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2013/08/30/Functional-Abstraction-of-Sequence-Spark-API-Design">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="reprint-spark-streaming-job-troubleshooting-of-dependency-chain"><a href="/spark/2013/05/22/SparkStreaming-Job-Troubleshooting-of-Dependency-Chain">[REPRINT] Spark Streaming Job Troubleshooting of Dependency Chain</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-05-22</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#spark">spark</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#spark streaming">spark streaming</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/spark/2013/05/22/SparkStreaming-Job-Troubleshooting-of-Dependency-Chain">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="转载-spark源码分析之-deploy模块"><a href="/jerryshao/2013/04/30/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-deploy%E6%A8%A1%E5%9D%97">[转载] Spark源码分析之-deploy模块</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-04-30</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#jerryshao">jerryshao</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/jerryshao/2013/04/30/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-deploy%E6%A8%A1%E5%9D%97">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="转载-spark源码分析之-scheduler模块"><a href="/jerryshao/2013/04/21/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-scheduler%E6%A8%A1%E5%9D%97">[转载] Spark源码分析之-scheduler模块</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-04-21</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#jerryshao">jerryshao</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/jerryshao/2013/04/21/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-scheduler%E6%A8%A1%E5%9D%97">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="reprint-spark-streaming-introduction"><a href="/jerryshao/2013/04/02/spark-streaming-introduction">[REPRINT] Spark Streaming Introduction</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-04-02</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#jerryshao">jerryshao</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#spark">spark</a> <a href="/tags.html#spark streaming">spark streaming</a> <a href="/tags.html#reprint">reprint</a></p>
+
+    <p><a href="/jerryshao/2013/04/02/spark-streaming-introduction">Read more »</a></p>
+  </li>
+  <li>
+    <h3 id="reprint-spark-overview"><a href="/jerryshao/2013/03/29/spark-overview">[REPRINT] Spark Overview</a></h3>
+    <p><i class="fa fa-calendar "></i> <time>2013-03-29</time>
+<i class="icon-folder-open"></i> <a href="/categories.html#jerryshao">jerryshao</a>
+<i class="fa fa-tags"></i>
+<a href="/tags.html#cloud">cloud</a> <a href="/tags.html#reprint">reprint</a> <a href="/tags.html#spark">spark</a></p>
+
+    <p><a href="/jerryshao/2013/03/29/spark-overview">Read more »</a></p>
+  </li>
+</ul>
+
+:ET

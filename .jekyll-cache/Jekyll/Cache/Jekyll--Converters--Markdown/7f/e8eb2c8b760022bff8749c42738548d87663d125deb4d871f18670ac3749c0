@@ -1,0 +1,592 @@
+I"E�<p>本文转自<a href="https://github.com/jerryshao/jerryshao.github.com">Jerryshao Blog</a></p>
+
+<h3 id="background">Background</h3>
+
+<p>Spark在资源管理和调度方式上采用了类似于Hadoop <a href="http://hadoop.apache.org/docs/current/hadoop-yarn/hadoop-yarn-site/YARN.html"><strong>YARN</strong></a>的方式，最上层是资源调度器，它负责分配资源和调度注册到Spark中的所有应用，Spark选用<a href="http://incubator.apache.org/mesos/">Mesos</a>或是YARN等作为其资源调度框架。在每一个应用内部，Spark又实现了任务调度器，负责任务的调度和协调，类似于<a href="http://hadoop.apache.org/">MapReduce</a>。本质上，外层的资源调度和内层的任务调度相互独立，各司其职。本文对于Spark的源码分析主要集中在内层的任务调度器上，分析Spark任务调度器的实现。</p>
+
+<h1 id="scheduler模块整体架构">Scheduler模块整体架构</h1>
+
+<p><code class="language-plaintext highlighter-rouge">scheduler</code>模块主要分为两大部分：</p>
+
+<ol>
+  <li><code class="language-plaintext highlighter-rouge">TaskSchedulerListener</code>。<code class="language-plaintext highlighter-rouge">TaskSchedulerListener</code>部分的主要功能是监听用户提交的job，将job分解为不同的类型的stage以及相应的task，并向<code class="language-plaintext highlighter-rouge">TaskScheduler</code>提交task。</li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">TaskScheduler</code>。<code class="language-plaintext highlighter-rouge">TaskScheduler</code>接收用户提交的task并执行。而<code class="language-plaintext highlighter-rouge">TaskScheduler</code>根据部署的不同又分为三个子模块:</p>
+
+    <ul>
+      <li><code class="language-plaintext highlighter-rouge">ClusterScheduler</code></li>
+      <li><code class="language-plaintext highlighter-rouge">LocalScheduler</code></li>
+      <li><code class="language-plaintext highlighter-rouge">MesosScheduler</code></li>
+    </ul>
+  </li>
+</ol>
+
+<h2 id="taskschedulerlistener">TaskSchedulerListener</h2>
+
+<p>Spark抽象了<code class="language-plaintext highlighter-rouge">TaskSchedulerListener</code>并在其上实现了<code class="language-plaintext highlighter-rouge">DAGScheduler</code>。<code class="language-plaintext highlighter-rouge">DAGScheduler</code>的主要功能是接收用户提交的job，将job根据类型划分为不同的stage，并在每一个stage内产生一系列的task，向<code class="language-plaintext highlighter-rouge">TaskScheduler</code>提交task。下面我们首先来看一下<code class="language-plaintext highlighter-rouge">TaskSchedulerListener</code>部分的类图：</p>
+
+<p><img src="/img/2013-04-21-sheduler/dagscheduler.png" alt="DAGScheduler class chart" width="640" /></p>
+
+<ul>
+  <li>用户所提交的job在得到<code class="language-plaintext highlighter-rouge">DAGScheduler</code>的调度后，会被包装成<code class="language-plaintext highlighter-rouge">ActiveJob</code>，同时会启动<code class="language-plaintext highlighter-rouge">JobWaiter</code>阻塞监听job的完成状况。</li>
+  <li>于此同时依据job中<code class="language-plaintext highlighter-rouge">RDD</code>的dependency和dependency属性(<code class="language-plaintext highlighter-rouge">NarrowDependency</code>，<code class="language-plaintext highlighter-rouge">ShufflerDependecy</code>)，<code class="language-plaintext highlighter-rouge">DAGScheduler</code>会根据依赖关系的先后产生出不同的stage DAG(result stage, shuffle map stage)。</li>
+  <li>在每一个stage内部，根据stage产生出相应的task，包括<code class="language-plaintext highlighter-rouge">ResultTask</code>或是<code class="language-plaintext highlighter-rouge">ShuffleMapTask</code>，这些task会根据<code class="language-plaintext highlighter-rouge">RDD</code>中partition的数量和分布，产生出一组相应的task，并将其包装为<code class="language-plaintext highlighter-rouge">TaskSet</code>提交到<code class="language-plaintext highlighter-rouge">TaskScheduler</code>上去。</li>
+</ul>
+
+<blockquote>
+  <h4 id="rdd的依赖关系和stage的分类">RDD的依赖关系和Stage的分类</h4>
+  <p>在Spark中，每一个<code class="language-plaintext highlighter-rouge">RDD</code>是对于数据集在某一状态下的表现形式，而这个状态有可能是从前一状态转换而来的，因此换句话说这一个<code class="language-plaintext highlighter-rouge">RDD</code>有可能与之前的<code class="language-plaintext highlighter-rouge">RDD(s)</code>有依赖关系。根据依赖关系的不同，可以将<code class="language-plaintext highlighter-rouge">RDD</code>分成两种不同的类型：<code class="language-plaintext highlighter-rouge">Narrow Dependency</code>和<code class="language-plaintext highlighter-rouge">Wide Dependency</code>。</p>
+
+  <ul>
+    <li><code class="language-plaintext highlighter-rouge">Narrow Dependency</code>指的是 <code class="language-plaintext highlighter-rouge">child RDD</code>只依赖于<code class="language-plaintext highlighter-rouge">parent RDD(s)</code>固定数量的partition。</li>
+    <li><code class="language-plaintext highlighter-rouge">Wide Dependency</code>指的是<code class="language-plaintext highlighter-rouge">child RDD</code>的每一个partition都依赖于<code class="language-plaintext highlighter-rouge">parent RDD(s)</code>所有partition。</li>
+  </ul>
+
+  <p>它们之间的区别可参看下图：</p>
+
+  <p><img src="/img/2013-04-21-sheduler/rdd_dependency.png" alt="RDD dependecies" width="480" /></p>
+
+  <p>根据<code class="language-plaintext highlighter-rouge">RDD</code>依赖关系的不同，Spark也将每一个job分为不同的stage，而stage之间的依赖关系则形成了DAG。对于<code class="language-plaintext highlighter-rouge">Narrow Dependency</code>，Spark会尽量多地将<code class="language-plaintext highlighter-rouge">RDD</code>转换放在同一个stage中；而对于<code class="language-plaintext highlighter-rouge">Wide Dependency</code>，由于<code class="language-plaintext highlighter-rouge">Wide Dependency</code>通常意味着shuffle操作，因此Spark会将此stage定义为<code class="language-plaintext highlighter-rouge">ShuffleMapStage</code>，以便于向<code class="language-plaintext highlighter-rouge">MapOutputTracker</code>注册shuffle操作。对于stage的划分可参看下图，Spark通常将shuffle操作定义为stage的边界。</p>
+
+  <p><img src="/img/2013-04-21-sheduler/stage.png" alt="different stage boundary" width="480" /></p>
+
+</blockquote>
+
+<h3 id="dagscheduler">DAGScheduler</h3>
+
+<p>在用户创建<code class="language-plaintext highlighter-rouge">SparkContext</code>对象时，Spark会在内部创建<code class="language-plaintext highlighter-rouge">DAGScheduler</code>对象，并根据用户的部署情况，绑定不同的<code class="language-plaintext highlighter-rouge">TaskSechduler</code>，并启动<code class="language-plaintext highlighter-rouge">DAGcheduler</code></p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private var taskScheduler: TaskScheduler = {
+    //...
+}
+taskScheduler.start()
+
+private var dagScheduler = new DAGScheduler(taskScheduler)
+dagScheduler.start()
+</code></pre></div></div>
+
+<p>而<code class="language-plaintext highlighter-rouge">DAGScheduler</code>的启动会在内部创建daemon线程，daemon线程调用<code class="language-plaintext highlighter-rouge">run()</code>从block queue中取出event进行处理。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def run() {
+  SparkEnv.set(env)
+
+  while (true) {
+    val event = eventQueue.poll(POLL_TIMEOUT, TimeUnit.MILLISECONDS)
+    if (event != null) {
+      logDebug("Got event of type " + event.getClass.getName)
+    }
+
+    if (event != null) {
+      if (processEvent(event)) {
+        return
+      }
+    }
+
+    val time = System.currentTimeMillis() // TODO: use a pluggable clock for testability
+    if (failed.size &gt; 0 &amp;&amp; time &gt; lastFetchFailureTime + RESUBMIT_TIMEOUT) {
+      resubmitFailedStages()
+    } else {
+      submitWaitingStages()
+    }
+  }
+}
+</code></pre></div></div>
+
+<p>而<code class="language-plaintext highlighter-rouge">run()</code>会调用<code class="language-plaintext highlighter-rouge">processEvent</code>来处理不同的event。</p>
+
+<p><code class="language-plaintext highlighter-rouge">DAGScheduler</code>处理的event包括：</p>
+
+<ul>
+  <li><code class="language-plaintext highlighter-rouge">JobSubmitted</code></li>
+  <li><code class="language-plaintext highlighter-rouge">CompletionEvent</code></li>
+  <li><code class="language-plaintext highlighter-rouge">ExecutorLost</code></li>
+  <li><code class="language-plaintext highlighter-rouge">TaskFailed</code></li>
+  <li><code class="language-plaintext highlighter-rouge">StopDAGScheduler</code></li>
+</ul>
+
+<p>根据event的不同调用不同的方法去处理。</p>
+
+<p>本质上<code class="language-plaintext highlighter-rouge">DAGScheduler</code>是一个生产者-消费者模型，用户和<code class="language-plaintext highlighter-rouge">TaskSchduler</code>产生event将其放入block queue，daemon线程消费event并处理相应事件。</p>
+
+<h3 id="job的生与死">Job的生与死</h3>
+
+<p>既然用户提交的job最终会交由<code class="language-plaintext highlighter-rouge">DAGScheduler</code>去处理，那么我们就来研究一下<code class="language-plaintext highlighter-rouge">DAGScheduler</code>处理job的整个流程。在这里我们分析两种不同类型的job的处理流程。</p>
+
+<ol>
+  <li>
+    <p>没有shuffle和reduce的job</p>
+
+ 	val textFile = sc.textFile(“README.md”)
+ 	textFile.filter(line =&gt; line.contains(“Spark”)).count()
+  </li>
+  <li>
+    <p>有shuffle和reduce的job</p>
+
+ 	val textFile = sc.textFile(“README.md”)
+ 	textFile.flatMap(line =&gt; line.split(“ “)).map(word =&gt; (word, 1)).reduceByKey((a, b) =&gt; a + b)
+  </li>
+</ol>
+
+<p>首先在对<code class="language-plaintext highlighter-rouge">RDD</code>的<code class="language-plaintext highlighter-rouge">count()</code>和<code class="language-plaintext highlighter-rouge">reduceByKey()</code>操作都会调用<code class="language-plaintext highlighter-rouge">SparkContext</code>的<code class="language-plaintext highlighter-rouge">runJob()</code>来提交job，而<code class="language-plaintext highlighter-rouge">SparkContext</code>的<code class="language-plaintext highlighter-rouge">runJob()</code>最终会调用<code class="language-plaintext highlighter-rouge">DAGScheduler</code>的<code class="language-plaintext highlighter-rouge">runJob()</code>：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>def runJob[T, U: ClassManifest](
+    finalRdd: RDD[T],
+    func: (TaskContext, Iterator[T]) =&gt; U,
+    partitions: Seq[Int],
+    callSite: String,
+    allowLocal: Boolean,
+    resultHandler: (Int, U) =&gt; Unit)
+{
+  if (partitions.size == 0) {
+    return
+  }
+  val (toSubmit, waiter) = prepareJob(
+      finalRdd, func, partitions, callSite, allowLocal, resultHandler)
+  eventQueue.put(toSubmit)
+  waiter.awaitResult() match {
+    case JobSucceeded =&gt; {}
+    case JobFailed(exception: Exception) =&gt;
+      logInfo("Failed to run " + callSite)
+      throw exception
+  }
+}
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">runJob()</code>会调用<code class="language-plaintext highlighter-rouge">prepareJob()</code>对job进行预处理，封装成<code class="language-plaintext highlighter-rouge">JobSubmitted</code>事件，放入queue中，并阻塞等待job完成。</p>
+
+<p>当daemon线程的<code class="language-plaintext highlighter-rouge">processEvent()</code>从queue中取出<code class="language-plaintext highlighter-rouge">JobSubmitted</code>事件后，会根据job划分出不同的stage，并且提交stage：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>case JobSubmitted(finalRDD, func, partitions, allowLocal, callSite, listener) =&gt;
+  val runId = nextRunId.getAndIncrement()
+  val finalStage = newStage(finalRDD, None, runId)
+  val job = new ActiveJob(runId, finalStage, func, partitions, callSite, listener)
+  clearCacheLocs()
+  if (allowLocal &amp;&amp; finalStage.parents.size == 0 &amp;&amp; partitions.length == 1) {
+    runLocally(job)
+  } else {
+    activeJobs += job
+    resultStageToJob(finalStage) = job
+    submitStage(finalStage)
+  }
+</code></pre></div></div>
+
+<p>首先，对于任何的job都会产生出一个<code class="language-plaintext highlighter-rouge">finalStage</code>来产生和提交task。其次对于某些简单的job，它没有依赖关系，并且只有一个partition，这样的job会使用local thread处理而并非提交到<code class="language-plaintext highlighter-rouge">TaskScheduler</code>上处理。</p>
+
+<p>接下来产生<code class="language-plaintext highlighter-rouge">finalStage</code>后，需要调用<code class="language-plaintext highlighter-rouge">submitStage()</code>，它根据stage之间的依赖关系得出stage DAG，并以依赖关系进行处理：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def submitStage(stage: Stage) {
+  if (!waiting(stage) &amp;&amp; !running(stage) &amp;&amp; !failed(stage)) {
+    val missing = getMissingParentStages(stage).sortBy(_.id)
+    if (missing == Nil) {
+      submitMissingTasks(stage)
+      running += stage
+    } else {
+      for (parent &lt;- missing) {
+        submitStage(parent)
+      }
+      waiting += stage
+    }
+  }
+}
+</code></pre></div></div>
+
+<p>对于新提交的job，<code class="language-plaintext highlighter-rouge">finalStage</code>的parent stage还未获得，因此<code class="language-plaintext highlighter-rouge">submitStage</code>会调用<code class="language-plaintext highlighter-rouge">getMissingParentStages()</code>来获得依赖关系：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def getMissingParentStages(stage: Stage): List[Stage] = {
+  val missing = new HashSet[Stage]
+  val visited = new HashSet[RDD[_]]
+  def visit(rdd: RDD[_]) {
+    if (!visited(rdd)) {
+      visited += rdd
+      if (getCacheLocs(rdd).contains(Nil)) {
+        for (dep &lt;- rdd.dependencies) {
+          dep match {
+            case shufDep: ShuffleDependency[_,_] =&gt;
+              val mapStage = getShuffleMapStage(shufDep, stage.priority)
+              if (!mapStage.isAvailable) {
+                missing += mapStage
+              }
+            case narrowDep: NarrowDependency[_] =&gt;
+              visit(narrowDep.rdd)
+          }
+        }
+      }
+    }
+  }
+  visit(stage.rdd)
+  missing.toList
+}
+</code></pre></div></div>
+
+<p>这里parent stage是通过<code class="language-plaintext highlighter-rouge">RDD</code>的依赖关系递归遍历获得。对于<code class="language-plaintext highlighter-rouge">Wide Dependecy</code>也就是<code class="language-plaintext highlighter-rouge">Shuffle Dependecy</code>，Spark会产生新的<code class="language-plaintext highlighter-rouge">mapStage</code>作为<code class="language-plaintext highlighter-rouge">finalStage</code>的parent，而对于<code class="language-plaintext highlighter-rouge">Narrow Dependecy</code> Spark则不会产生新的stage。这里对stage的划分是按照上面提到的作为划分依据的，因此对于本段开头提到的两种job，第一种job只会产生一个<code class="language-plaintext highlighter-rouge">finalStage</code>，而第二种job会产生<code class="language-plaintext highlighter-rouge">finalStage</code>和<code class="language-plaintext highlighter-rouge">mapStage</code>。</p>
+
+<p>当stage DAG产生以后，针对每个stage需要产生task去执行，故在这会调用<code class="language-plaintext highlighter-rouge">submitMissingTasks()</code>：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def submitMissingTasks(stage: Stage) {
+  val myPending = pendingTasks.getOrElseUpdate(stage, new HashSet)
+  myPending.clear()
+  var tasks = ArrayBuffer[Task[_]]()
+  if (stage.isShuffleMap) {
+    for (p &lt;- 0 until stage.numPartitions if stage.outputLocs(p) == Nil) {
+      val locs = getPreferredLocs(stage.rdd, p)
+      tasks += new ShuffleMapTask(stage.id, stage.rdd, stage.shuffleDep.get, p, locs)
+    }
+  } else {
+    val job = resultStageToJob(stage)
+    for (id &lt;- 0 until job.numPartitions if (!job.finished(id))) {
+      val partition = job.partitions(id)
+      val locs = getPreferredLocs(stage.rdd, partition)
+      tasks += new ResultTask(stage.id, stage.rdd, job.func, partition, locs, id)
+    }
+  }
+  if (tasks.size &gt; 0) {
+    myPending ++= tasks
+    taskSched.submitTasks(
+      new TaskSet(tasks.toArray, stage.id, stage.newAttemptId(), stage.priority))
+    if (!stage.submissionTime.isDefined) {
+      stage.submissionTime = Some(System.currentTimeMillis())
+    }
+  } else {
+    running -= stage
+  }
+}
+</code></pre></div></div>
+
+<p>首先根据stage所依赖的<code class="language-plaintext highlighter-rouge">RDD</code>的partition的分布，会产生出与partition数量相等的task，这些task根据partition的locality进行分布；其次对于<code class="language-plaintext highlighter-rouge">finalStage</code>或是<code class="language-plaintext highlighter-rouge">mapStage</code>会产生不同的task；最后所有的task会封装到<code class="language-plaintext highlighter-rouge">TaskSet</code>内提交到<code class="language-plaintext highlighter-rouge">TaskScheduler</code>去执行。</p>
+
+<p>至此job在<code class="language-plaintext highlighter-rouge">DAGScheduler</code>内的启动过程全部完成，交由<code class="language-plaintext highlighter-rouge">TaskScheduler</code>执行task，当task执行完后会将结果返回给<code class="language-plaintext highlighter-rouge">DAGScheduler</code>，<code class="language-plaintext highlighter-rouge">DAGScheduler</code>调用<code class="language-plaintext highlighter-rouge">handleTaskComplete()</code>处理task返回:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private def handleTaskCompletion(event: CompletionEvent) {
+  val task = event.task
+  val stage = idToStage(task.stageId)
+
+  def markStageAsFinished(stage: Stage) = {
+    val serviceTime = stage.submissionTime match {
+      case Some(t) =&gt; "%.03f".format((System.currentTimeMillis() - t) / 1000.0)
+      case _ =&gt; "Unkown"
+    }
+    logInfo("%s (%s) finished in %s s".format(stage, stage.origin, serviceTime))
+    running -= stage
+  }
+  event.reason match {
+    case Success =&gt;
+        ...
+      task match {
+        case rt: ResultTask[_, _] =&gt;
+          ...
+        case smt: ShuffleMapTask =&gt;
+          ...
+      }
+    case Resubmitted =&gt;
+      ...
+
+    case FetchFailed(bmAddress, shuffleId, mapId, reduceId) =&gt;
+      ...
+    case other =&gt;
+      abortStage(idToStage(task.stageId), task + " failed: " + other)
+  }
+}
+</code></pre></div></div>
+
+<p>每个执行完成的task都会将结果返回给<code class="language-plaintext highlighter-rouge">DAGScheduler</code>，<code class="language-plaintext highlighter-rouge">DAGScheduler</code>根据返回结果来进行进一步的动作。</p>
+
+<h3 id="rdd的计算">RDD的计算</h3>
+
+<p><code class="language-plaintext highlighter-rouge">RDD</code>的计算是在task中完成的。我们之前提到task分为<code class="language-plaintext highlighter-rouge">ResultTask</code>和<code class="language-plaintext highlighter-rouge">ShuffleMapTask</code>，我们分别来看一下这两种task具体的执行过程。</p>
+
+<ul>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">ResultTask</code></p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  override def run(attemptId: Long): U = {
+    val context = new TaskContext(stageId, partition, attemptId)
+    try {
+      func(context, rdd.iterator(split, context))
+    } finally {
+      context.executeOnCompleteCallbacks()
+    }
+  }
+</code></pre></div>    </div>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">ShuffleMapTask</code></p>
+
+    <div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  override def run(attemptId: Long): MapStatus = {
+    val numOutputSplits = dep.partitioner.numPartitions
+    
+    val taskContext = new TaskContext(stageId, partition, attemptId)
+    try {
+      val buckets = Array.fill(numOutputSplits)(new ArrayBuffer[(Any, Any)])
+      for (elem &lt;- rdd.iterator(split, taskContext)) {
+        val pair = elem.asInstanceOf[(Any, Any)]
+        val bucketId = dep.partitioner.getPartition(pair._1)
+        buckets(bucketId) += pair
+      }
+    
+      val compressedSizes = new Array[Byte](numOutputSplits)
+    
+      val blockManager = SparkEnv.get.blockManager
+      for (i &lt;- 0 until numOutputSplits) {
+        val blockId = "shuffle_" + dep.shuffleId + "_" + partition + "_" + i
+        val iter: Iterator[(Any, Any)] = buckets(i).iterator
+        val size = blockManager.put(blockId, iter, StorageLevel.DISK_ONLY, false)
+        compressedSizes(i) = MapOutputTracker.compressSize(size)
+      }
+    
+      return new MapStatus(blockManager.blockManagerId, compressedSizes)
+    } finally {
+      taskContext.executeOnCompleteCallbacks()
+    }
+  }
+</code></pre></div>    </div>
+  </li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">ResultTask</code>和<code class="language-plaintext highlighter-rouge">ShuffleMapTask</code>都会调用<code class="language-plaintext highlighter-rouge">RDD</code>的<code class="language-plaintext highlighter-rouge">iterator()</code>来计算和转换<code class="language-plaintext highlighter-rouge">RDD</code>，不同的是：<code class="language-plaintext highlighter-rouge">ResultTask</code>转换完<code class="language-plaintext highlighter-rouge">RDD</code>后调用<code class="language-plaintext highlighter-rouge">func()</code>计算结果；而<code class="language-plaintext highlighter-rouge">ShufflerMapTask</code>则将其放入<code class="language-plaintext highlighter-rouge">blockManager</code>中用来shuffle。</p>
+
+<p><code class="language-plaintext highlighter-rouge">RDD</code>的计算调用<code class="language-plaintext highlighter-rouge">iterator()</code>，<code class="language-plaintext highlighter-rouge">iterator()</code>在内部调用<code class="language-plaintext highlighter-rouge">compute()</code>从<code class="language-plaintext highlighter-rouge">RDD</code>依赖关系的根开始计算：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>final def iterator(split: Partition, context: TaskContext): Iterator[T] = {
+  if (storageLevel != StorageLevel.NONE) {
+    SparkEnv.get.cacheManager.getOrCompute(this, split, context, storageLevel)
+  } else {
+    computeOrReadCheckpoint(split, context)
+  }
+}
+
+private[spark] def computeOrReadCheckpoint(split: Partition, context: TaskContext): Iterator[T] = {
+  if (isCheckpointed) {
+    firstParent[T].iterator(split, context)
+  } else {
+    compute(split, context)
+  }
+}
+</code></pre></div></div>
+
+<p>至此大致分析了<code class="language-plaintext highlighter-rouge">TaskSchedulerListener</code>，包括<code class="language-plaintext highlighter-rouge">DAGScheduler</code>内部的结构，job生命周期内的活动，<code class="language-plaintext highlighter-rouge">RDD</code>是何时何地计算的。接下来我们分析一下task在<code class="language-plaintext highlighter-rouge">TaskScheduler</code>内干了什么。</p>
+
+<h2 id="taskscheduler">TaskScheduler</h2>
+
+<p>前面也提到了Spark实现了三种不同的<code class="language-plaintext highlighter-rouge">TaskScheduler</code>，包括<code class="language-plaintext highlighter-rouge">LocalSheduler</code>、<code class="language-plaintext highlighter-rouge">ClusterScheduler</code>和<code class="language-plaintext highlighter-rouge">MesosScheduler</code>。<code class="language-plaintext highlighter-rouge">LocalSheduler</code>是一个在本地执行的线程池，<code class="language-plaintext highlighter-rouge">DAGScheduler</code>提交的所有task会在线程池中被执行，并将结果返回给<code class="language-plaintext highlighter-rouge">DAGScheduler</code>。<code class="language-plaintext highlighter-rouge">MesosScheduler</code>依赖于Mesos进行调度，笔者对Mesos了解甚少，因此不做分析。故此章节主要分析<code class="language-plaintext highlighter-rouge">ClusterScheduler</code>模块。</p>
+
+<p><code class="language-plaintext highlighter-rouge">ClusterScheduler</code>模块与deploy模块和executor模块耦合较为紧密，因此在分析<code class="language-plaintext highlighter-rouge">ClUsterScheduler</code>时也会顺带介绍deploy和executor模块。</p>
+
+<p>首先我们来看一下<code class="language-plaintext highlighter-rouge">ClusterScheduler</code>的类图：</p>
+
+<p><img src="/img/2013-04-21-sheduler/cluster_scheduler.png" alt="ClusterScheduler" width="640" /></p>
+
+<p><code class="language-plaintext highlighter-rouge">ClusterScheduler</code>的启动会伴随<code class="language-plaintext highlighter-rouge">SparkDeploySchedulerBackend</code>的启动，而backend会将自己分为两个角色：首先是driver，driver是一个local运行的actor，负责与remote的executor进行通行，提交任务，控制executor；其次是<code class="language-plaintext highlighter-rouge">StandaloneExecutorBackend</code>，Spark会在每一个slave node上启动一个<code class="language-plaintext highlighter-rouge">StandaloneExecutorBackend</code>进程，负责执行任务，返回执行结果。</p>
+
+<h3 id="clusterscheduler的启动">ClusterScheduler的启动</h3>
+
+<p>在<code class="language-plaintext highlighter-rouge">SparkContext</code>实例化的过程中，<code class="language-plaintext highlighter-rouge">ClusterScheduler</code>被随之实例化，同时赋予其<code class="language-plaintext highlighter-rouge">SparkDeploySchedulerBackend</code>：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  master match {
+      ...
+
+    case SPARK_REGEX(sparkUrl) =&gt;
+      val scheduler = new ClusterScheduler(this)
+      val backend = new SparkDeploySchedulerBackend(scheduler, this, sparkUrl, appName)
+      scheduler.initialize(backend)
+      scheduler
+
+    case LOCAL_CLUSTER_REGEX(numSlaves, coresPerSlave, memoryPerSlave) =&gt;
+      ...
+    case _ =&gt;
+      ...
+  }
+}
+taskScheduler.start()
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">ClusterScheduler</code>的启动会启动<code class="language-plaintext highlighter-rouge">SparkDeploySchedulerBackend</code>，同时启动daemon进程来检查speculative task：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>override def start() {
+  backend.start()
+
+  if (System.getProperty("spark.speculation", "false") == "true") {
+    new Thread("ClusterScheduler speculation check") {
+      setDaemon(true)
+
+      override def run() {
+        while (true) {
+          try {
+            Thread.sleep(SPECULATION_INTERVAL)
+          } catch {
+            case e: InterruptedException =&gt; {}
+          }
+          checkSpeculatableTasks()
+        }
+      }
+    }.start()
+  }
+}
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">SparkDeploySchedulerBacked</code>的启动首先会调用父类的<code class="language-plaintext highlighter-rouge">start()</code>，接着它会启动client，并由client连接到master向每一个node的worker发送请求启动<code class="language-plaintext highlighter-rouge">StandaloneExecutorBackend</code>。这里的client、master、worker涉及到了deploy模块，暂时不做具体介绍。而<code class="language-plaintext highlighter-rouge">StandaloneExecutorBackend</code>则涉及到了executor模块，它主要的功能是在每一个node创建task可以运行的环境，并让task在其环境中运行。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>override def start() {
+  super.start()
+
+  val driverUrl = "akka://spark@%s:%s/user/%s".format(
+    System.getProperty("spark.driver.host"), System.getProperty("spark.driver.port"),
+    StandaloneSchedulerBackend.ACTOR_NAME)
+  val args = Seq(driverUrl, "", "", "")
+  val command = Command("spark.executor.StandaloneExecutorBackend", args, sc.executorEnvs)
+  val sparkHome = sc.getSparkHome().getOrElse(
+    throw new IllegalArgumentException("must supply spark home for spark standalone"))
+  val appDesc = new ApplicationDescription(appName, maxCores, executorMemory, command, sparkHome)
+
+  client = new Client(sc.env.actorSystem, master, appDesc, this)
+  client.start()
+}
+</code></pre></div></div>
+
+<p>在<code class="language-plaintext highlighter-rouge">StandaloneSchedulerBackend</code>中会创建<code class="language-plaintext highlighter-rouge">DriverActor</code>，它就是local的driver，以actor的方式与remote的executor进行通信。</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>override def start() {
+  val properties = new ArrayBuffer[(String, String)]
+  val iterator = System.getProperties.entrySet.iterator
+  while (iterator.hasNext) {
+    val entry = iterator.next
+    val (key, value) = (entry.getKey.toString, entry.getValue.toString)
+    if (key.startsWith("spark.")) {
+      properties += ((key, value))
+    }
+  }
+  driverActor = actorSystem.actorOf(
+    Props(new DriverActor(properties)), name = StandaloneSchedulerBackend.ACTOR_NAME)
+}
+</code></pre></div></div>
+
+<p>在client实例化之前，会将<code class="language-plaintext highlighter-rouge">StandaloneExecutorBackend</code>的启动环境作为参数传递给client，而client启动时会将此提交给master，由master分发给所有node上的worker，worker会配置环境并创建进程启动<code class="language-plaintext highlighter-rouge">StandaloneExecutorBackend</code>。</p>
+
+<p>至此<code class="language-plaintext highlighter-rouge">ClusterScheduler</code>的启动，local driver的创建，remote executor环境的启动所有过程都已结束，<code class="language-plaintext highlighter-rouge">ClusterScheduler</code>等待<code class="language-plaintext highlighter-rouge">DAGScheduler</code>提交任务。</p>
+
+<h3 id="clusterscheduler提交任务">ClusterScheduler提交任务</h3>
+
+<p><code class="language-plaintext highlighter-rouge">DAGScheduler</code>会调用<code class="language-plaintext highlighter-rouge">ClusterScheduler</code>提交任务，任务会被包装成<code class="language-plaintext highlighter-rouge">TaskSetManager</code>并等待调度：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>override def submitTasks(taskSet: TaskSet) {
+  val tasks = taskSet.tasks
+  logInfo("Adding task set " + taskSet.id + " with " + tasks.length + " tasks")
+  this.synchronized {
+    val manager = new TaskSetManager(this, taskSet)
+    activeTaskSets(taskSet.id) = manager
+    activeTaskSetsQueue += manager
+    taskSetTaskIds(taskSet.id) = new HashSet[Long]()
+
+    if (hasReceivedTask == false) {
+      starvationTimer.scheduleAtFixedRate(new TimerTask() {
+        override def run() {
+          if (!hasLaunchedTask) {
+            logWarning("Initial job has not accepted any resources; " +
+              "check your cluster UI to ensure that workers are registered")
+          } else {
+            this.cancel()
+          }
+        }
+      }, STARVATION_TIMEOUT, STARVATION_TIMEOUT)
+    }
+    hasReceivedTask = true;
+  }
+  backend.reviveOffers()
+}
+</code></pre></div></div>
+
+<p>在任务提交的同时会启动定时器，如果任务还未被执行，定时器持续发出警告直到任务被执行。同时会调用<code class="language-plaintext highlighter-rouge">StandaloneSchedulerBackend</code>的<code class="language-plaintext highlighter-rouge">reviveOffers()</code>，而它则会通过actor向driver发送<code class="language-plaintext highlighter-rouge">ReviveOffers</code>，driver收到<code class="language-plaintext highlighter-rouge">ReviveOffers</code>后调用<code class="language-plaintext highlighter-rouge">makeOffers()</code>：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// Make fake resource offers on just one executor
+def makeOffers(executorId: String) {
+  launchTasks(scheduler.resourceOffers(
+    Seq(new WorkerOffer(executorId, executorHost(executorId), freeCores(executorId)))))
+}
+
+// Launch tasks returned by a set of resource offers
+def launchTasks(tasks: Seq[Seq[TaskDescription]]) {
+  for (task &lt;- tasks.flatten) {
+    freeCores(task.executorId) -= 1
+    executorActor(task.executorId) ! LaunchTask(task)
+  }
+}
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">makeOffers()</code>会向<code class="language-plaintext highlighter-rouge">ClusterScheduler</code>申请资源，并向executor提交<code class="language-plaintext highlighter-rouge">LauchTask</code>请求。</p>
+
+<p>接下来<code class="language-plaintext highlighter-rouge">LaunchTask</code>会进入executor模块，<code class="language-plaintext highlighter-rouge">StandaloneExecutorBackend</code>在收到<code class="language-plaintext highlighter-rouge">LaunchTask</code>请求后会调用<code class="language-plaintext highlighter-rouge">Executor</code>执行task:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>override def receive = {
+  case RegisteredExecutor(sparkProperties) =&gt;
+    ...  
+  case RegisterExecutorFailed(message) =&gt;
+    ...
+  case LaunchTask(taskDesc) =&gt;
+    logInfo("Got assigned task " + taskDesc.taskId)
+    executor.launchTask(this, taskDesc.taskId, taskDesc.serializedTask)
+
+  case Terminated(_) | RemoteClientDisconnected(_, _) | RemoteClientShutdown(_, _) =&gt;
+    ...
+}
+
+def launchTask(context: ExecutorBackend, taskId: Long, serializedTask: ByteBuffer) {
+  threadPool.execute(new TaskRunner(context, taskId, serializedTask))
+}
+</code></pre></div></div>
+
+<p><code class="language-plaintext highlighter-rouge">Executor</code>内部是一个线程池，每一个提交的task都会包装为<code class="language-plaintext highlighter-rouge">TaskRunner</code>交由threadpool执行：</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>class TaskRunner(context: ExecutorBackend, taskId: Long, serializedTask: ByteBuffer)
+  extends Runnable {
+
+  override def run() {
+    SparkEnv.set(env)
+    Thread.currentThread.setContextClassLoader(urlClassLoader)
+    val ser = SparkEnv.get.closureSerializer.newInstance()
+    logInfo("Running task ID " + taskId)
+    context.statusUpdate(taskId, TaskState.RUNNING, EMPTY_BYTE_BUFFER)
+    try {
+      SparkEnv.set(env)
+      Accumulators.clear()
+      val (taskFiles, taskJars, taskBytes) = Task.deserializeWithDependencies(serializedTask)
+      updateDependencies(taskFiles, taskJars)
+      val task = ser.deserialize[Task[Any]](taskBytes, Thread.currentThread.getContextClassLoader)
+      logInfo("Its generation is " + task.generation)
+      env.mapOutputTracker.updateGeneration(task.generation)
+      val value = task.run(taskId.toInt)
+      val accumUpdates = Accumulators.values
+      val result = new TaskResult(value, accumUpdates)
+      val serializedResult = ser.serialize(result)
+      logInfo("Serialized size of result for " + taskId + " is " + serializedResult.limit)
+      context.statusUpdate(taskId, TaskState.FINISHED, serializedResult)
+      logInfo("Finished task ID " + taskId)
+    } catch {
+      case ffe: FetchFailedException =&gt; {
+        val reason = ffe.toTaskEndReason
+        context.statusUpdate(taskId, TaskState.FAILED, ser.serialize(reason))
+      }
+
+      case t: Throwable =&gt; {
+        val reason = ExceptionFailure(t)
+        context.statusUpdate(taskId, TaskState.FAILED, ser.serialize(reason))
+
+        // TODO: Should we exit the whole executor here? On the one hand, the failed task may
+        // have left some weird state around depending on when the exception was thrown, but on
+        // the other hand, maybe we could detect that when future tasks fail and exit then.
+        logError("Exception in task ID " + taskId, t)
+        //System.exit(1)
+      }
+    }
+  }
+}
+</code></pre></div></div>
+
+<p>其中<code class="language-plaintext highlighter-rouge">task.run()</code>则真正执行了task中的任务，如前<strong>RDD的计算</strong>章节所述。返回值被包装成<code class="language-plaintext highlighter-rouge">TaskResult</code>返回。</p>
+
+<p>至此task在<code class="language-plaintext highlighter-rouge">ClusterScheduler</code>内运行的流程有了一个大致的介绍，当然这里略掉了许多异常处理的分支，但这不影响我们对主线的了解。</p>
+
+<h1 id="end">END</h1>
+
+<p>至此对Spark的Scheduler模块的主线做了一个顺藤摸瓜式的介绍，Scheduler模块作为Spark最核心的模块之一，充分体现了Spark与MapReduce的不同之处，体现了Spark DAG思想的精巧和设计的优雅。</p>
+
+<p>当然Spark的代码仍然在积极开发之中，当前的源码分析在过不久后可能会变得没有意义，但重要的是体会Spark区别于MapReduce的设计理念，以及DAG思想的应用。DAG作为对MapReduce框架的改进越来越受到大数据界的重视，<a href="http://hortonworks.com/"><strong>hortonworks</strong></a>也提出了类似DAG的框架<a href="http://hortonworks.com/blog/category/tez/">tez</a>作为对MapReduce的改进。</p>
+:ET
