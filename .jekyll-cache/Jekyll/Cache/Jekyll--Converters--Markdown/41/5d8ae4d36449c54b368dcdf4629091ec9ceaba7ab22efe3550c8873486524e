@@ -1,4 +1,4 @@
-I"�%
+I"�%
 <h3 id="background">Background</h3>
 
 <p>spark-greenplum是一个spark DataSource为greenplum的实现。通过使用postgresql copy命令的方式从dataframe分区向greenplum拷贝数据，相较于spark sql本身jbdc DataSource的速度提升了上百倍。本文讲解关于实现从spark sql向gp拷贝数据事务的实现。</p>
@@ -39,7 +39,7 @@
 <p>下面的命令为将一个文件中的数据拷贝到一个表中.</p>
 
 <div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">COPY</span> <span class="k">table_name</span> <span class="p">[</span> <span class="p">(</span> <span class="k">column_name</span> <span class="p">[,</span> <span class="p">...]</span> <span class="p">)</span> <span class="p">]</span>
-    <span class="k">FROM</span> <span class="err">{</span> <span class="s1">'filename'</span> <span class="o">|</span> <span class="k">STDIN</span> <span class="err">}</span>
+    <span class="k">FROM</span> <span class="p">{</span> <span class="s1">'filename'</span> <span class="o">|</span> <span class="k">STDIN</span> <span class="p">}</span>
     <span class="p">[</span> <span class="p">[</span> <span class="k">WITH</span> <span class="p">]</span> <span class="p">(</span> <span class="k">option</span> <span class="p">[,</span> <span class="p">...]</span> <span class="p">)</span> <span class="p">]</span>
 </code></pre></div></div>
 

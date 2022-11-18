@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2021-12-10T15:12:04+08:00</lastBuildDate>
-        <pubDate>2021-12-10T15:12:04+08:00</pubDate>
+        <lastBuildDate>2022-11-18T22:54:15+08:00</lastBuildDate>
+        <pubDate>2022-11-18T22:54:15+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -200,7 +200,7 @@
 
 &lt;p&gt;会被转换为&lt;/p&gt;
 
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;into&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WOODY_DB_&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;UNIQUE_ID&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gdw_tables__tgt_tbl&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;gdw_tables&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;src_tbl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;into&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;WOODY_DB_&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;UNIQUE_ID&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gdw_tables__tgt_tbl&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;gdw_tables&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;src_tbl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;h4 id=&quot;context&quot;&gt;Context&lt;/h4&gt;
@@ -399,13 +399,13 @@
 
 &lt;p&gt;假设表gdw_tables.tba_merge的location 是‘/sys/edw/gdw_tables/tba_merge’，使用b_woody_sub进行测试。如下两条语句:&lt;/p&gt;
 
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;into&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;gdw_tables&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tba_merge&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;’&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20201019&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;‘&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;…&lt;/span&gt;
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;into&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;gdw_tables&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tba_merge&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;’&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20201019&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;‘&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;…&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;alter&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;gdw_tables&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tba&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;location&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;‘&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sys&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;edw&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gdw_tables&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tba_merge&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20201019&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;’&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;将会被转换为:&lt;/p&gt;
 
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;into&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;preprod_b_woody_sub_db&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gdw_tables__tba_merge&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;‘&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20201019&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;’&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;…&lt;/span&gt;
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;into&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;preprod_b_woody_sub_db&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gdw_tables__tba_merge&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;‘&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20201019&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;’&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;…&lt;/span&gt;
 &lt;span class=&quot;k&quot;&gt;alter&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;preprod_b_woody_sub_db&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gdw_tables__tba&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;location&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;‘&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;preprod&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b_woody_sub&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;analysis&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;db&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sys&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;edw&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;gdw_tables&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tba_merge&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;/&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dt&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20201019&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;’&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
@@ -695,13 +695,13 @@ res0: Boolean &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quo
 
 &lt;p&gt;修改前:&lt;/p&gt;
 
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ta&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tb&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;union&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;all&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tc&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;distribute&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ta&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tb&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;union&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;all&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tc&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;distribute&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;修改后:&lt;/p&gt;
 
 &lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;set&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;spark&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;sql&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;shuffle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;partitions&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bucket&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;number&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ta&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;cast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Decimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;38&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;18&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tb&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;union&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;all&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tmp&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;distribute&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ta&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;cast&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;Decimal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;38&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;18&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tb&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;union&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;all&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c2&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;from&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tc&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tmp&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;distribute&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c1&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;我们修改了语句，手动的将union之后为double类型c1 转为Decimal类型，然后再针对Decimal 类型的bucket 列进行 distributed by操作。当然在此之前，我们要将spark.sql.shuffle.partitions设为与bucket number相同的值。&lt;/p&gt;
@@ -1100,7 +1100,7 @@ spark.worker.timeout&lt;/p&gt;
             &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
           &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;finally&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
             &lt;span class=&quot;n&quot;&gt;fsnamesystem&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;writeUnlock&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;leaseManager&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;);&lt;/span&gt;
-            &lt;span class=&quot;c1&quot;&gt;// lease reassignments should to be sync'ed.&lt;/span&gt;
+            &lt;span class=&quot;c1&quot;&gt;// lease reassignments should to be sync&apos;ed.&lt;/span&gt;
             &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;needSync&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
               &lt;span class=&quot;c1&quot;&gt;// 如果需要sync sortedLeases，则进行同步&lt;/span&gt;
               &lt;span class=&quot;n&quot;&gt;fsnamesystem&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;getEditLog&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;().&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;logSync&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;();&lt;/span&gt;
@@ -1786,15 +1786,15 @@ spark.worker.timeout&lt;/p&gt;
     &lt;p&gt;hive表 可以看到其INPUTFORMAT/OUTPUTFORMAT是 hive开头的。&lt;/p&gt;
 
     &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;CREATE TABLE `ta`(`id` int, `name` string)
-ROW FORMAT SERDE 'org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe'
+ROW FORMAT SERDE &apos;org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe&apos;
 WITH SERDEPROPERTIES (
-  'serialization.format' = '1'
+  &apos;serialization.format&apos; = &apos;1&apos;
 )
 STORED AS
-  INPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat'
-  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat'
+  INPUTFORMAT &apos;org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat&apos;
+  OUTPUTFORMAT &apos;org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat&apos;
 TBLPROPERTIES (
-  'transient_lastDdlTime' = '1569816513'
+  &apos;transient_lastDdlTime&apos; = &apos;1569816513&apos;
 )
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
   &lt;/li&gt;
@@ -1803,7 +1803,7 @@ TBLPROPERTIES (
     &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;CREATE TABLE `ta` (`id` INT, `name` STRING)
 USING parquet
 OPTIONS (
-  `serialization.format` '1'
+  `serialization.format` &apos;1&apos;
 )
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;    &lt;/div&gt;
   &lt;/li&gt;
@@ -1876,7 +1876,7 @@ OPTIONS (
       &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;newRight&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;dataType&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commonType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;right&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Cast&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commonType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 
       &lt;span class=&quot;nv&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;withNewChildren&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;Seq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;newLeft&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;newRight&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; 
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; 
-      &lt;span class=&quot;c1&quot;&gt;// Otherwise, don't do anything with the expression. &lt;/span&gt;
+      &lt;span class=&quot;c1&quot;&gt;// Otherwise, don&apos;t do anything with the expression. &lt;/span&gt;
       &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; 
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; 
  &lt;span class=&quot;o&quot;&gt;}.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getOrElse&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;  &lt;span class=&quot;c1&quot;&gt;// If there is no applicable conversion, leave expression unchanged. &lt;/span&gt;
@@ -1922,13 +1922,13 @@ OPTIONS (
 &lt;p&gt;下面是一个可复现的场景。&lt;/p&gt;
 
 &lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;创建外部分区表&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;create&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;external&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partitioned&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stored&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;parquet&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;location&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'file://path'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;create&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;external&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partitioned&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;by&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;stored&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;parquet&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;location&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;file://path&apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;一个分区&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;也因此创建了这个分区&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'n1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&apos;n1&apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;drop&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;掉&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;这个分区&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;ALTER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DROP&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PARTITION&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'n1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ALTER&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;DROP&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;PARTITION&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&apos;n1&apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
 &lt;span class=&quot;o&quot;&gt;//&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n1&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;这个分区&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;'n1'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;test&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&apos;n1&apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;通过测试，发现在spark-2.3版本，进行上述操作，最后select这张表，得到的结果如下:&lt;/p&gt;
@@ -1996,7 +1996,7 @@ OPTIONS (
 
 &lt;p&gt;比如下面的这个查询:&lt;/p&gt;
 
-&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tablea&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
+&lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;insert&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;overwrite&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tablea&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p1&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p2&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;v2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;p3&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;select&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;如果是static的overwrite，其会首先删掉 表下面的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;p1=v1/p2=v2&lt;/code&gt;分区(会删掉下面所有的p3子分区)，然后在数据计算完之后，将数据写入。&lt;/p&gt;
@@ -2150,7 +2150,7 @@ OPTIONS (
       &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;newRight&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;dataType&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commonType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;right&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Cast&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;right&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;commonType&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 
       &lt;span class=&quot;nv&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;withNewChildren&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;Seq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;newLeft&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;newRight&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; 
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; 
-      &lt;span class=&quot;c1&quot;&gt;// Otherwise, don't do anything with the expression. &lt;/span&gt;
+      &lt;span class=&quot;c1&quot;&gt;// Otherwise, don&apos;t do anything with the expression. &lt;/span&gt;
       &lt;span class=&quot;n&quot;&gt;b&lt;/span&gt; 
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; 
  &lt;span class=&quot;o&quot;&gt;}.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getOrElse&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;  &lt;span class=&quot;c1&quot;&gt;// If there is no applicable conversion, leave expression unchanged. &lt;/span&gt;
@@ -2470,7 +2470,7 @@ OPTIONS (
        ss &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt; OPTIONS &lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt; FILTER &lt;span class=&quot;o&quot;&gt;]&lt;/span&gt;
    &lt;span class=&quot;nt&quot;&gt;-h&lt;/span&gt;, &lt;span class=&quot;nt&quot;&gt;--help&lt;/span&gt;           this message      &lt;span class=&quot;c&quot;&gt;#显示帮助菜单&lt;/span&gt;
    &lt;span class=&quot;nt&quot;&gt;-V&lt;/span&gt;, &lt;span class=&quot;nt&quot;&gt;--version&lt;/span&gt;        output version information      &lt;span class=&quot;c&quot;&gt;#输出版本信息&lt;/span&gt;
-   &lt;span class=&quot;nt&quot;&gt;-n&lt;/span&gt;, &lt;span class=&quot;nt&quot;&gt;--numeric&lt;/span&gt;        don&lt;span class=&quot;s1&quot;&gt;'t resolve service names    #不解析服务名
+   &lt;span class=&quot;nt&quot;&gt;-n&lt;/span&gt;, &lt;span class=&quot;nt&quot;&gt;--numeric&lt;/span&gt;        don&lt;span class=&quot;s1&quot;&gt;&apos;t resolve service names    #不解析服务名
    -r, --resolve       resolve host names   #解析主机名
    -a, --all            display all sockets     #显示所有的套接字
    -l, --listening      display listening sockets   #显示监听状态的socket
@@ -2559,11 +2559,11 @@ usage: netstat &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quo
         &lt;span class=&quot;nt&quot;&gt;-M&lt;/span&gt;, &lt;span class=&quot;nt&quot;&gt;--masquerade&lt;/span&gt;         display masqueraded connections
 
         &lt;span class=&quot;nt&quot;&gt;-v&lt;/span&gt;, &lt;span class=&quot;nt&quot;&gt;--verbose&lt;/span&gt;            be verbose
-        &lt;span class=&quot;nt&quot;&gt;-W&lt;/span&gt;, &lt;span class=&quot;nt&quot;&gt;--wide&lt;/span&gt;               don&lt;span class=&quot;s1&quot;&gt;'t truncate IP addresses
-        -n, --numeric            don'&lt;/span&gt;t resolve names
-        &lt;span class=&quot;nt&quot;&gt;--numeric-hosts&lt;/span&gt;          don&lt;span class=&quot;s1&quot;&gt;'t resolve host names
-        --numeric-ports          don'&lt;/span&gt;t resolve port names
-        &lt;span class=&quot;nt&quot;&gt;--numeric-users&lt;/span&gt;          don&lt;span class=&quot;s1&quot;&gt;'t resolve user names
+        &lt;span class=&quot;nt&quot;&gt;-W&lt;/span&gt;, &lt;span class=&quot;nt&quot;&gt;--wide&lt;/span&gt;               don&lt;span class=&quot;s1&quot;&gt;&apos;t truncate IP addresses
+        -n, --numeric            don&apos;&lt;/span&gt;t resolve names
+        &lt;span class=&quot;nt&quot;&gt;--numeric-hosts&lt;/span&gt;          don&lt;span class=&quot;s1&quot;&gt;&apos;t resolve host names
+        --numeric-ports          don&apos;&lt;/span&gt;t resolve port names
+        &lt;span class=&quot;nt&quot;&gt;--numeric-users&lt;/span&gt;          don&lt;span class=&quot;s1&quot;&gt;&apos;t resolve user names
         -N, --symbolic           resolve hardware names
         -e, --extend             display other/more information
         -p, --programs           display PID/Program name for sockets
@@ -2578,7 +2578,7 @@ usage: netstat &lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quo
 
   &amp;lt;Socket&amp;gt;={-t|--tcp} {-u|--udp} {-U|--udplite} {-S|--sctp} {-w|--raw}
            {-x|--unix} --ax25 --ipx --netrom
-  &amp;lt;AF&amp;gt;=Use '&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;-6&lt;/span&gt;|-4&lt;span class=&quot;s1&quot;&gt;' or '&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;-A&lt;/span&gt; &amp;lt;af&amp;gt;&lt;span class=&quot;s1&quot;&gt;' or '&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;--&lt;/span&gt;&amp;lt;af&amp;gt;&lt;span class=&quot;s1&quot;&gt;'; default: inet
+  &amp;lt;AF&amp;gt;=Use &apos;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;-6&lt;/span&gt;|-4&lt;span class=&quot;s1&quot;&gt;&apos; or &apos;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;-A&lt;/span&gt; &amp;lt;af&amp;gt;&lt;span class=&quot;s1&quot;&gt;&apos; or &apos;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;--&lt;/span&gt;&amp;lt;af&amp;gt;&lt;span class=&quot;s1&quot;&gt;&apos;; default: inet
   List of possible address families (which support routing):
     inet (DARPA Internet) inet6 (IPv6) ax25 (AMPR AX.25)
     netrom (AMPR NET/ROM) ipx (Novell IPX) ddp (Appletalk DDP)
@@ -2667,27 +2667,27 @@ Usage:
 &lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Help &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;Interactive Commands - procps-ng version 3.3.10
 Window 1:Def: Cumulative mode Off.  System: Delay 3.0 secs&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Secure mode Off.
 
-  Z,B,E,e   Global: &lt;span class=&quot;s1&quot;&gt;'Z'&lt;/span&gt; colors&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'B'&lt;/span&gt; bold&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'E'&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;'e'&lt;/span&gt; summary/task memory scale
-  l,t,m     Toggle Summary: &lt;span class=&quot;s1&quot;&gt;'l'&lt;/span&gt; load avg&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'t'&lt;/span&gt; task/cpu stats&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'m'&lt;/span&gt; memory info
-  0,1,2,3,I Toggle: &lt;span class=&quot;s1&quot;&gt;'0'&lt;/span&gt; zeros&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'1/2/3'&lt;/span&gt; cpus or numa node views&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'I'&lt;/span&gt; Irix mode
-  f,F,X     Fields: &lt;span class=&quot;s1&quot;&gt;'f'&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;'F'&lt;/span&gt; add/remove/order/sort&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'X'&lt;/span&gt; increase fixed-width
+  Z,B,E,e   Global: &lt;span class=&quot;s1&quot;&gt;&apos;Z&apos;&lt;/span&gt; colors&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;B&apos;&lt;/span&gt; bold&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;E&apos;&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;&apos;e&apos;&lt;/span&gt; summary/task memory scale
+  l,t,m     Toggle Summary: &lt;span class=&quot;s1&quot;&gt;&apos;l&apos;&lt;/span&gt; load avg&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;t&apos;&lt;/span&gt; task/cpu stats&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;m&apos;&lt;/span&gt; memory info
+  0,1,2,3,I Toggle: &lt;span class=&quot;s1&quot;&gt;&apos;0&apos;&lt;/span&gt; zeros&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;1/2/3&apos;&lt;/span&gt; cpus or numa node views&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;I&apos;&lt;/span&gt; Irix mode
+  f,F,X     Fields: &lt;span class=&quot;s1&quot;&gt;&apos;f&apos;&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;&apos;F&apos;&lt;/span&gt; add/remove/order/sort&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;X&apos;&lt;/span&gt; increase fixed-width
 
-  L,&amp;amp;,&amp;lt;,&amp;gt; &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Locate: &lt;span class=&quot;s1&quot;&gt;'L'&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;'&amp;amp;'&lt;/span&gt; find/again&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Move &lt;span class=&quot;nb&quot;&gt;sort &lt;/span&gt;column: &lt;span class=&quot;s1&quot;&gt;'&amp;lt;'&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;'&amp;gt;'&lt;/span&gt; left/right
-  R,H,V,J &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Toggle: &lt;span class=&quot;s1&quot;&gt;'R'&lt;/span&gt; Sort&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'H'&lt;/span&gt; Threads&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'V'&lt;/span&gt; Forest view&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'J'&lt;/span&gt; Num justify
-  c,i,S,j &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Toggle: &lt;span class=&quot;s1&quot;&gt;'c'&lt;/span&gt; Cmd name/line&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'i'&lt;/span&gt; Idle&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'S'&lt;/span&gt; Time&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'j'&lt;/span&gt; Str justify
-  x,y     &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Toggle highlights: &lt;span class=&quot;s1&quot;&gt;'x'&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;sort &lt;/span&gt;field&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'y'&lt;/span&gt; running tasks
-  z,b     &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Toggle: &lt;span class=&quot;s1&quot;&gt;'z'&lt;/span&gt; color/mono&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'b'&lt;/span&gt; bold/reverse &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;only &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'x'&lt;/span&gt; or &lt;span class=&quot;s1&quot;&gt;'y'&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
-  u,U,o,O &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Filter by: &lt;span class=&quot;s1&quot;&gt;'u'&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;'U'&lt;/span&gt; effective/any user&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'o'&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;'O'&lt;/span&gt; other criteria
-  n,#,^O  &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Set: &lt;span class=&quot;s1&quot;&gt;'n'&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;'#'&lt;/span&gt; max tasks displayed&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Show: Ctrl+&lt;span class=&quot;s1&quot;&gt;'O'&lt;/span&gt; other filter&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;s&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  L,&amp;amp;,&amp;lt;,&amp;gt; &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Locate: &lt;span class=&quot;s1&quot;&gt;&apos;L&apos;&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;&apos;&amp;amp;&apos;&lt;/span&gt; find/again&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Move &lt;span class=&quot;nb&quot;&gt;sort &lt;/span&gt;column: &lt;span class=&quot;s1&quot;&gt;&apos;&amp;lt;&apos;&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;&apos;&amp;gt;&apos;&lt;/span&gt; left/right
+  R,H,V,J &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Toggle: &lt;span class=&quot;s1&quot;&gt;&apos;R&apos;&lt;/span&gt; Sort&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;H&apos;&lt;/span&gt; Threads&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;V&apos;&lt;/span&gt; Forest view&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;J&apos;&lt;/span&gt; Num justify
+  c,i,S,j &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Toggle: &lt;span class=&quot;s1&quot;&gt;&apos;c&apos;&lt;/span&gt; Cmd name/line&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;i&apos;&lt;/span&gt; Idle&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;S&apos;&lt;/span&gt; Time&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;j&apos;&lt;/span&gt; Str justify
+  x,y     &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Toggle highlights: &lt;span class=&quot;s1&quot;&gt;&apos;x&apos;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;sort &lt;/span&gt;field&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;y&apos;&lt;/span&gt; running tasks
+  z,b     &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Toggle: &lt;span class=&quot;s1&quot;&gt;&apos;z&apos;&lt;/span&gt; color/mono&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;b&apos;&lt;/span&gt; bold/reverse &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;only &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;x&apos;&lt;/span&gt; or &lt;span class=&quot;s1&quot;&gt;&apos;y&apos;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  u,U,o,O &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Filter by: &lt;span class=&quot;s1&quot;&gt;&apos;u&apos;&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;&apos;U&apos;&lt;/span&gt; effective/any user&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;o&apos;&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;&apos;O&apos;&lt;/span&gt; other criteria
+  n,#,^O  &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Set: &lt;span class=&quot;s1&quot;&gt;&apos;n&apos;&lt;/span&gt;/&lt;span class=&quot;s1&quot;&gt;&apos;#&apos;&lt;/span&gt; max tasks displayed&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Show: Ctrl+&lt;span class=&quot;s1&quot;&gt;&apos;O&apos;&lt;/span&gt; other filter&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;s&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
   C,...   &lt;span class=&quot;nb&quot;&gt;.&lt;/span&gt; Toggle scroll coordinates msg &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt;: up,down,left,right,home,end
 
-  k,r       Manipulate tasks: &lt;span class=&quot;s1&quot;&gt;'k'&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;kill&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'r'&lt;/span&gt; renice
+  k,r       Manipulate tasks: &lt;span class=&quot;s1&quot;&gt;&apos;k&apos;&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;kill&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;r&apos;&lt;/span&gt; renice
   d or s    Set update interval
-  W,Y       Write configuration file &lt;span class=&quot;s1&quot;&gt;'W'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Inspect other output &lt;span class=&quot;s1&quot;&gt;'Y'&lt;/span&gt;
+  W,Y       Write configuration file &lt;span class=&quot;s1&quot;&gt;&apos;W&apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; Inspect other output &lt;span class=&quot;s1&quot;&gt;&apos;Y&apos;&lt;/span&gt;
   q         Quit
-          &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; commands shown with &lt;span class=&quot;s1&quot;&gt;'.'&lt;/span&gt; require a visible task display window &lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
-Press &lt;span class=&quot;s1&quot;&gt;'h'&lt;/span&gt; or &lt;span class=&quot;s1&quot;&gt;'?'&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;help &lt;/span&gt;with Windows,
-Type &lt;span class=&quot;s1&quot;&gt;'q'&lt;/span&gt; or &amp;lt;Esc&amp;gt; to &lt;span class=&quot;k&quot;&gt;continue&lt;/span&gt;
+          &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt; commands shown with &lt;span class=&quot;s1&quot;&gt;&apos;.&apos;&lt;/span&gt; require a visible task display window &lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+Press &lt;span class=&quot;s1&quot;&gt;&apos;h&apos;&lt;/span&gt; or &lt;span class=&quot;s1&quot;&gt;&apos;?&apos;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;for &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;help &lt;/span&gt;with Windows,
+Type &lt;span class=&quot;s1&quot;&gt;&apos;q&apos;&lt;/span&gt; or &amp;lt;Esc&amp;gt; to &lt;span class=&quot;k&quot;&gt;continue&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;常用可以使用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;1&lt;/code&gt;查看CPU信息。&lt;/p&gt;
@@ -3019,8 +3019,8 @@ Options:
   &lt;span class=&quot;k&quot;&gt;delimiter&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\t&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
   &lt;span class=&quot;n&quot;&gt;dbschema&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;gptest&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
   &lt;span class=&quot;n&quot;&gt;dbtable&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;&quot;store_sales&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-  &lt;span class=&quot;k&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'gptest'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-  &lt;span class=&quot;n&quot;&gt;password&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'test'&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;user&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;gptest&apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;password&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;test&apos;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
   
 &lt;span class=&quot;k&quot;&gt;INSERT&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;INTO&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;TABLE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tbl&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;SELECT&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tpcds_100g&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;store_sales&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WHERE&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ss_sold_date_sk&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;=&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;2451537&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;AND&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ss_sold_date_sk&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;2451520&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
 
@@ -5409,16 +5409,16 @@ java.io.IOException: Connection reset by peer
 
 &lt;h3 id=&quot;match&quot;&gt;match&lt;/h3&gt;
 
-&lt;p&gt;match是和case一起使用。其实有些时候有一些隐式的match。比如下面这两段代码的功能都是一样的，都是过滤掉字符串中的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;'_'&lt;/code&gt;字符,其实这段代码可以简单的使用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;str.filterNot(_ != '_')&lt;/code&gt;，本例子只是讲解match case。&lt;/p&gt;
+&lt;p&gt;match是和case一起使用。其实有些时候有一些隐式的match。比如下面这两段代码的功能都是一样的，都是过滤掉字符串中的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&apos;_&apos;&lt;/code&gt;字符,其实这段代码可以简单的使用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;str.filterNot(_ != &apos;_&apos;)&lt;/code&gt;，本例子只是讲解match case。&lt;/p&gt;
 
 &lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;    &lt;span class=&quot;nv&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;flatMap&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
-      &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;'_'&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;&quot;&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&apos;_&apos;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;&quot;&lt;/span&gt;
       &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;$c&quot;&lt;/span&gt;
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
     
     &lt;span class=&quot;nv&quot;&gt;str&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;flatMap&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
       &lt;span class=&quot;n&quot;&gt;char&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;match&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
-        &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;'_'&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;&quot;&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;ss&quot;&gt;&apos;_&apos;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;&quot;&lt;/span&gt;
         &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;c&quot;&lt;/span&gt;
       &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
@@ -5426,7 +5426,7 @@ java.io.IOException: Connection reset by peer
 
 &lt;p&gt;其实这个flatMap函数的输入是一个函数，输入是String类型，输出是一个字符集合。因此，这里省去的match实际上是对输入参数的match。&lt;/p&gt;
 
-&lt;p&gt;对于case来说，匹配到的可以是一个具体的value, 比如&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;'_'&lt;/code&gt;是一个字符，而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;_&lt;/code&gt;代表任何value。也可以是匹配到一个类型的实例。例如:&lt;/p&gt;
+&lt;p&gt;对于case来说，匹配到的可以是一个具体的value, 比如&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;&apos;_&apos;&lt;/code&gt;是一个字符，而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;_&lt;/code&gt;代表任何value。也可以是匹配到一个类型的实例。例如:&lt;/p&gt;
 
 &lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;testMatch&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;obj&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Any&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Unit&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
     &lt;span class=&quot;n&quot;&gt;obj&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;match&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
@@ -8098,7 +8098,7 @@ ForkJoinPool是一个用于运行ForkJoinTask的线程池. ForkJoinPool和其他
 &lt;p&gt;下面的命令为将一个文件中的数据拷贝到一个表中.&lt;/p&gt;
 
 &lt;div class=&quot;language-sql highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;COPY&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;table_name&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;column_name&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...]&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;'filename'&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;STDIN&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&apos;filename&apos;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;STDIN&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
     &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;WITH&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;option&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;[,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;...]&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
@@ -8415,7 +8415,7 @@ case class ColumnStat(
     &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;size&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;EstimationUtils&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getOutputSize&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;planOutput&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;rowCount&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;attrStats&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
     &lt;span class=&quot;nc&quot;&gt;Statistics&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sizeInBytes&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rowCount&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rowCount&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;attributeStats&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;attrStats&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
   &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;c1&quot;&gt;// When CBO is disabled or the table doesn't have other statistics, we apply the size-only&lt;/span&gt;
+    &lt;span class=&quot;c1&quot;&gt;// When CBO is disabled or the table doesn&apos;t have other statistics, we apply the size-only&lt;/span&gt;
     &lt;span class=&quot;c1&quot;&gt;// estimation strategy and only propagate sizeInBytes in statistics.&lt;/span&gt;
     &lt;span class=&quot;nc&quot;&gt;Statistics&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;sizeInBytes&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sizeInBytes&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
   &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
@@ -8714,13 +8714,13 @@ level 3: p({A, B, C, D})&lt;/p&gt;
 &lt;p&gt;它会解析为一个AST。&lt;/p&gt;
 
 &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;== Parsed Logical Plan ==
-'Project [unresolvedalias('sum('v), None)]
-+- 'SubqueryAlias tmp
-   +- 'Project ['ta.key, ((1 + 2) + 'ta.value) AS v#12]
-      +- 'Filter (('ta.key = 'tb.key) &amp;amp;&amp;amp; ('tb.value &amp;gt; 90))
-         +- 'Join Inner
-            :- 'UnresolvedRelation `ta`
-            +- 'UnresolvedRelation `tb`
+&apos;Project [unresolvedalias(&apos;sum(&apos;v), None)]
++- &apos;SubqueryAlias tmp
+   +- &apos;Project [&apos;ta.key, ((1 + 2) + &apos;ta.value) AS v#12]
+      +- &apos;Filter ((&apos;ta.key = &apos;tb.key) &amp;amp;&amp;amp; (&apos;tb.value &amp;gt; 90))
+         +- &apos;Join Inner
+            :- &apos;UnresolvedRelation `ta`
+            +- &apos;UnresolvedRelation `tb`
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 &lt;p&gt;&lt;img src=&quot;/imgs/spark-catalyst/sql-ast.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
@@ -8981,8 +8981,8 @@ Aggregate [sum(v#12L) AS sum(v)#28L]
 &lt;p&gt;这里有一个查询，如下：&lt;/p&gt;
 
 &lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;org.apache.spark.sql.functions._&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;tableA&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;spark&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20000000&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;as&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;'a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 
-&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;tableB&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;spark&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10000000&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;as&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;'b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;tableA&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;spark&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;20000000&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;as&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;&apos;a&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 
+&lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;tableB&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;spark&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;range&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;10000000&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;as&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;&apos;b&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; 
 &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;result&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;tableA&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tableB&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;Seq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;id&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
     &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;groupBy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
     &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;count&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
@@ -10112,14 +10112,14 @@ def writeIndexFileAndCommit(
 
 &lt;p&gt;首先描述下大概。因为是sort，所以要排序，这里就用到了ExternalSoter这个数据结构。然后把要处理的数据全部插入到ExternalSorter里面，在插入的过程中是不排序的，就是插入，插入数据是(partitionId,key,value)。然后是调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt; sorter.writePartitionedFile&lt;/code&gt;,在这里会排序，会按照partitionId和key（或者key的hashcode）进行排序，其他的就和上面bypassShuffleWriter的差不多了，最后也是写到一个indexFile里面。返回mapStatus。&lt;/p&gt;
 
-&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/** Write a bunch of records to this task's output */
+&lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/** Write a bunch of records to this task&apos;s output */
 override def write(records: Iterator[Product2[K, V]]): Unit = {
   sorter = if (dep.mapSideCombine) {
     require(dep.aggregator.isDefined, &quot;Map-side combine without Aggregator specified!&quot;)
     new ExternalSorter[K, V, C](
       context, dep.aggregator, Some(dep.partitioner), dep.keyOrdering, dep.serializer)
   } else {
-    // In this case we pass neither an aggregator nor an ordering to the sorter, because we don't
+    // In this case we pass neither an aggregator nor an ordering to the sorter, because we don&apos;t
     // care whether the keys get sorted in each partition; that will be done on the reduce side
     // if the operation being run is sortByKey.
     new ExternalSorter[K, V, V](
@@ -10127,7 +10127,7 @@ override def write(records: Iterator[Product2[K, V]]): Unit = {
   }
   sorter.insertAll(records)
 
-  // Don't bother including the time to open the merged output file in the shuffle write time,
+  // Don&apos;t bother including the time to open the merged output file in the shuffle write time,
   // because it just opens a single file, so is typically too fast to measure accurately
   // (see SPARK-3570).
   val output = shuffleBlockResolver.getDataFile(dep.shuffleId, mapId)
@@ -10213,7 +10213,7 @@ public void write(scala.collection.Iterator&amp;lt;Product2&amp;lt;K, V&amp;gt;&
       try {
         sorter.cleanupResources();
       } catch (Exception e) {
-        // Only throw this error if we won't be masking another
+        // Only throw this error if we won&apos;t be masking another
         // error.
         if (success) {
           throw e;
@@ -10277,7 +10277,7 @@ override def read(): Iterator[Product2[K, C]] = {
       val combinedKeyValuesIterator = interruptibleIter.asInstanceOf[Iterator[(K, C)]]
       dep.aggregator.get.combineCombinersByKey(combinedKeyValuesIterator, context)
     } else {
-      // We don't know the value type, but also don't care -- the dependency *should*
+      // We don&apos;t know the value type, but also don&apos;t care -- the dependency *should*
       // have made sure its compatible w/ this aggregator, which will convert the value
       // type to the combined type C
       val keyValuesIterator = interruptibleIter.asInstanceOf[Iterator[(K, Nothing)]]
@@ -10292,7 +10292,7 @@ override def read(): Iterator[Product2[K, C]] = {
   dep.keyOrdering match {
     case Some(keyOrd: Ordering[K]) =&amp;gt;
       // Create an ExternalSorter to sort the data. Note that if spark.shuffle.spill is disabled,
-      // the ExternalSorter won't spill to disk.
+      // the ExternalSorter won&apos;t spill to disk.
       val sorter =
         new ExternalSorter[K, C, C](context, ordering = Some(keyOrd), serializer = dep.serializer)
       sorter.insertAll(aggregatedIter)
@@ -10455,7 +10455,7 @@ private var bytesPerUpdate: Double = _
 /** Total number of insertions and updates into the map since the last resetSamples(). */
 private var numUpdates: Long = _
 
-/** The value of 'numUpdates' at which we will take our next sample. */
+/** The value of &apos;numUpdates&apos; at which we will take our next sample. */
 private var nextSampleNum: Long = _
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
@@ -10489,7 +10489,7 @@ protected def afterUpdate(): Unit = {
 &lt;p&gt;这个是每次更新后，都更新次数+1，然后当他等于下次抽样次数时候就进行抽样。&lt;/p&gt;
 
 &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/**
- * Take a new sample of the current collection's size.
+ * Take a new sample of the current collection&apos;s size.
  */
 private def takeSample(): Unit = {
   samples.enqueue(Sample(SizeEstimator.estimate(this), numUpdates))
@@ -10706,9 +10706,9 @@ object SparkWC {
     // https://issues.apache.org/jira/browse/SPARK-2075
     //
     // NullWritable is a `Comparable` in Hadoop 1.+, so the compiler cannot find an implicit
-    // Ordering for it and will use the default `null`. However, it's a `Comparable[NullWritable]`
+    // Ordering for it and will use the default `null`. However, it&apos;s a `Comparable[NullWritable]`
     // in Hadoop 2.+, so the compiler will call the implicit `Ordering.ordered` method to create an
-    // Ordering for `NullWritable`. That's why the compiler will generate different anonymous
+    // Ordering for `NullWritable`. That&apos;s why the compiler will generate different anonymous
     // classes for `saveAsTextFile` in Hadoop 1.+ and Hadoop 2.+.
     //
     // Therefore, here we provide an explicit Ordering `null` to make sure the compiler generate
@@ -10814,7 +10814,7 @@ object SparkWC {
     val cleanedFunc = clean(func)
     logInfo(&quot;Starting job: &quot; + callSite.shortForm)
     if (conf.getBoolean(&quot;spark.logLineage&quot;, false)) {
-      logInfo(&quot;RDD's recursive dependencies:\n&quot; + rdd.toDebugString)
+      logInfo(&quot;RDD&apos;s recursive dependencies:\n&quot; + rdd.toDebugString)
     }
     dagScheduler.runJob(rdd, cleanedFunc, partitions, callSite, resultHandler, localProperties.get)
     progressBar.foreach(_.finishAll())
@@ -10835,7 +10835,7 @@ object SparkWC {
     val waiter = submitJob(rdd, func, partitions, callSite, resultHandler, properties)
     // Note: Do not call Await.ready(future) because that calls `scala.concurrent.blocking`,
     // which causes concurrent SQL executions to fail if a fork-join pool is used. Note that
-    // due to idiosyncrasies in Scala, `awaitPermission` is not actually used anywhere so it's
+    // due to idiosyncrasies in Scala, `awaitPermission` is not actually used anywhere so it&apos;s
     // safe to pass in null here. For more detail, see SPARK-13747.
     val awaitPermission = null.asInstanceOf[scala.concurrent.CanAwait]
     waiter.completionFuture.ready(Duration.Inf)(awaitPermission)
@@ -12484,12 +12484,12 @@ val blockManager = new BlockManager(executorId, actorSystem, blockManagerMaster,
 
 &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def register(id: BlockManagerId, maxMemSize: Long, slaveActor: ActorRef) {
   if (id.executorId == &quot;&amp;lt;driver&amp;gt;&quot; &amp;amp;&amp;amp; !isLocal) {
-    // Got a register message from the master node; don't register it
+    // Got a register message from the master node; don&apos;t register it
   } else if (!blockManagerInfo.contains(id)) {
     blockManagerIdByExecutor.get(id.executorId) match {
       case Some(manager) =&amp;gt;
         // A block manager of the same executor already exists.
-        // This should never happen. Let's just quit.
+        // This should never happen. Let&apos;s just quit.
         logError(&quot;Got two different block manager registrations on &quot; + id.executorId)
         System.exit(1)
       case None =&amp;gt;
@@ -12531,7 +12531,7 @@ private def initialize() {
 &lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;可以配置多个folder，Spark会在不同的folder下面创建Spark文件夹，文件夹的命名方式为(spark-local-yyyyMMddHHmmss-xxxx, xxxx是一个随机数)，所有的block都会存储在所创建的folder里面。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DiskStore&lt;/code&gt;会在对象被创建时调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;createLocalDirs()&lt;/code&gt;来创建文件夹：&lt;/p&gt;
 
 &lt;div class=&quot;language-plaintext highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;private def createLocalDirs(): Array[File] = {
-  logDebug(&quot;Creating local directories at root dirs '&quot; + rootDirs + &quot;'&quot;)
+  logDebug(&quot;Creating local directories at root dirs &apos;&quot; + rootDirs + &quot;&apos;&quot;)
   val dateFormat = new SimpleDateFormat(&quot;yyyyMMddHHmmss&quot;)
   rootDirs.split(&quot;,&quot;).map { rootDir =&amp;gt;
     var foundLocalDir = false
@@ -12573,7 +12573,7 @@ private def initialize() {
   val dirId = hash % localDirs.length
   val subDirId = (hash / localDirs.length) % subDirsPerLocalDir
 
-  // Create the subdirectory if it doesn't already exist
+  // Create the subdirectory if it doesn&apos;t already exist
   var subDir = subDirs(dirId)(subDirId)
   if (subDir == null) {
     subDir = subDirs(dirId).synchronized {
@@ -12675,7 +12675,7 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
       }
       true
     } else {
-      // Tell the block manager that we couldn't put it in memory so that it can drop it to
+      // Tell the block manager that we couldn&apos;t put it in memory so that it can drop it to
       // disk if the block allows disk storage.
       val data = if (deserialized) {
         Left(value.asInstanceOf[ArrayBuffer[Any]])
@@ -12700,7 +12700,7 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
   } else if (entry.deserialized) {
     Some(entry.value.asInstanceOf[ArrayBuffer[Any]].iterator)
   } else {
-    val buffer = entry.value.asInstanceOf[ByteBuffer].duplicate() // Doesn't actually copy data
+    val buffer = entry.value.asInstanceOf[ByteBuffer].duplicate() // Doesn&apos;t actually copy data
     Some(blockManager.dataDeserialize(blockId, buffer))
   }
 }
@@ -12719,7 +12719,7 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
 
   ...
 
-  // Remember the block's storage level so that we can correctly drop it to disk if it needs
+  // Remember the block&apos;s storage level so that we can correctly drop it to disk if it needs
   // to be dropped right after it got put into memory. Note, however, that other threads will
   // not be able to get() this block until we call markReady on its BlockInfo.
   val myInfo = {
@@ -12742,10 +12742,10 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
 
   val startTimeMs = System.currentTimeMillis
 
-  // If we need to replicate the data, we'll want access to the values, but because our
+  // If we need to replicate the data, we&apos;ll want access to the values, but because our
   // put will read the whole iterator, there will be no values left. For the case where
-  // the put serializes data, we'll remember the bytes, above; but for the case where it
-  // doesn't, such as deserialized storage, let's rely on the put returning an Iterator.
+  // the put serializes data, we&apos;ll remember the bytes, above; but for the case where it
+  // doesn&apos;t, such as deserialized storage, let&apos;s rely on the put returning an Iterator.
   var valuesAfterPut: Iterator[Any] = null
 
   // Ditto for the bytes after the put
@@ -12762,7 +12762,7 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
     try {
       if (level.useMemory) {
         // Save it just to memory first, even if it also has useDisk set to true; we will later
-        // drop it to disk if the memory store can't hold it.
+        // drop it to disk if the memory store can&apos;t hold it.
         val res = memoryStore.putValues(blockId, values, level, true)
         size = res.size
         res.data match {
@@ -12771,7 +12771,7 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
         }
       } else {
         // Save directly to disk.
-        // Don't get back the bytes unless we replicate them.
+        // Don&apos;t get back the bytes unless we replicate them.
         val askForBytes = level.replication &amp;gt; 1
         val res = diskStore.putValues(blockId, values, level, askForBytes)
         size = res.size
@@ -12793,7 +12793,7 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
       // that it has failed, and then remove it from the block info map.
       if (! marked) {
         // Note that the remove must happen before markFailure otherwise another thread
-        // could've inserted a new BlockInfo before we remove it.
+        // could&apos;ve inserted a new BlockInfo before we remove it.
         blockInfo.remove(blockId)
         myInfo.markFailure()
         logWarning(&quot;Putting block &quot; + blockId + &quot; failed&quot;)
@@ -12809,7 +12809,7 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
     if (bytesAfterPut == null) {
       if (valuesAfterPut == null) {
         throw new SparkException(
-          &quot;Underlying put returned neither an Iterator nor bytes! This shouldn't happen.&quot;)
+          &quot;Underlying put returned neither an Iterator nor bytes! This shouldn&apos;t happen.&quot;)
       }
       bytesAfterPut = dataSerialize(blockId, valuesAfterPut)
     }
@@ -12901,8 +12901,8 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
           // Read it as a byte buffer into memory first, then return it
           diskStore.getBytes(blockId) match {
             case Some(bytes) =&amp;gt;
-              // Put a copy of the block back in memory before returning it. Note that we can't
-              // put the ByteBuffer returned by the disk store as that's a memory-mapped file.
+              // Put a copy of the block back in memory before returning it. Note that we can&apos;t
+              // put the ByteBuffer returned by the disk store as that&apos;s a memory-mapped file.
               // The use of rewind assumes this.
               assert (0 == bytes.position())
               val copyForMemory = ByteBuffer.allocate(bytes.limit)
@@ -13018,14 +13018,14 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
           logInfo(&quot;Finished waiting for %s&quot;.format(key))
           // See whether someone else has successfully loaded it. The main way this would fail
           // is for the RDD-level cache eviction policy if someone else has loaded the same RDD
-          // partition but we didn't want to make space for it. However, that case is unlikely
-          // because it's unlikely that two threads would work on the same RDD partition. One
+          // partition but we didn&apos;t want to make space for it. However, that case is unlikely
+          // because it&apos;s unlikely that two threads would work on the same RDD partition. One
           // downside of the current code is that threads wait serially if this does happen.
           blockManager.get(key) match {
             case Some(values) =&amp;gt;
               return values.asInstanceOf[Iterator[T]]
             case None =&amp;gt;
-              logInfo(&quot;Whoever was loading %s failed; we'll try it ourselves&quot;.format  (key))
+              logInfo(&quot;Whoever was loading %s failed; we&apos;ll try it ourselves&quot;.format  (key))
               loading.add(key)
           }
         } else {
@@ -13371,7 +13371,7 @@ override def preStart() {
     masterAddress = master.path.address
     master ! RegisterApplication(appDescription) //向master注册application
     context.system.eventStream.subscribe(self, classOf[RemoteClientLifeCycleEvent])
-    context.watch(master)  // Doesn't work with remote actors, but useful for testing
+    context.watch(master)  // Doesn&apos;t work with remote actors, but useful for testing
   } catch {
     case e: Exception =&amp;gt;
       logError(&quot;Failed to connect to master&quot;, e)
@@ -13388,7 +13388,7 @@ override def preStart() {
   val app = addApplication(description, sender)
   logInfo(&quot;Registered app &quot; + description.name + &quot; with ID &quot; + app.id)
   waitingApps += app
-  context.watch(sender)  // This doesn't work with remote actors but helps for testing
+  context.watch(sender)  // This doesn&apos;t work with remote actors but helps for testing
   sender ! RegisteredApplication(app.id)
   schedule()
 }
@@ -13414,7 +13414,7 @@ override def preStart() {
         }
         pos = (pos + 1) % numUsable
       }
-      // Now that we've decided how many cores to give on each node, let's actually give them
+      // Now that we&apos;ve decided how many cores to give on each node, let&apos;s actually give them
       for (pos &amp;lt;- 0 until numUsable) {
         if (assigned(pos) &amp;gt; 0) {
           val exec = app.addExecutor(usableWorkers(pos), assigned(pos))
@@ -13424,7 +13424,7 @@ override def preStart() {
       }
     }
   } else {
-    // Pack each app into as few nodes as possible until we've assigned all its cores
+    // Pack each app into as few nodes as possible until we&apos;ve assigned all its cores
     for (worker &amp;lt;- workers if worker.coresFree &amp;gt; 0 &amp;amp;&amp;amp; worker.state == WorkerState.ALIVE) {
       for (app &amp;lt;- waitingApps if app.coresLeft &amp;gt; 0) {
         if (canUse(app, worker)) {
@@ -13478,7 +13478,7 @@ override def preStart() {
 
 def fetchAndRunExecutor() {
   try {
-    // Create the executor's working directory
+    // Create the executor&apos;s working directory
     val executorDir = new File(workDir, appId + &quot;/&quot; + execId)
     if (!executorDir.mkdirs()) {
       throw new IOException(&quot;Failed to create directory &quot; + executorDir)

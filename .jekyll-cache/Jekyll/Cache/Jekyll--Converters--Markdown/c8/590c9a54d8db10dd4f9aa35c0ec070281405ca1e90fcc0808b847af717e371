@@ -1,4 +1,4 @@
-I"c�
+I"H�
 <p>目录</p>
 <ul id="markdown-toc">
   <li><a href="#前言" id="markdown-toc-前言">前言</a></li>
@@ -186,7 +186,7 @@
 
 <p>会被转换为</p>
 
-<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">insert</span> <span class="k">into</span> <span class="n">WOODY_DB_</span><span class="err">{</span><span class="n">UNIQUE_ID</span><span class="err">}</span><span class="p">.</span><span class="n">gdw_tables__tgt_tbl</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">gdw_tables</span><span class="p">.</span><span class="n">src_tbl</span><span class="p">;</span>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">insert</span> <span class="k">into</span> <span class="n">WOODY_DB_</span><span class="p">{</span><span class="n">UNIQUE_ID</span><span class="p">}.</span><span class="n">gdw_tables__tgt_tbl</span> <span class="k">select</span> <span class="o">*</span> <span class="k">from</span> <span class="n">gdw_tables</span><span class="p">.</span><span class="n">src_tbl</span><span class="p">;</span>
 </code></pre></div></div>
 
 <h4 id="context">Context</h4>
@@ -385,13 +385,13 @@
 
 <p>假设表gdw_tables.tba_merge的location 是‘/sys/edw/gdw_tables/tba_merge’，使用b_woody_sub进行测试。如下两条语句:</p>
 
-<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">insert</span> <span class="k">into</span> <span class="n">gdw_tables</span><span class="p">.</span><span class="n">tba_merge</span> <span class="n">partition</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="err">’</span><span class="mi">20201019</span><span class="err">‘</span><span class="p">)</span> <span class="k">select</span><span class="err">…</span>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">insert</span> <span class="k">into</span> <span class="n">gdw_tables</span><span class="p">.</span><span class="n">tba_merge</span> <span class="k">partition</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="err">’</span><span class="mi">20201019</span><span class="err">‘</span><span class="p">)</span> <span class="k">select</span><span class="err">…</span>
 <span class="k">alter</span> <span class="k">table</span> <span class="n">gdw_tables</span><span class="p">.</span><span class="n">tba</span> <span class="k">set</span> <span class="k">location</span> <span class="err">‘</span><span class="o">/</span><span class="n">sys</span><span class="o">/</span><span class="n">edw</span><span class="o">/</span><span class="n">gdw_tables</span><span class="o">/</span><span class="n">tba_merge</span><span class="o">/</span><span class="n">dt</span><span class="o">=</span><span class="mi">20201019</span><span class="err">’</span><span class="p">;</span>
 </code></pre></div></div>
 
 <p>将会被转换为:</p>
 
-<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">insert</span> <span class="k">into</span> <span class="n">preprod_b_woody_sub_db</span><span class="p">.</span><span class="n">gdw_tables__tba_merge</span> <span class="n">partition</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="err">‘</span><span class="mi">20201019</span><span class="err">’</span><span class="p">)</span> <span class="k">select</span> <span class="err">…</span>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">insert</span> <span class="k">into</span> <span class="n">preprod_b_woody_sub_db</span><span class="p">.</span><span class="n">gdw_tables__tba_merge</span> <span class="k">partition</span><span class="p">(</span><span class="n">dt</span><span class="o">=</span><span class="err">‘</span><span class="mi">20201019</span><span class="err">’</span><span class="p">)</span> <span class="k">select</span> <span class="err">…</span>
 <span class="k">alter</span> <span class="k">table</span> <span class="n">preprod_b_woody_sub_db</span><span class="p">.</span><span class="n">gdw_tables__tba</span> <span class="k">set</span> <span class="k">location</span> <span class="err">‘</span><span class="o">/</span><span class="n">preprod</span><span class="o">/</span><span class="n">b_woody_sub</span><span class="o">/</span><span class="n">analysis</span><span class="p">.</span><span class="n">db</span><span class="o">/</span><span class="n">sys</span><span class="o">/</span><span class="n">edw</span><span class="o">/</span><span class="n">gdw_tables</span><span class="o">/</span><span class="n">tba_merge</span><span class="o">/</span><span class="n">dt</span><span class="o">=</span><span class="mi">20201019</span><span class="err">’</span><span class="p">;</span>
 </code></pre></div></div>
 
