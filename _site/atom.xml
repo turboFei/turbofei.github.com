@@ -4,13 +4,262 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2022-11-18T22:54:15+08:00</updated>
+ <updated>2022-11-19T03:43:33+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
    <email>turbofei@foxmail.com</email>
  </author>
 
+ 
+ <entry>
+   <title>Ebay Kyuubi Spark Engine Big Result Sets Enhancements</title>
+   <link href="http://www.turbofei.wang/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-enhancements"/>
+   <updated>2022-11-18T00:00:00+08:00</updated>
+   <id>http://www.turbofei.wang/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-enhancements</id>
+   <content type="html">
+&lt;p&gt;目录&lt;/p&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#前言&quot; id=&quot;markdown-toc-前言&quot;&gt;前言&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#问题分析&quot; id=&quot;markdown-toc-问题分析&quot;&gt;问题分析&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#sql-分类&quot; id=&quot;markdown-toc-sql-分类&quot;&gt;SQL 分类&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#spark读取文件过程&quot; id=&quot;markdown-toc-spark读取文件过程&quot;&gt;Spark读取文件过程&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#针对不需要排序的sql结果落地&quot; id=&quot;markdown-toc-针对不需要排序的sql结果落地&quot;&gt;针对不需要排序的SQL结果落地&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#针对需要排序的sql计算结果落地&quot; id=&quot;markdown-toc-针对需要排序的sql计算结果落地&quot;&gt;针对需要排序的SQL计算结果落地&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#总结&quot; id=&quot;markdown-toc-总结&quot;&gt;总结&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;ebay对于Kyuubi Spark 引擎big result sets场景做的一些优化&lt;/p&gt;
+
+&lt;h3 id=&quot;前言&quot;&gt;前言&lt;/h3&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://www.bilibili.com/video/BV1oa411R7BC/&quot;&gt;eBay基于kyuubi构建spark服务的gateway&lt;/a&gt;，而最常见的场景就是Spark SQL, 主要分为以下两种:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;用户在BI 工具上面执行sql语句，执行结果会被截断(kyuubi.operation.result.max.rows)，只取几千条结果返回。&lt;/li&gt;
+  &lt;li&gt;用户使用JDBC拉取全部的执行结果，可能会有几千万条。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;对于第二种场景，如果sql的执行结果集特别大，如果Spark driver将所有计算结果保存在内存中，那么Spark driver会成为瓶颈，非常容易产生OOM。&lt;/p&gt;
+
+&lt;p&gt;因此Kyuubi社区提供了一个&lt;a href=&quot;https://kyuubi.apache.org/docs/latest/deployment/spark/incremental_collection.html?highlight=big%20result&quot;&gt;针对大计算结果集的一个方案&lt;/a&gt;, 可以将&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kyuubi.operation.incremental.collect&lt;/code&gt; 设为true来将原本调用dataFrame的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;collect&lt;/code&gt;方法改为调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;toLocalIterator&lt;/code&gt; 方法。&lt;/p&gt;
+
+&lt;p&gt;我们都知道dataFrame是分partition的，每个partition对应一个task去执行。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;collect&lt;/code&gt;方法是将所有task并行执行，然后收集结果。而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;toLocalIterator&lt;/code&gt;是一个lazy 操作，它是一次计算一个partition的结果，只有在client端需要读取下一部分结果时候，才会计算下一个partition的结果，也就是将所有task串行执行。&lt;/p&gt;
+
+&lt;p&gt;虽然它保护了Spark driver, 不容易OOM，但是性能大部分时间很差，特别是用户的sql比较复杂时候，大大的拉长计算时间。&lt;/p&gt;
+
+&lt;p&gt;本文讲下，我们针对big result sets场景下做的一些优化。&lt;/p&gt;
+
+&lt;h3 id=&quot;问题分析&quot;&gt;问题分析&lt;/h3&gt;
+
+&lt;p&gt;Kyuubi Spark 大计算结果集场景下，主要有以下问题&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;不能将所有结果都保存在内存中，防止OOM，而且不能入侵Spark内核，去做一些计算结果spill的优化&lt;/li&gt;
+  &lt;li&gt;如果使用incremental collect, 延迟计算导致运行时间大大拉长&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;对于第一个问题，不能全部放在内存，我们可以将计算结果落地。&lt;/p&gt;
+
+&lt;p&gt;对于第二个问题，延迟计算导致性能问题，我们可以进行预计算，将结果整齐的落入文件，然后在incremental 拉取结果时，整齐的从文件中读取。&lt;/p&gt;
+
+&lt;p&gt;所以，我们做了一些优化，将sql的计算结果，进行预计算，整齐的存入hdfs文件，然后在后续的拉取中，依然采用incremental 拉取，但是尽量的减少拉取时候split的partition(task)数量，进行快速拉取。&lt;/p&gt;
+
+&lt;h3 id=&quot;sql-分类&quot;&gt;SQL 分类&lt;/h3&gt;
+
+&lt;p&gt;用户的sql分为以下两种：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;没有排序操作&lt;/li&gt;
+  &lt;li&gt;有排序操作，在后续从文件中读取结果返回时候，依然要保持顺序&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;对于不需要排序的sql，我们可以直接将计算结果落盘，但是对于需要排序的sql，我们不能直接落盘，因为直接落盘之后，再重新读取，顺序是不能保证的。&lt;/p&gt;
+
+&lt;h3 id=&quot;spark读取文件过程&quot;&gt;Spark读取文件过程&lt;/h3&gt;
+
+&lt;p&gt;下面是 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;org.apache.spark.sql.execution.DataSourceScanExec::createNonBucketedReadRDD&lt;/code&gt;的代码，用于在非bucket读取时候创建RDD.&lt;/p&gt;
+
+&lt;p&gt;这里面有两个参数，一个是 maxSplitBytes, 代表一个partition(task)最大处理的bytes 大小，另一个是openCostInBytes,代表打开一个文件所需要的开销。&lt;/p&gt;
+
+&lt;p&gt;可以看到这个方法会把selectedPartitions里面的每个文件，按照maxSplitBytes进行split(如果支持split), 然后flatMap展开，之后按照split之后的length，从大到小排序。&lt;/p&gt;
+
+&lt;p&gt;然后将排序好的splitFiles，构建partitions，构建过程就是把排好序的splitFiles进行合并，如果&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;currentSize + file.length &amp;gt; maxSplitBytes&lt;/code&gt;，那么就把current选择的splitFile(s)作为一个partition，然后两个splitFile 合并之间有一个openCostInBytes的开销。&lt;/p&gt;
+
+&lt;p&gt;所以，即使我们将计算结果有序的写入多个数据文件中，再次读取的时候，这些结果的顺序也会被打乱。&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;cm&quot;&gt;/**
+   * Create an RDD for non-bucketed reads.
+   * The bucketed variant of this function is [[createBucketedReadRDD]].
+   *
+   * @param readFile a function to read each (part of a) file.
+   * @param selectedPartitions Hive-style partition that are part of the read.
+   * @param fsRelation [[HadoopFsRelation]] associated with the read.
+   */&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;createNonBucketedReadRDD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;readFile&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;PartitionedFile&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Iterator&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;InternalRow&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;],&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;selectedPartitions&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Array&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;PartitionDirectory&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;],&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;fsRelation&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;HadoopFsRelation&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;RDD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;InternalRow&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;openCostInBytes&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;fsRelation&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sessionState&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;filesOpenCostInBytes&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;maxSplitBytes&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;FilePartition&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;maxSplitBytes&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;fsRelation&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;selectedPartitions&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;nf&quot;&gt;logInfo&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Planning scan with bin packing, max size: $maxSplitBytes bytes, &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;open cost is considered as scanning $openCostInBytes bytes.&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;splitFiles&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;selectedPartitions&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;flatMap&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partition&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;files&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;flatMap&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;file&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// getPath() is very expensive so we only want to call it once in this block:&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;filePath&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getPath&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;isSplitable&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;relation&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;fileFormat&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;isSplitable&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+          &lt;span class=&quot;nv&quot;&gt;relation&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;relation&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;options&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;filePath&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;nv&quot;&gt;PartitionedFileUtil&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;splitFiles&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+          &lt;span class=&quot;n&quot;&gt;sparkSession&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;relation&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+          &lt;span class=&quot;n&quot;&gt;file&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+          &lt;span class=&quot;n&quot;&gt;filePath&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;filePath&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+          &lt;span class=&quot;n&quot;&gt;isSplitable&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;isSplitable&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+          &lt;span class=&quot;n&quot;&gt;maxSplitBytes&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;maxSplitBytes&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+          &lt;span class=&quot;n&quot;&gt;partitionValues&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;partition&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;values&lt;/span&gt;
+        &lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;}.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sortBy&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;length&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;implicitly&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Ordering&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;Long&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]].&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;reverse&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;partitions&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt;
+      &lt;span class=&quot;nv&quot;&gt;FilePartition&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getFilePartitions&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;relation&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;splitFiles&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;maxSplitBytes&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;FileScanRDD&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;fsRelation&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;readFile&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;partitions&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h3 id=&quot;针对不需要排序的sql结果落地&quot;&gt;针对不需要排序的SQL结果落地&lt;/h3&gt;
+
+&lt;p&gt;对于不需要排序的sql，我们可以直接将计算结果进行落地，但是为了整齐的存入，整齐的读取，我们加入了一些参数。&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;minFileSize, 这个参数代表我们可以接受的写出文件平均大小&lt;/li&gt;
+  &lt;li&gt;fileCoalesceNumThreshold， 这个参数代表我们对文件进行合并的文件数量阈值，如果写出的文件平均size小于minFileSize, 且文件个数大于这个阈值，我们将会对写出文件进行合并，期待合并的文件大小是下面第三个参数&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;partitonBytes&lt;/code&gt;的值，算出合并之后文件个数之后，将前面写出文件读出再写入到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Coalesce&lt;/code&gt;路径。&lt;/li&gt;
+  &lt;li&gt;partitonBytes， 这个参数代表，我们在读取落地的计算结果时候，每个partition(task)处理的文件bytes&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;写入过程大概如下:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;根据sql query的schema, 创建一张external parquet分区表(分区键是一个unique的string, 表路径在sessionScrathPath之下)&lt;/li&gt;
+  &lt;li&gt;将sql的结果写入到这张表中&lt;/li&gt;
+  &lt;li&gt;拿到表路径的content summary, 得到写出文件数量和size，如果复合上面提到的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Coalesce&lt;/code&gt;条件，则对这些文件进行合并，做到整齐的写入&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;这里我们之所以创建分区表，是为了在job 完成commit files时候，可以只用rename 一个partition path而不是去rename所有文件，来减少对hdfs namenode的rpc。&lt;/p&gt;
+
+&lt;p&gt;关于读取过程，先看下Spark代码 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;org.apache.spark.sql.execution.datasources.FilePartition::maxSplitBytes&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;第一个参数 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;defaultMaxSplitBytes&lt;/code&gt; 是从&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.files.maxPartitionBytes&lt;/code&gt;中获得，默认128M。&lt;/p&gt;
+
+&lt;p&gt;第二个参数&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;openCostInBytes&lt;/code&gt; 是从&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.files.openCostInBytes&lt;/code&gt;中获得，默认4M。&lt;/p&gt;
+
+&lt;p&gt;第三个参数 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;minPartitionNum&lt;/code&gt;, 是首先从&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.files.minPartitionNum&lt;/code&gt;中获得，如果未设置，则取&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.default.parallelism&lt;/code&gt;的值，默认是当前&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cores* 2&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;然后&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;totalBytes&lt;/code&gt;是要读取文件的size之和， &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bytesPerCore&lt;/code&gt; 是 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;totalBytes/minPartitionNum&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;最后&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;maxSplitBytes&lt;/code&gt;的结果，会取 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;defaultMaxSplitBytes&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Math.max(openCostInBytes, bytesPerCore)&lt;/code&gt; 之中的最小值。&lt;/p&gt;
+
+&lt;p&gt;也就是说当我们计算资源很丰富，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cores&lt;/code&gt;很大时候，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bytesPerCore&lt;/code&gt; 会很小，导致得到的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;maxSplitBytes&lt;/code&gt; 会很小。&lt;/p&gt;
+
+&lt;p&gt;比如说，当我们要incremental读取写出去的400M计算结果，而当前cores数量是80， 那么 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bytesPerCore&lt;/code&gt;是5M，默认参数情况下，我们得到的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;maxSplitBytes&lt;/code&gt; split size也就是5M，那么Spark会至少分配80个task 去串行的读取这个计算结果。&lt;/p&gt;
+
+&lt;p&gt;Spark这样做的目的是为了最大化利用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cores&lt;/code&gt;来快速并行执行，而我们在incremental collect时候，task都是串行。默认情况下(&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.files.minPartitionNum&lt;/code&gt;未设置), 这会造成，读取计算的结果的时间大大拉长。&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;maxSplitBytes&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;SparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;selectedPartitions&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Seq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;PartitionDirectory&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;])&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Long&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;defaultMaxSplitBytes&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sessionState&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;filesMaxPartitionBytes&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;openCostInBytes&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sessionState&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;filesOpenCostInBytes&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;minPartitionNum&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sessionState&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;filesMinPartitionNum&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getOrElse&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sparkContext&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;defaultParallelism&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;totalBytes&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;selectedPartitions&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;flatMap&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;files&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;map&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;getLen&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;openCostInBytes&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)).&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;sum&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;bytesPerCore&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;totalBytes&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;/&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;minPartitionNum&lt;/span&gt;
+
+    &lt;span class=&quot;nv&quot;&gt;Math&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;min&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;defaultMaxSplitBytes&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;Math&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;max&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;openCostInBytes&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bytesPerCore&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;所以针对计算结果读取过程，我们做的优化如下:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;根据计算结果的totalSize和上面说的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;partitonBytes&lt;/code&gt; ，将 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;totalSize/partitonBytes&lt;/code&gt; 的结果用来临时去set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.files.minPartitionNum&lt;/code&gt;（会在operation 结束之后还原), 这样我们按照&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;partitionBytes&lt;/code&gt;去控制incremental读取计算结果的partition(task)数量，整齐的读取&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;针对需要排序的sql计算结果落地&quot;&gt;针对需要排序的SQL计算结果落地&lt;/h3&gt;
+
+&lt;p&gt;前面说过，将计算结果落地之后再读取，不能保证有序。&lt;/p&gt;
+
+&lt;p&gt;除非我们将排序的SQL结果写入一个文件，并且写入的结果要有序。&lt;/p&gt;
+
+&lt;p&gt;所以，针对需要排序的SQL计算结果落地，我们需要把计算结果写入一个文件，而这必然要求我们设置一个阈值，我将之命名为 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sortLimitThreshold&lt;/code&gt;, 默认为100万条。只有当需要排序SQL的计算结果小于这个阈值时，才会将计算结果落地。同时我们也加了一个参数为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sortLimitEnabled&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;此处我们面临两个问题&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;如何将结果只写入一个文件&lt;/li&gt;
+  &lt;li&gt;且保证文件内容有序&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;对于问题1， 我们只需在原有sql基础上，加上一个 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;limit $count&lt;/code&gt; 即可让其结果只输出到一个文件。&lt;/p&gt;
+
+&lt;p&gt;对于问题2，我们需要借助Spark 里面的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TakeOrderedAndProjectExec&lt;/code&gt;来保证输出文件内容有序。&lt;/p&gt;
+
+&lt;p&gt;关于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TakeOrderedAndProjectExec&lt;/code&gt;,  从代码中可以看出只有当 limit &amp;lt; &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.execution.topKSortFallbackThreshold&lt;/code&gt;的值时候，才会用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TakeOrderedAndProjectExec&lt;/code&gt;.&lt;/p&gt;
+
+&lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;cm&quot;&gt;/**
+   * Plans special cases of limit operators.
+   */&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;object&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;SpecialLimits&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;extends&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Strategy&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;apply&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;plan&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;LogicalPlan&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;Seq&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;SparkPlan&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;plan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;match&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;ReturnAnswer&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rootPlan&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;rootPlan&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;match&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;IntegerLiteral&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Sort&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;order&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;topKSortFallbackThreshold&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+          &lt;span class=&quot;nc&quot;&gt;TakeOrderedAndProjectExec&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;order&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;output&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;planLater&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Nil&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;IntegerLiteral&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Project&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;projectList&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Sort&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;order&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)))&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;topKSortFallbackThreshold&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+          &lt;span class=&quot;nc&quot;&gt;TakeOrderedAndProjectExec&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;order&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;projectList&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;planLater&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Nil&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;IntegerLiteral&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+          &lt;span class=&quot;nc&quot;&gt;CollectLimitExec&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;planLater&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Nil&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Tail&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;IntegerLiteral&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+          &lt;span class=&quot;nc&quot;&gt;CollectTailExec&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;planLater&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Nil&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;other&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;planLater&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;other&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Nil&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;IntegerLiteral&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Sort&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;order&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt;
+          &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;topKSortFallbackThreshold&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nc&quot;&gt;TakeOrderedAndProjectExec&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;order&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;output&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;planLater&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Nil&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;IntegerLiteral&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Project&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;projectList&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Sort&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;order&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kc&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)))&lt;/span&gt;
+          &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;conf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;topKSortFallbackThreshold&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nc&quot;&gt;TakeOrderedAndProjectExec&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;limit&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;order&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;projectList&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;planLater&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;child&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;))&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;::&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Nil&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;case&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Nil&lt;/span&gt;
+    &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+  &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
+
+  &lt;span class=&quot;k&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;TOP_K_SORT_FALLBACK_THRESHOLD&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;=&lt;/span&gt;
+    &lt;span class=&quot;nf&quot;&gt;buildConf&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;spark.sql.execution.topKSortFallbackThreshold&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;internal&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;()&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;doc&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;In SQL queries with a SORT followed by a LIMIT like &quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+          &lt;span class=&quot;s&quot;&gt;&quot;&apos;SELECT x FROM t ORDER BY y LIMIT m&apos;, if m is under this threshold, do a top-K sort&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+          &lt;span class=&quot;s&quot;&gt;&quot; in memory, otherwise do a global sort which spills to disk if necessary.&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;version&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;2.4.0&quot;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;intConf&lt;/span&gt;
+      &lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;createWithDefault&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;ByteArrayMethods&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;py&quot;&gt;MAX_ROUNDED_ARRAY_LENGTH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;写入过程如下:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;如果&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sortLimitEnabled&lt;/code&gt;是true，那么去拿到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql(statement).count&lt;/code&gt;的结果&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;rowCount&lt;/code&gt;, 如果其小于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sortLimitThreshold&lt;/code&gt;, 那么在原有&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;statement&lt;/code&gt; 基础之上加上&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;limit $rowCount&lt;/code&gt;, 以确保其结果输出到单个文件&lt;/li&gt;
+  &lt;li&gt;临时 set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.execution.topKSortFallbackThreshold&lt;/code&gt; 为rowCount, 以确保其使用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TakeOrderedAndProjectExec&lt;/code&gt;，确保其输出文件内容有序&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;总结&quot;&gt;总结&lt;/h3&gt;
+
+&lt;p&gt;对于big result sets场景中，为了让服务更加稳定，我们对其结果进行预计算，将计算结果整齐的落入文件，然后在读取时候，整齐的读出，减少split的partition 数量，可以极大的提高用户query的稳定性和性能。&lt;/p&gt;
+</content>
+ </entry>
  
  <entry>
    <title>Ebay Spark Test Framework Woody</title>
