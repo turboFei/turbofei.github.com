@@ -260,6 +260,41 @@ Spark这样做的目的是为了最大化利用`cores`来快速并行执行，�
 
 
 
+### UploadData/DownloadData API
+
+此外我们在内部扩展了hive-service-rpc, 引入了UploadData/DownloadData API, 且这个特性，我司同事已经贡献给Hive 社区，https://github.com/apache/hive/pull/2878， 已经在hive-service-rpc [4.0.0-alpha-1](https://mvnrepository.com/artifact/org.apache.hive/hive-service-rpc/4.0.0-alpha-1) 发布。
+
+UploadData可以让用户上传本地数据到集群的表中，然后在集群操作。
+
+DownloadData可以让用户下载大的计算结果到本地文件，然后在本地处理。
+
+这里对内部实现进行简单描述:
+
+#### UploadData
+
+- 用户指定本地文件路径，然后通过`TUploadDataReq`发送文件内容的binary, Spark端接收后，存入到working 目录下的hdfs文件
+
+- 扩展 SparkSessionExtensions，支持UploadDataCommand 和 MoveDataCommand
+
+  ```
+  statement
+      : UPLOAD DATA INPATH path=STRING OVERWRITE? INTO TABLE
+          multipartIdentifier partitionSpec? optionSpec?              #uploadData
+      | MOVE DATA INPATH path=STRING OVERWRITE? INTO
+          destDir=STRING (destFileName=STRING)?                       #moveData
+
+- UploadDataCommand用于将上传的文件，upload到表中
+- MoveDataCommand用于将上传到working目录下的hdfs文件，move到指定的hdfs路径
+
+#### DownloadData
+
+- 用户可以下载指定的hdfs路径下的数据，或者指定一个sql query, 将其结果下载到本地
+- 用户可以指定下载数据的format，比如csv或者parquet
+- 可以指定文件的minSize和fileNumber等参数
+- spark端会先将结果存入到working 目录下的路径下
+- 类似于上面的数据落盘，如果用户的sql没有排序操作，则对小文件进行Coalesce
+- client端拉取时候会获得, fileName, data binary, schema和size，然后依靠这些信息，新建或者存入已有文件中。
+
 ### 总结
 
-对于big result sets场景中，为了让服务更加稳定，对其结果进行预计算，将计算结果规整的落入文件，然后在读取时候，规整的读出，减少split的partition 数量和碎片，可以极大的提高用户query的稳定性和性能。
+对于big result sets场景中，为了让服务更加稳定，对其结果进行预计算，将计算结果规整的落入文件，然后在读取时候，规整的读出，减少split的partition 数量和碎片，可以极大的提高用户query的稳定性和性能。此外，简单介绍UploadData/DownloadData API.
