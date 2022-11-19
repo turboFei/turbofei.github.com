@@ -5,13 +5,13 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2022-11-19T03:43:33+08:00</lastBuildDate>
-        <pubDate>2022-11-19T03:43:33+08:00</pubDate>
+        <lastBuildDate>2022-11-19T09:50:17+08:00</lastBuildDate>
+        <pubDate>2022-11-19T09:50:17+08:00</pubDate>
         <ttl>1800</ttl>
 
 
         <item>
-                <title>Ebay Kyuubi Spark Engine Big Result Sets Enhancements</title>
+                <title>Ebay Kyuubi Spark Engine Big Result Sets Solution</title>
                 <description>
 &lt;p&gt;目录&lt;/p&gt;
 
@@ -20,7 +20,7 @@
   &lt;li&gt;&lt;a href=&quot;#问题分析&quot; id=&quot;markdown-toc-问题分析&quot;&gt;问题分析&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#sql-分类&quot; id=&quot;markdown-toc-sql-分类&quot;&gt;SQL 分类&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#spark读取文件过程&quot; id=&quot;markdown-toc-spark读取文件过程&quot;&gt;Spark读取文件过程&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;#针对不需要排序的sql结果落地&quot; id=&quot;markdown-toc-针对不需要排序的sql结果落地&quot;&gt;针对不需要排序的SQL结果落地&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#针对不需排序的sql结果落地&quot; id=&quot;markdown-toc-针对不需排序的sql结果落地&quot;&gt;针对不需排序的SQL结果落地&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#针对需要排序的sql计算结果落地&quot; id=&quot;markdown-toc-针对需要排序的sql计算结果落地&quot;&gt;针对需要排序的SQL计算结果落地&lt;/a&gt;&lt;/li&gt;
   &lt;li&gt;&lt;a href=&quot;#总结&quot; id=&quot;markdown-toc-总结&quot;&gt;总结&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
@@ -28,20 +28,37 @@
 
 &lt;h3 id=&quot;前言&quot;&gt;前言&lt;/h3&gt;
 
-&lt;p&gt;&lt;a href=&quot;https://www.bilibili.com/video/BV1oa411R7BC/&quot;&gt;eBay基于kyuubi构建spark服务的gateway&lt;/a&gt;，而最常见的场景就是Spark SQL, 主要分为以下两种:&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://www.bilibili.com/video/BV1oa411R7BC/&quot;&gt;eBay基于kyuubi构建spark服务的gateway&lt;/a&gt;，最常见的场景是Spark SQL, 主要分为以下两种:&lt;/p&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;用户在BI 工具上面执行sql语句，执行结果会被截断(kyuubi.operation.result.max.rows)，只取几千条结果返回。&lt;/li&gt;
-  &lt;li&gt;用户使用JDBC拉取全部的执行结果，可能会有几千万条。&lt;/li&gt;
+  &lt;li&gt;用户在BI 工具上面执行sql语句，计算结果会被截断，返回&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kyuubi.operation.result.max.rows&lt;/code&gt;条结果。&lt;/li&gt;
+  &lt;li&gt;用户使用JDBC拉取全部计算结果，可能会有几千万条。&lt;/li&gt;
 &lt;/ol&gt;
 
 &lt;p&gt;对于第二种场景，如果sql的执行结果集特别大，如果Spark driver将所有计算结果保存在内存中，那么Spark driver会成为瓶颈，非常容易产生OOM。&lt;/p&gt;
 
 &lt;p&gt;因此Kyuubi社区提供了一个&lt;a href=&quot;https://kyuubi.apache.org/docs/latest/deployment/spark/incremental_collection.html?highlight=big%20result&quot;&gt;针对大计算结果集的一个方案&lt;/a&gt;, 可以将&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;kyuubi.operation.incremental.collect&lt;/code&gt; 设为true来将原本调用dataFrame的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;collect&lt;/code&gt;方法改为调用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;toLocalIterator&lt;/code&gt; 方法。&lt;/p&gt;
 
-&lt;p&gt;我们都知道dataFrame是分partition的，每个partition对应一个task去执行。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;collect&lt;/code&gt;方法是将所有task并行执行，然后收集结果。而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;toLocalIterator&lt;/code&gt;是一个lazy 操作，它是一次计算一个partition的结果，只有在client端需要读取下一部分结果时候，才会计算下一个partition的结果，也就是将所有task串行执行。&lt;/p&gt;
+&lt;p&gt;dataFrame是分partition的，每个partition对应一个task去执行。&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;collect&lt;/code&gt;方法是将所有task并行执行，然后收集结果。而&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;toLocalIterator&lt;/code&gt;是一个lazy 操作，它是一次计算一个partition的结果，只有在client端需要读取下一部分结果时候，才会计算下一个partition的结果，也就是将所有task串行执行。&lt;/p&gt;
 
-&lt;p&gt;虽然它保护了Spark driver, 不容易OOM，但是性能大部分时间很差，特别是用户的sql比较复杂时候，大大的拉长计算时间。&lt;/p&gt;
+&lt;p&gt;当第一个task完成之后，Kyuubi Spark 引擎就会把这个operation的状态设置为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;FINISHED&lt;/code&gt;, 允许client端&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;fetchResults&lt;/code&gt;。比如client端默认每次拉取1000条数据，会发送一条&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TFetchResultsReq&lt;/code&gt;的rpc, 然后Spark端返回当前collect的计算结果，如果不到1000条，就会触发下一个task的计算，直到能够返回client端需要的条数或者所有的task计算完成，然后作为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TFetchResultsResp&lt;/code&gt;返回，这算一次rpc.&lt;/p&gt;
+
+&lt;p&gt;虽然它保护了Spark driver, 不容易OOM，但是不保证性能，特别是用户的sql比较复杂时候，大大的拉长了计算时间。&lt;/p&gt;
+
+&lt;p&gt;比如说用户的sql对一张大表进行查询，加入了很多过滤条件:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;这个查询创建了大量的partition(task)&lt;/li&gt;
+  &lt;li&gt;但是有些partition经过过滤之后，并没有复合条件的结果返回，或者只有几条对应的结果。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;这就造成了以下问题:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;串行执行这些大量的partition(task)性能很差&lt;/li&gt;
+  &lt;li&gt;有些partition没有符合条件的结果返回，这些无效的计算，延迟到了拉取结果时候&lt;/li&gt;
+  &lt;li&gt;可能需要串行计算很多partition(task)，才能返回client需要的条数，造成client端timeout。&lt;/li&gt;
+&lt;/ul&gt;
 
 &lt;p&gt;本文讲下，我们针对big result sets场景下做的一些优化。&lt;/p&gt;
 
@@ -56,20 +73,22 @@
 
 &lt;p&gt;对于第一个问题，不能全部放在内存，我们可以将计算结果落地。&lt;/p&gt;
 
-&lt;p&gt;对于第二个问题，延迟计算导致性能问题，我们可以进行预计算，将结果整齐的落入文件，然后在incremental 拉取结果时，整齐的从文件中读取。&lt;/p&gt;
+&lt;p&gt;对于第二个问题，延迟计算导致性能问题，我们可以进行预计算，不延迟无效计算，将结果规整的落入文件(每个文件大小相当)，然后在incremental 拉取结果时，让每次拉取，可以读取到期望size的计算结果，避免client端&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TFetchResultsReq&lt;/code&gt; rpc timeout。&lt;/p&gt;
 
-&lt;p&gt;所以，我们做了一些优化，将sql的计算结果，进行预计算，整齐的存入hdfs文件，然后在后续的拉取中，依然采用incremental 拉取，但是尽量的减少拉取时候split的partition(task)数量，进行快速拉取。&lt;/p&gt;
+&lt;p&gt;所以，我们做了一些优化，将sql的计算结果，进行预计算，按照预期的size落入hdfs文件，然后在后续的拉取时，依然采用incremental 拉取，按照预期的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;partitionBytes&lt;/code&gt;去split计算结果划分partition(task)，快速拉取。&lt;/p&gt;
 
 &lt;h3 id=&quot;sql-分类&quot;&gt;SQL 分类&lt;/h3&gt;
 
 &lt;p&gt;用户的sql分为以下两种：&lt;/p&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;没有排序操作&lt;/li&gt;
-  &lt;li&gt;有排序操作，在后续从文件中读取结果返回时候，依然要保持顺序&lt;/li&gt;
+  &lt;li&gt;不需排序的SQL&lt;/li&gt;
+  &lt;li&gt;需要排序的SQL&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;对于不需要排序的sql，我们可以直接将计算结果落盘，但是对于需要排序的sql，我们不能直接落盘，因为直接落盘之后，再重新读取，顺序是不能保证的。&lt;/p&gt;
+&lt;p&gt;对于不需要排序的SQL，可以直接将计算结果落盘。&lt;/p&gt;
+
+&lt;p&gt;但是对于需要排序的SQL，不能直接落盘，因为直接落盘之后，再重新读取，顺序是不能保证的。&lt;/p&gt;
 
 &lt;h3 id=&quot;spark读取文件过程&quot;&gt;Spark读取文件过程&lt;/h3&gt;
 
@@ -81,7 +100,7 @@
 
 &lt;p&gt;然后将排序好的splitFiles，构建partitions，构建过程就是把排好序的splitFiles进行合并，如果&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;currentSize + file.length &amp;gt; maxSplitBytes&lt;/code&gt;，那么就把current选择的splitFile(s)作为一个partition，然后两个splitFile 合并之间有一个openCostInBytes的开销。&lt;/p&gt;
 
-&lt;p&gt;所以，即使我们将计算结果有序的写入多个数据文件中，再次读取的时候，这些结果的顺序也会被打乱。&lt;/p&gt;
+&lt;p&gt;所以，即使将计算结果有序的写入多个数据文件中，再次读取的时候，这些结果的顺序也会被打乱。&lt;/p&gt;
 
 &lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;cm&quot;&gt;/**
    * Create an RDD for non-bucketed reads.
@@ -125,14 +144,14 @@
   &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
-&lt;h3 id=&quot;针对不需要排序的sql结果落地&quot;&gt;针对不需要排序的SQL结果落地&lt;/h3&gt;
+&lt;h3 id=&quot;针对不需排序的sql结果落地&quot;&gt;针对不需排序的SQL结果落地&lt;/h3&gt;
 
-&lt;p&gt;对于不需要排序的sql，我们可以直接将计算结果进行落地，但是为了整齐的存入，整齐的读取，我们加入了一些参数。&lt;/p&gt;
+&lt;p&gt;对于不需要排序的sql，我们可以直接将计算结果进行落地，但是为了规整的写入，规整的读出，我们加入了一些参数。&lt;/p&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;minFileSize, 这个参数代表我们可以接受的写出文件平均大小&lt;/li&gt;
-  &lt;li&gt;fileCoalesceNumThreshold， 这个参数代表我们对文件进行合并的文件数量阈值，如果写出的文件平均size小于minFileSize, 且文件个数大于这个阈值，我们将会对写出文件进行合并，期待合并的文件大小是下面第三个参数&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;partitonBytes&lt;/code&gt;的值，算出合并之后文件个数之后，将前面写出文件读出再写入到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Coalesce&lt;/code&gt;路径。&lt;/li&gt;
-  &lt;li&gt;partitonBytes， 这个参数代表，我们在读取落地的计算结果时候，每个partition(task)处理的文件bytes&lt;/li&gt;
+  &lt;li&gt;minFileSize, 这个参数代表可以接受的落盘文件平均大小&lt;/li&gt;
+  &lt;li&gt;fileCoalesceNumThreshold， 这个参数代表对文件进行合并的文件数量阈值，如果写出的文件平均size小于minFileSize, 且文件个数大于这个阈值，将会对写出文件进行合并，期待合并的文件大小是下面第三个参数&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;partitonBytes&lt;/code&gt;的值，算出合并之后文件个数之后，将前面写出文件读出再写入到&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Coalesce&lt;/code&gt;路径。&lt;/li&gt;
+  &lt;li&gt;partitonBytes， 这个参数代表，在读取落地的计算结果时候，每个partition(task)处理的文件bytes。&lt;/li&gt;
 &lt;/ol&gt;
 
 &lt;p&gt;写入过程大概如下:&lt;/p&gt;
@@ -140,10 +159,10 @@
 &lt;ol&gt;
   &lt;li&gt;根据sql query的schema, 创建一张external parquet分区表(分区键是一个unique的string, 表路径在sessionScrathPath之下)&lt;/li&gt;
   &lt;li&gt;将sql的结果写入到这张表中&lt;/li&gt;
-  &lt;li&gt;拿到表路径的content summary, 得到写出文件数量和size，如果复合上面提到的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Coalesce&lt;/code&gt;条件，则对这些文件进行合并，做到整齐的写入&lt;/li&gt;
+  &lt;li&gt;拿到表路径的content summary, 得到写出文件数量和size，如果复合上面提到的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Coalesce&lt;/code&gt;条件，则对这些文件进行合并&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;这里我们之所以创建分区表，是为了在job 完成commit files时候，可以只用rename 一个partition path而不是去rename所有文件，来减少对hdfs namenode的rpc。&lt;/p&gt;
+&lt;p&gt;这里之所以创建分区表，是为了在job 完成commit files时候，可以只用rename 一个partition path而不是去rename所有文件，来减少对hdfs namenode的rpc。&lt;/p&gt;
 
 &lt;p&gt;关于读取过程，先看下Spark代码 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;org.apache.spark.sql.execution.datasources.FilePartition::maxSplitBytes&lt;/code&gt;.&lt;/p&gt;
 
@@ -157,11 +176,11 @@
 
 &lt;p&gt;最后&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;maxSplitBytes&lt;/code&gt;的结果，会取 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;defaultMaxSplitBytes&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Math.max(openCostInBytes, bytesPerCore)&lt;/code&gt; 之中的最小值。&lt;/p&gt;
 
-&lt;p&gt;也就是说当我们计算资源很丰富，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cores&lt;/code&gt;很大时候，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bytesPerCore&lt;/code&gt; 会很小，导致得到的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;maxSplitBytes&lt;/code&gt; 会很小。&lt;/p&gt;
+&lt;p&gt;也就是说当计算资源很丰富，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cores&lt;/code&gt;很大时候，&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bytesPerCore&lt;/code&gt; 会很小，导致得到的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;maxSplitBytes&lt;/code&gt; 会很小。&lt;/p&gt;
 
-&lt;p&gt;比如说，当我们要incremental读取写出去的400M计算结果，而当前cores数量是80， 那么 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bytesPerCore&lt;/code&gt;是5M，默认参数情况下，我们得到的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;maxSplitBytes&lt;/code&gt; split size也就是5M，那么Spark会至少分配80个task 去串行的读取这个计算结果。&lt;/p&gt;
+&lt;p&gt;比如说，当incremental读取写出去的400M计算结果，而当前cores数量是80， 那么 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;bytesPerCore&lt;/code&gt;是5M，默认参数情况下，得到的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;maxSplitBytes&lt;/code&gt; split size也就是5M，那么Spark会至少分配80个task 去串行的读取这个计算结果。&lt;/p&gt;
 
-&lt;p&gt;Spark这样做的目的是为了最大化利用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cores&lt;/code&gt;来快速并行执行，而我们在incremental collect时候，task都是串行。默认情况下(&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.files.minPartitionNum&lt;/code&gt;未设置), 这会造成，读取计算的结果的时间大大拉长。&lt;/p&gt;
+&lt;p&gt;Spark这样做的目的是为了最大化利用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;cores&lt;/code&gt;来快速并行执行，而我们在incremental collect时候，task都是串行。默认情况下&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.files.minPartitionNum&lt;/code&gt;未设置,  当计算资源充足时候，会划分过多的partition, 造成太多的碎片, 拉长读取计算的结果的时间。&lt;/p&gt;
 
 &lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;maxSplitBytes&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
       &lt;span class=&quot;n&quot;&gt;sparkSession&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;SparkSession&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt;
@@ -180,29 +199,29 @@
 &lt;p&gt;所以针对计算结果读取过程，我们做的优化如下:&lt;/p&gt;
 
 &lt;ol&gt;
-  &lt;li&gt;根据计算结果的totalSize和上面说的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;partitonBytes&lt;/code&gt; ，将 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;totalSize/partitonBytes&lt;/code&gt; 的结果用来临时去set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.files.minPartitionNum&lt;/code&gt;（会在operation 结束之后还原), 这样我们按照&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;partitionBytes&lt;/code&gt;去控制incremental读取计算结果的partition(task)数量，整齐的读取&lt;/li&gt;
+  &lt;li&gt;根据计算结果的totalSize和上面说的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;partitonBytes&lt;/code&gt; ，将 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;totalSize/partitonBytes&lt;/code&gt; 的结果用来临时去set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.files.minPartitionNum&lt;/code&gt;（会在operation 结束之后还原), 这样按照&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;partitionBytes&lt;/code&gt;去控制incremental读取计算结果的partition(task)数量，减少碎片，可以快速的返回client结果，避免rpc timeout.&lt;/li&gt;
 &lt;/ol&gt;
 
 &lt;h3 id=&quot;针对需要排序的sql计算结果落地&quot;&gt;针对需要排序的SQL计算结果落地&lt;/h3&gt;
 
 &lt;p&gt;前面说过，将计算结果落地之后再读取，不能保证有序。&lt;/p&gt;
 
-&lt;p&gt;除非我们将排序的SQL结果写入一个文件，并且写入的结果要有序。&lt;/p&gt;
+&lt;p&gt;除非将排序的SQL结果写入一个文件，并且写入的结果要有序。&lt;/p&gt;
 
-&lt;p&gt;所以，针对需要排序的SQL计算结果落地，我们需要把计算结果写入一个文件，而这必然要求我们设置一个阈值，我将之命名为 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sortLimitThreshold&lt;/code&gt;, 默认为100万条。只有当需要排序SQL的计算结果小于这个阈值时，才会将计算结果落地。同时我们也加了一个参数为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sortLimitEnabled&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;所以，针对需要排序的SQL计算结果落地，需要把计算结果写入一个文件，而这必然要求设置一个阈值，将之命名为 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sortLimitThreshold&lt;/code&gt;, 默认为100万条。只有当需要排序SQL的计算结果小于这个阈值时，才会将计算结果落地。同时也加了一个参数为&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;sortLimitEnabled&lt;/code&gt;.&lt;/p&gt;
 
-&lt;p&gt;此处我们面临两个问题&lt;/p&gt;
+&lt;p&gt;此处面临两个问题&lt;/p&gt;
 
 &lt;ol&gt;
   &lt;li&gt;如何将结果只写入一个文件&lt;/li&gt;
   &lt;li&gt;且保证文件内容有序&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;p&gt;对于问题1， 我们只需在原有sql基础上，加上一个 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;limit $count&lt;/code&gt; 即可让其结果只输出到一个文件。&lt;/p&gt;
+&lt;p&gt;对于问题1， 只需在原有sql基础上，加上一个 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;limit $count&lt;/code&gt; 即可让其结果只输出到一个文件。&lt;/p&gt;
 
-&lt;p&gt;对于问题2，我们需要借助Spark 里面的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TakeOrderedAndProjectExec&lt;/code&gt;来保证输出文件内容有序。&lt;/p&gt;
+&lt;p&gt;对于问题2，需要借助Spark 里面的&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TakeOrderedAndProjectExec&lt;/code&gt;来保证输出文件内容有序。&lt;/p&gt;
 
-&lt;p&gt;关于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TakeOrderedAndProjectExec&lt;/code&gt;,  从代码中可以看出只有当 limit &amp;lt; &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.execution.topKSortFallbackThreshold&lt;/code&gt;的值时候，才会用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TakeOrderedAndProjectExec&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;关于&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TakeOrderedAndProjectExec&lt;/code&gt;,  从代码中可以看出只有当 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;limit &amp;lt; spark.sql.execution.topKSortFallbackThreshold&lt;/code&gt;的值时候，才会用&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;TakeOrderedAndProjectExec&lt;/code&gt;.&lt;/p&gt;
 
 &lt;div class=&quot;language-scala highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;cm&quot;&gt;/**
    * Plans special cases of limit operators.
@@ -252,10 +271,10 @@
 
 &lt;h3 id=&quot;总结&quot;&gt;总结&lt;/h3&gt;
 
-&lt;p&gt;对于big result sets场景中，为了让服务更加稳定，我们对其结果进行预计算，将计算结果整齐的落入文件，然后在读取时候，整齐的读出，减少split的partition 数量，可以极大的提高用户query的稳定性和性能。&lt;/p&gt;
+&lt;p&gt;对于big result sets场景中，为了让服务更加稳定，对其结果进行预计算，将计算结果规整的落入文件，然后在读取时候，规整的读出，减少split的partition 数量和碎片，可以极大的提高用户query的稳定性和性能。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-enhancements</link>
-                <guid>http://www.turbofei.wang/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-enhancements</guid>
+                <link>http://www.turbofei.wang/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-solution</link>
+                <guid>http://www.turbofei.wang/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-solution</guid>
                 <pubDate>2022-11-18T00:00:00+08:00</pubDate>
         </item>
 
