@@ -2,7 +2,7 @@
 layout: post
 category: spark
 tagline: ""
-summary: ebay对于Kyuubi Spark 引擎big result sets场景做的一些优化
+summary: 本文讲下ebay对于Kyuubi Spark 引擎big result sets场景做的一些优化，如果错误，欢迎指正。
 tags: [kyuubi,spark]
 ---
 {% include JB/setup %}
