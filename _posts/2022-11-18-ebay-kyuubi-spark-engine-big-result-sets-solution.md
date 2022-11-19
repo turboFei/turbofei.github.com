@@ -163,7 +163,7 @@ Kyuubi Spark 大计算结果集场景下，主要有以下问题
 
 也就是说当计算资源很丰富，`cores`很大时候，`bytesPerCore` 会很小，导致得到的 `maxSplitBytes` 会很小。
 
-比如说，当incremental读取写出去的400M计算结果，而当前cores数量是80， 那么 `bytesPerCore`是5M，默认参数情况下，得到的`maxSplitBytes` split size也就是5M，那么Spark会至少分配80个task 去串行的读取这个计算结果。
+比如说，当incremental读取写出去的400M计算结果，而当前cores数量是40， 那么 `bytesPerCore`是5M，默认参数情况下，得到的`maxSplitBytes` split size也就是5M，那么Spark会至少分配80个task 去串行的读取这个计算结果。
 
 Spark这样做的目的是为了最大化利用`cores`来快速并行执行，而我们在incremental collect时候，task都是串行。默认情况下`spark.sql.files.minPartitionNum`未设置,  当计算资源充足时候，会划分过多的partition, 造成太多的碎片, 拉长读取计算的结果的时间。
 
