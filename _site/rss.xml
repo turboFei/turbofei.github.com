@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2022-11-19T12:21:47+08:00</lastBuildDate>
-        <pubDate>2022-11-19T12:21:47+08:00</pubDate>
+        <lastBuildDate>2023-02-22T22:47:39+08:00</lastBuildDate>
+        <pubDate>2023-02-22T22:47:39+08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -9733,7 +9733,7 @@ protected def doExecute(): RDD[InternalRow]
         </item>
 
         <item>
-                <title>Spark Security面面观</title>
+                <title>[转载]Spark Security面面观</title>
                 <description>&lt;h3 id=&quot;背景&quot;&gt;背景&lt;/h3&gt;
 
 &lt;p&gt;作为一款成熟的商业软件，安全往往鲜少被提及但又不可忽略，大数据软件也是如此。在生产环境中，对于一款成熟的大数据软件的考量，不仅需要考虑其功能完备性和性能，同时安全也是不可缺少的一环。为什么安全如此重要呢？&lt;/p&gt;
@@ -10082,8 +10082,8 @@ spark.org.apache.hadoop.security.authentication.server.AuthenticationFilter.para
 
 &lt;p&gt;本文从总体上介绍了Spark中关于安全的各个方面，以及如何开启和配置这些安全机制。本文并未从原理和代码上阐述所有这些安全机制背后的原理以及实现，因为对于每一种安全机制都可以长篇大论赘述其由来。相反的是，相比于原理，怎么去使用它更为重要，毕竟绝大多数的用户/开发者不会涉及到里面真正的细节。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/2018/01/15/spark-security-overview</link>
-                <guid>http://www.turbofei.wang/2018/01/15/spark-security-overview</guid>
+                <link>http://www.turbofei.wang/jerryshao/2018/01/15/spark-security-overview</link>
+                <guid>http://www.turbofei.wang/jerryshao/2018/01/15/spark-security-overview</guid>
                 <pubDate>2018-01-15T00:00:00+08:00</pubDate>
         </item>
 

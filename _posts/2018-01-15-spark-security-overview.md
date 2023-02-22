@@ -1,9 +1,10 @@
 ---
 layout: post
-title: "Spark Security面面观"
+title: "[转载]Spark Security面面观"
 date: 2018-01-15
 author: "Jerry Shao"
 header-img: "img/2018-01-15-spark-security-overview/data-security.jpg"
+category: jerryshao
 tags:
     - spark
     - cloud

@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2022-11-19T12:21:47+08:00</updated>
+ <updated>2023-02-22T22:47:39+08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -9735,10 +9735,10 @@ protected def doExecute(): RDD[InternalRow]
  </entry>
  
  <entry>
-   <title>Spark Security面面观</title>
-   <link href="http://www.turbofei.wang/2018/01/15/spark-security-overview"/>
+   <title>[转载]Spark Security面面观</title>
+   <link href="http://www.turbofei.wang/jerryshao/2018/01/15/spark-security-overview"/>
    <updated>2018-01-15T00:00:00+08:00</updated>
-   <id>http://www.turbofei.wang/2018/01/15/spark-security-overview</id>
+   <id>http://www.turbofei.wang/jerryshao/2018/01/15/spark-security-overview</id>
    <content type="html">&lt;h3 id=&quot;背景&quot;&gt;背景&lt;/h3&gt;
 
 &lt;p&gt;作为一款成熟的商业软件，安全往往鲜少被提及但又不可忽略，大数据软件也是如此。在生产环境中，对于一款成熟的大数据软件的考量，不仅需要考虑其功能完备性和性能，同时安全也是不可缺少的一环。为什么安全如此重要呢？&lt;/p&gt;
