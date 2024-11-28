@@ -4,3 +4,4 @@ _dragt/
 .DS_Store
 *.sh
 node_modules/
+.idea/

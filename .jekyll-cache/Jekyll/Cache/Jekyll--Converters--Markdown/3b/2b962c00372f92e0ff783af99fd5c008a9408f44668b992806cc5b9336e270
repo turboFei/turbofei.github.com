@@ -22,13 +22,13 @@
 <p>match是和case一起使用。其实有些时候有一些隐式的match。比如下面这两段代码的功能都是一样的，都是过滤掉字符串中的<code class="language-plaintext highlighter-rouge">'_'</code>字符,其实这段代码可以简单的使用<code class="language-plaintext highlighter-rouge">str.filterNot(_ != '_')</code>，本例子只是讲解match case。</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    <span class="nv">str</span><span class="o">.</span><span class="py">flatMap</span> <span class="o">{</span>
-      <span class="k">case</span> <span class="ss">'_'</span> <span class="k">=&gt;</span> <span class="s">""</span>
+      <span class="k">case</span> <span class="sc">'_'</span> <span class="k">=&gt;</span> <span class="s">""</span>
       <span class="k">case</span> <span class="n">c</span> <span class="k">=&gt;</span> <span class="n">s</span><span class="s">"$c"</span>
     <span class="o">}</span>
     
     <span class="nv">str</span><span class="o">.</span><span class="py">flatMap</span> <span class="o">{</span> <span class="n">char</span> <span class="k">=&gt;</span>
       <span class="n">char</span> <span class="k">match</span> <span class="o">{</span>
-        <span class="k">case</span> <span class="ss">'_'</span> <span class="k">=&gt;</span> <span class="s">""</span>
+        <span class="k">case</span> <span class="sc">'_'</span> <span class="k">=&gt;</span> <span class="s">""</span>
         <span class="k">case</span> <span class="n">c</span> <span class="k">=&gt;</span> <span class="n">s</span><span class="s">"c"</span>
       <span class="o">}</span>
     <span class="o">}</span>
