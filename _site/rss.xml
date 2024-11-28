@@ -5,24 +5,169 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2024-11-01T15:51:49-07:00</lastBuildDate>
-        <pubDate>2024-11-01T15:51:49-07:00</pubDate>
+        <lastBuildDate>2024-11-28T13:51:34-08:00</lastBuildDate>
+        <pubDate>2024-11-28T13:51:34-08:00</pubDate>
         <ttl>1800</ttl>
 
 
         <item>
-                <title>Celeborn Automation</title>
+                <title>基于Celeborn RESTful API进行自动化工具集成</title>
                 <description>
 &lt;p&gt;目录&lt;/p&gt;
+
 &lt;ul id=&quot;markdown-toc&quot;&gt;
   &lt;li&gt;&lt;a href=&quot;#前言&quot; id=&quot;markdown-toc-前言&quot;&gt;前言&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#celeborn-master-管理&quot; id=&quot;markdown-toc-celeborn-master-管理&quot;&gt;Celeborn Master 管理&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#master-pod重启前流程&quot; id=&quot;markdown-toc-master-pod重启前流程&quot;&gt;Master Pod重启前流程&lt;/a&gt;        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#1-检查-celeborn-master-集群的状态&quot; id=&quot;markdown-toc-1-检查-celeborn-master-集群的状态&quot;&gt;1. 检查 Celeborn Master 集群的状态&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#2-创建-celeborn-master-ratis-快照&quot; id=&quot;markdown-toc-2-创建-celeborn-master-ratis-快照&quot;&gt;2. 创建 Celeborn Master Ratis 快照&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#3-按需进行celeborn-mastere-failover以及检查&quot; id=&quot;markdown-toc-3-按需进行celeborn-mastere-failover以及检查&quot;&gt;3. 按需进行Celeborn Mastere Failover以及检查&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#master-pod重启后流程&quot; id=&quot;markdown-toc-master-pod重启后流程&quot;&gt;Master Pod重启后流程&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#celeborn-worker-管理&quot; id=&quot;markdown-toc-celeborn-worker-管理&quot;&gt;Celeborn Worker 管理&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#worker-decommission&quot; id=&quot;markdown-toc-worker-decommission&quot;&gt;Worker decommission&lt;/a&gt;        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#1-exclude-worker&quot; id=&quot;markdown-toc-1-exclude-worker&quot;&gt;1. Exclude Worker&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#2-发送-decommissionthenidle-event-并等待worker进入idle-状态&quot; id=&quot;markdown-toc-2-发送-decommissionthenidle-event-并等待worker进入idle-状态&quot;&gt;2. 发送 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt; event 并等待Worker进入IDLE 状态&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#3-graceful-shutdown&quot; id=&quot;markdown-toc-3-graceful-shutdown&quot;&gt;3. Graceful Shutdown&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#worker-recommission&quot; id=&quot;markdown-toc-worker-recommission&quot;&gt;Worker recommission&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#总结&quot; id=&quot;markdown-toc-总结&quot;&gt;总结&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;h3 id=&quot;前言&quot;&gt;前言&lt;/h3&gt;
 
+&lt;p&gt;Apache Celeborn 是一个统一的大数据中间服务，致力于提高不同MapReduce引擎的效率和弹性，并为中间数据（包括shuffle数据、溢出数据、结果数据等）提供弹性、高效的管理服务。目前，Celeborn专注于shuffle数据。&lt;/p&gt;
+
+&lt;p&gt;为了Spark on Kubernetes的弹性以及解决External Shuffle Service的灵活性和稳定性不足，eBay引入 Celeborn 作为Remote Shuffle Service。&lt;/p&gt;
+
+&lt;p&gt;Celeborn 集群本身分为两个组件，Celeborn Master 和 Celeborn Worker, Worker负责处理数据的读写，并通过心跳将各种信息汇报给 Master, 然后Master通过raft 协议保证集群数据的一致性。&lt;/p&gt;
+
+&lt;p&gt;对于Celeborn Master，我们进行Cloud Native部署， Celeborn Worker与现有的计算节点的NodeManager进行混布，使用systemctl管理Worker服务进程, 目前最大的集群大概有接近6000台 Celeborn Worker。&lt;/p&gt;
+
+&lt;p&gt;由于集群规模较大，而且每个月都需要对集群的Pod进行OS patching，也就是说每个月Worker Pod都会重启一次，所以我们需要通过自动化工具来管理Celeborn集群，以便更好地保证集群的稳定性。&lt;/p&gt;
+
+&lt;p&gt;因此我们对 Celeborn 的&lt;a href=&quot;https://celeborn.apache.org/docs/latest/restapi/&quot;&gt;RESTful API&lt;/a&gt; 进行了优化，以便更好地与自动化工具进行集成，并将于0.6.0版本发布。
+另外在 Celeborn 0.5.0 之后就支持通过 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;http://host:port/swagger&lt;/code&gt; 来查看swagger UI, 可以更好地了解API的使用。&lt;/p&gt;
+
+&lt;p&gt;本文将介绍我们如何基于最新的RESTful API集成自动化工具来管理Celeborn集群，其他方面不再详细说明。&lt;/p&gt;
+
+&lt;h3 id=&quot;celeborn-master-管理&quot;&gt;Celeborn Master 管理&lt;/h3&gt;
+
+&lt;p&gt;对于Celeborn Master我们是部署在Kubernetes，在Master pod 里有一个 agent 的container，会在重启前和重启后和自动化工具进行通信，触发 podPreStart 和 podPostStart workflow，来判断是否能够重启以及重启后服务是否正常。&lt;/p&gt;
+
+&lt;h4 id=&quot;master-pod重启前流程&quot;&gt;Master Pod重启前流程&lt;/h4&gt;
+
+&lt;p&gt;下面是 podPreStart workflow 的流程图，首先我们会判断当前是否处于 SLA window，如果是则等待。
+&lt;img src=&quot;/imgs/celeborn/podPreStart.png&quot; width=&quot;500&quot; /&gt;&lt;/p&gt;
+
+&lt;h5 id=&quot;1-检查-celeborn-master-集群的状态&quot;&gt;1. 检查 Celeborn Master 集群的状态&lt;/h5&gt;
+&lt;ol&gt;
+  &lt;li&gt;因为Master基于RAFT协议保证数据的一致性，所以重启前Master 的数量要大于总数量的一半 + 1，Master 数量目前我们是通过Prometheus的Metrics来判断。&lt;/li&gt;
+  &lt;li&gt;检查当前集群Master集群拥有Leader，通过call Master API &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;GET /api/v1/masters&lt;/code&gt;, 然后检查返回结果&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;leader&lt;/code&gt;字段.
+&lt;img src=&quot;/imgs/celeborn/masters.png&quot; width=&quot;800&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;确认当前Master 集群的group size是预期的，检查返回结果的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;masterCommitInfo&lt;/code&gt; 字段的size.&lt;/li&gt;
+  &lt;li&gt;检查当前活着的Master的 commit index 是否一致，检查返回结果的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;masterCommitInfo&lt;/code&gt;的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;commitIndex&lt;/code&gt; 字段, 如果 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;commitIndex&lt;/code&gt;的gap大于一定的阈值，则需要等待。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h5 id=&quot;2-创建-celeborn-master-ratis-快照&quot;&gt;2. 创建 Celeborn Master Ratis 快照&lt;/h5&gt;
+
+&lt;p&gt;Ratis是一个Raft 协议的Java实现，Celeborn 使用Ratis来保证Master集群的数据一致性，为了在重启后快速恢复数据，我们会在重启前创建Ratis的快照。&lt;/p&gt;
+
+&lt;p&gt;Celeborn社区之前提供了Ratis-shell来管理ratis 集群，为了更好地和自动化工具进行集成，我们把所有ratis-shell命令都进行了RESTful实现, 方便进行Master的Failover以及创建Ratis快照。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/ratis-rest.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;通过调用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/ratis/snapshot/create&lt;/code&gt; 来创建快照。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/ratis-snapshot.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h5 id=&quot;3-按需进行celeborn-mastere-failover以及检查&quot;&gt;3. 按需进行Celeborn Mastere Failover以及检查&lt;/h5&gt;
+
+&lt;p&gt;如果当前Master Pod是Leader, 则需要进行Failover。&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;暂停当前Pod的Leader选举，调用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/ratis/election/pause&lt;/code&gt;。
+&lt;img src=&quot;/imgs/celeborn/ratis-election-pause.png&quot; width=&quot;800&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;让出当前Pod的Leader, 调用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/ratis/leader/step_down&lt;/code&gt;。
+  &lt;img src=&quot;/imgs/celeborn/ratis-election-stepdown.png&quot; width=&quot;800&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;等待一段时间之后，恢复当前Pod的Leader选举，调用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/ratis/election/resume&lt;/code&gt;。
+  &lt;img src=&quot;/imgs/celeborn/ratis-election-resume.png&quot; width=&quot;800&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;重新检查当前Master集群的状态，并确保Leader已经变更，即当前Pod不再是Leader。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h4 id=&quot;master-pod重启后流程&quot;&gt;Master Pod重启后流程&lt;/h4&gt;
+
+&lt;p&gt;下面是 podPostStart workflow 的流程图:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;检查pod 是否ready，比如 hostname 和 VIP 是否正常。&lt;/li&gt;
+  &lt;li&gt;进行一些初始化操作，比如load conf。&lt;/li&gt;
+  &lt;li&gt;检查当前Master集群的状态，跟Pod重启前的检查基本一样，唯一不同的是，重启后只需确保活着的Master数量大于总数量的一半即可。
+&lt;img src=&quot;/imgs/celeborn/podPostStart.png&quot; width=&quot;400&quot; /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;celeborn-worker-管理&quot;&gt;Celeborn Worker 管理&lt;/h3&gt;
+
+&lt;p&gt;自动化工具会周期性调用 Master的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;GET /api/v1/workers&lt;/code&gt; 来获取所有的注册的Worker的状态，包括 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lostWorkers&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;excludedWorkers&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;manualExcludedWorkers&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;shutdownWorkers&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;decommissionWorkers&lt;/code&gt;。
+同时我们设置了 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;celeborn.master.workerUnavailableInfo.expireTimeout=-1&lt;/code&gt;, 以便即使Worker长时间下线，其信息也不会被清除掉(可调用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/api/v1/workers/remove_unavailable&lt;/code&gt; 按需清理)。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/workers.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;worker-decommission&quot;&gt;Worker decommission&lt;/h4&gt;
+
+&lt;h5 id=&quot;1-exclude-worker&quot;&gt;1. Exclude Worker&lt;/h5&gt;
+
+&lt;p&gt;首先，调用 Master &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/workers/exclude&lt;/code&gt; 把worker信息放入 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;add&lt;/code&gt; 字段把worker加入到 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;manualExcludedWorkers&lt;/code&gt; 列表中，这样Master就不会再往这个worker上分配任务。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/exclude-worker.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h5 id=&quot;2-发送-decommissionthenidle-event-并等待worker进入idle-状态&quot;&gt;2. 发送 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt; event 并等待Worker进入IDLE 状态&lt;/h5&gt;
+
+&lt;p&gt;目前Celeborn Master支持的events类型有 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;None&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Immediately&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Decommission&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Graceful&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Recommission&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;用于 Decommission 的event类型有 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Decommission&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;下图是一些Worker State和event之间的转换图，其中 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Decommission&lt;/code&gt; event会在完成之后，退出Worker 进程，而 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt; event 是在完成之后，让Worker进入IDLE状态。&lt;/p&gt;
+
+&lt;p&gt;由于Worker进程在退出之后会被systemctl 自动拉起，所以我们选择使用 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt; event来进行Decommission操作，以便更好地控制Worker的状态。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/worker-states.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;调用 Master &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/workers/events&lt;/code&gt;, eventType 为 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt; 来发送Decommission事件, 并等待Worker进入IDLE状态。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/worker-decom.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h5 id=&quot;3-graceful-shutdown&quot;&gt;3. Graceful Shutdown&lt;/h5&gt;
+
+&lt;p&gt;在 Worker 进入IDLE 状态之后，检查Worker的 resourceConsumptions.&lt;/p&gt;
+
+&lt;p&gt;resourceConsumptions 是 一个map，key 为 userIdentifier, value用户的资源占用情况，包括 diskBytesWritten, diskFileCount, hdfsBytesWritten, hdfsFileCount 和 subResourceConsumptions。&lt;/p&gt;
+
+&lt;p&gt;subResourceConsumptions 也是一个map，key 为 applicationId, value是 application的资源占用情况。&lt;/p&gt;
+
+&lt;p&gt;我们通过判断当前Worker 上面不存在 subResourceConsumptions 非空的 resourceConsumption 来判断当前worker是否已经释放所有shuffle文件。&lt;/p&gt;
+
+&lt;p&gt;如果Worker已经释放所有shuffle文件，那么就可以graceful的shutdown当前Worker，否则需要继续等待，直到等待时间到达一个指定的阈值。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/worker-resource-consumptions.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;worker-recommission&quot;&gt;Worker recommission&lt;/h4&gt;
+
+&lt;p&gt;当要把一台worker 重新加入到集群中时，只需调用 Master &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/workers/exclude&lt;/code&gt; 把 worker信息放入 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;remove&lt;/code&gt; 字段即可将worker 从 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;manualExcludedWorkers&lt;/code&gt; 中移除, 重新接收任务。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/exclude-worker.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;总结&quot;&gt;总结&lt;/h3&gt;
+
+&lt;p&gt;本文介绍了eBay基于最新RESTful API 进行自动化管理Celeborn集群的一些实践，所有API调用都是访问Master的API。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/2024/11/01/Celeborn-automation</link>
-                <guid>http://www.turbofei.wang/2024/11/01/Celeborn-automation</guid>
+                <link>http://www.turbofei.wang/celeborn/2024/11/01/celeborn-automation</link>
+                <guid>http://www.turbofei.wang/celeborn/2024/11/01/celeborn-automation</guid>
                 <pubDate>2024-11-01T00:00:00-07:00</pubDate>
         </item>
 
