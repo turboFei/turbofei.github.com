@@ -64,11 +64,15 @@ Celeborn社区之前提供了Ratis-shell来管理ratis 集群，为了更好地�
 
 1. 暂停当前Pod的Leader选举，调用 `POST /api/v1/ratis/election/pause`。
    <img src="/imgs/celeborn/ratis-election-pause.png" width="800" />
-2. 让出当前Pod的Leader, 调用 `POST /api/v1/ratis/leader/step_down`。
+2. 让出当前Pod的Leader, 调用 `POST /api/v1/ratis/election/step_down`。
   <img src="/imgs/celeborn/ratis-election-stepdown.png" width="800" />
 3. 等待一段时间之后，恢复当前Pod的Leader选举，调用 `POST /api/v1/ratis/election/resume`。
   <img src="/imgs/celeborn/ratis-election-resume.png" width="800" />
 4. 重新检查当前Master集群的状态，并确保Leader已经变更，即当前Pod不再是Leader。
+
+另外也可以单独触发 Master Failover, 调用 `POST /api/v1/ratis/election/transfer` 将leader转移到指定的Master上。
+
+<img src="/imgs/celeborn/ratis-election-transfer.png" width="800" />
 
 #### Master Pod重启后流程
 
