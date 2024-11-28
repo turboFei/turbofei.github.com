@@ -3,6 +3,14 @@
 	"data" : [
 	 
 	{
+		"title" : "基于Celeborn RESTful API进行自动化工具集成 - celeborn",
+		"url" : "/celeborn/2024/11/01/celeborn-automation"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "Ebay Kyuubi Spark Engine Big Result Sets Solution - kyuubi_spark",
 		"url" : "/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-solution"
 	}
@@ -308,7 +316,7 @@
     
 	{
 		"title" : "java unsafe类的使用 - java",
-		"url" : "/coding/2016/11/13/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8"
+		"url" : "/coding/2016/11/12/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8"
 	}
 	
 	,
@@ -316,7 +324,7 @@
     
 	{
 		"title" : "ganglia 安装 - env",
-		"url" : "/bigdata/2016/08/17/ganglia-%E5%AE%89%E8%A3%85"
+		"url" : "/bigdata/2016/08/16/ganglia-%E5%AE%89%E8%A3%85"
 	}
 	
 	,
