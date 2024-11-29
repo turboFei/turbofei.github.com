@@ -16,6 +16,7 @@ http://www.turbofei.wang/public/html/rss.xml
 http://www.turbofei.wang/sitemap.txt
 http://www.turbofei.wang/tags
 
+http://www.turbofei.wang/celeborn/2024/11/28/celeborn-automation-integration
 http://www.turbofei.wang/celeborn/2024/11/01/celeborn-automation
 http://www.turbofei.wang/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-solution
 http://www.turbofei.wang/spark/2020/10/29/eBay-Spark-Test-Framework-Woody
