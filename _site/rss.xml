@@ -5,10 +5,174 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2024-11-28T15:03:09-08:00</lastBuildDate>
-        <pubDate>2024-11-28T15:03:09-08:00</pubDate>
+        <lastBuildDate>2024-11-28T18:52:05-08:00</lastBuildDate>
+        <pubDate>2024-11-28T18:52:05-08:00</pubDate>
         <ttl>1800</ttl>
 
+
+        <item>
+                <title>Integration of Automation Tools Based on Celeborn RESTful API</title>
+                <description>
+&lt;p&gt;Table of contents&lt;/p&gt;
+
+&lt;ul id=&quot;markdown-toc&quot;&gt;
+  &lt;li&gt;&lt;a href=&quot;#introduction&quot; id=&quot;markdown-toc-introduction&quot;&gt;Introduction&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#celeborn-master-management&quot; id=&quot;markdown-toc-celeborn-master-management&quot;&gt;Celeborn Master Management&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#pre-restart-workflow-for-master-pod&quot; id=&quot;markdown-toc-pre-restart-workflow-for-master-pod&quot;&gt;Pre-Restart Workflow for Master Pod&lt;/a&gt;        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#1-check-the-status-of-the-celeborn-master-cluster&quot; id=&quot;markdown-toc-1-check-the-status-of-the-celeborn-master-cluster&quot;&gt;1. Check the Status of the Celeborn Master Cluster&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#2-create-celeborn-master-ratis-snapshot&quot; id=&quot;markdown-toc-2-create-celeborn-master-ratis-snapshot&quot;&gt;2. Create Celeborn Master Ratis Snapshot&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#3-perform-celeborn-master-failover-and-check-as-needed&quot; id=&quot;markdown-toc-3-perform-celeborn-master-failover-and-check-as-needed&quot;&gt;3. Perform Celeborn Master Failover and Check as Needed&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#post-restart-workflow-for-master-pod&quot; id=&quot;markdown-toc-post-restart-workflow-for-master-pod&quot;&gt;Post-Restart Workflow for Master Pod&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#celeborn-worker-management&quot; id=&quot;markdown-toc-celeborn-worker-management&quot;&gt;Celeborn Worker Management&lt;/a&gt;    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;#worker-decommission&quot; id=&quot;markdown-toc-worker-decommission&quot;&gt;Worker Decommission&lt;/a&gt;        &lt;ul&gt;
+          &lt;li&gt;&lt;a href=&quot;#1-exclude-worker&quot; id=&quot;markdown-toc-1-exclude-worker&quot;&gt;1. Exclude Worker&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#2-send-decommissionthenidle-event-and-wait-for-worker-to-enter-idle-state&quot; id=&quot;markdown-toc-2-send-decommissionthenidle-event-and-wait-for-worker-to-enter-idle-state&quot;&gt;2. Send &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt; Event and Wait for Worker to Enter IDLE State&lt;/a&gt;&lt;/li&gt;
+          &lt;li&gt;&lt;a href=&quot;#3-graceful-shutdown&quot; id=&quot;markdown-toc-3-graceful-shutdown&quot;&gt;3. Graceful Shutdown&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/li&gt;
+      &lt;li&gt;&lt;a href=&quot;#worker-recommission&quot; id=&quot;markdown-toc-worker-recommission&quot;&gt;Worker Recommission&lt;/a&gt;&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;#summary&quot; id=&quot;markdown-toc-summary&quot;&gt;Summary&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;introduction&quot;&gt;Introduction&lt;/h3&gt;
+
+&lt;p&gt;Apache Celeborn is a unified big data intermediate service dedicated to improving the efficiency and elasticity of different map-reduce engines. It provides an elastic, high-efficient management service for intermediate data, including shuffle data, spilled data, result data, etc. Currently, Celeborn is focusing on shuffle data.&lt;/p&gt;
+
+&lt;p&gt;In order to improve the elasticity of Spark on Kubernetes and solve the flexibility and stability issues of External Shuffle Service, eBay introduced Celeborn as a Remote Shuffle Service.&lt;/p&gt;
+
+&lt;p&gt;The Celeborn cluster itself consists of two components: Celeborn Master and Celeborn Worker. The Worker is responsible for data read and write and reports various information to the Master through heartbeat. The Master ensures the consistency of cluster data through the raft protocol.&lt;/p&gt;
+
+&lt;p&gt;For Celeborn Master, we deploy it in a Cloud Native manner. Celeborn Worker is co-located with the NodeManager of existing compute nodes and managed by systemctl. Currently, the largest cluster has nearly 6000 Celeborn Workers.&lt;/p&gt;
+
+&lt;p&gt;Due to the large scale of the cluster and the need to patch the OS of the cluster’s Pods every month, meaning the Worker Pods will restart once a month, we need to manage the Celeborn cluster through automation tools to better ensure the stability of the cluster.&lt;/p&gt;
+
+&lt;p&gt;Therefore, we have optimized Celeborn’s &lt;a href=&quot;https://celeborn.apache.org/docs/latest/restapi/&quot;&gt;RESTful API&lt;/a&gt; for better integration with automation tools. These improvements will be available in version 0.6.0, along with the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;celeborn-openapi-client&lt;/code&gt; SDK to assist users in interacting with the new RESTful APIs.
+Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;http://host:port/swagger&lt;/code&gt; to better understand the usage of the API.&lt;/p&gt;
+
+&lt;p&gt;This article will introduce how we integrate automation tools to manage the Celeborn cluster based on the latest RESTful API, without detailing other aspects.&lt;/p&gt;
+
+&lt;h3 id=&quot;celeborn-master-management&quot;&gt;Celeborn Master Management&lt;/h3&gt;
+
+&lt;p&gt;For Celeborn Master, we deploy it on Kubernetes. There is an agent container in the Master pod that communicates with automation tools before and after the restart, triggering the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;podPreStart&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;podPostStart&lt;/code&gt; workflows to determine whether the restart can proceed and whether the service is functioning normally after the restart.&lt;/p&gt;
+
+&lt;h4 id=&quot;pre-restart-workflow-for-master-pod&quot;&gt;Pre-Restart Workflow for Master Pod&lt;/h4&gt;
+
+&lt;p&gt;Below is the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;podPreStart&lt;/code&gt; workflow diagram. First, we determine whether it is within the SLA window. If it is, we wait.
+&lt;img src=&quot;/imgs/celeborn/podPreStart.png&quot; width=&quot;500&quot; /&gt;&lt;/p&gt;
+
+&lt;h5 id=&quot;1-check-the-status-of-the-celeborn-master-cluster&quot;&gt;1. Check the Status of the Celeborn Master Cluster&lt;/h5&gt;
+&lt;ol&gt;
+  &lt;li&gt;Since the Master ensures data consistency based on the RAFT protocol, the number of Masters before the restart must be greater than half of the total number plus one. We determine the number of Masters through Prometheus metrics.&lt;/li&gt;
+  &lt;li&gt;Check that the current cluster has a Master leader by calling the Master API &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;GET /api/v1/masters&lt;/code&gt; and checking the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;leader&lt;/code&gt; field in the response.
+&lt;img src=&quot;/imgs/celeborn/masters.png&quot; width=&quot;800&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;Confirm that the group size of the current Master cluster is as expected by checking the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;masterCommitInfo&lt;/code&gt; field’s size in the response.&lt;/li&gt;
+  &lt;li&gt;Check that the commit index of the current active Masters is consistent by checking the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;commitIndex&lt;/code&gt; field in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;masterCommitInfo&lt;/code&gt; of the response. If the gap in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;commitIndex&lt;/code&gt; is greater than a certain threshold, wait.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h5 id=&quot;2-create-celeborn-master-ratis-snapshot&quot;&gt;2. Create Celeborn Master Ratis Snapshot&lt;/h5&gt;
+
+&lt;p&gt;Ratis is a Java implementation of the Raft protocol. Celeborn uses Ratis to ensure data consistency in the Master cluster. To quickly recover data after a restart, we create a Ratis snapshot before the restart.&lt;/p&gt;
+
+&lt;p&gt;Previously, the Celeborn community provided Ratis-shell to manage the Ratis cluster. To better integrate with automation tools, we implemented all Ratis-shell commands as RESTful APIs, facilitating Master failover and Ratis snapshot creation.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/ratis-rest.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Create a snapshot by calling &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/ratis/snapshot/create&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/ratis-snapshot.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h5 id=&quot;3-perform-celeborn-master-failover-and-check-as-needed&quot;&gt;3. Perform Celeborn Master Failover and Check as Needed&lt;/h5&gt;
+
+&lt;p&gt;If the current Master pod is the leader, perform a failover.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Pause the current pod’s leader election by calling &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/ratis/election/pause&lt;/code&gt;.
+&lt;img src=&quot;/imgs/celeborn/ratis-election-pause.png&quot; width=&quot;800&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;Step down the current pod’s leader by calling &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/ratis/election/step_down&lt;/code&gt;.
+&lt;img src=&quot;/imgs/celeborn/ratis-election-stepdown.png&quot; width=&quot;800&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;After waiting for a while, resume the current pod’s leader election by calling &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/ratis/election/resume&lt;/code&gt;.
+&lt;img src=&quot;/imgs/celeborn/ratis-election-resume.png&quot; width=&quot;800&quot; /&gt;&lt;/li&gt;
+  &lt;li&gt;Recheck the status of the current Master cluster and ensure the leader has changed, meaning the current pod is no longer the leader.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;You can also trigger a Master failover separately by calling &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/ratis/election/transfer&lt;/code&gt; to transfer the leader to a specified Master.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/ratis-election-transfer.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;post-restart-workflow-for-master-pod&quot;&gt;Post-Restart Workflow for Master Pod&lt;/h4&gt;
+
+&lt;p&gt;Below is the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;podPostStart&lt;/code&gt; workflow diagram:&lt;/p&gt;
+&lt;ol&gt;
+  &lt;li&gt;Check if the pod is ready, such as whether the hostname and VIP are normal.&lt;/li&gt;
+  &lt;li&gt;Perform some initialization operations, such as loading the configuration.&lt;/li&gt;
+  &lt;li&gt;Check the status of the current Master cluster, which is similar to the pre-restart check. The only difference is that after the restart, it is only necessary to ensure that the number of active Masters is greater than half of the total number.
+&lt;img src=&quot;/imgs/celeborn/podPostStart.png&quot; width=&quot;400&quot; /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3 id=&quot;celeborn-worker-management&quot;&gt;Celeborn Worker Management&lt;/h3&gt;
+
+&lt;p&gt;Automation tools periodically call the Master’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;GET /api/v1/workers&lt;/code&gt; to get the status of all registered Workers, including &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;lostWorkers&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;excludedWorkers&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;manualExcludedWorkers&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;shutdownWorkers&lt;/code&gt;, and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;decommissionWorkers&lt;/code&gt;. We also set &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;celeborn.master.workerUnavailableInfo.expireTimeout=-1&lt;/code&gt; so that even if a Worker is offline for a long time, its information will not be cleared (you can call &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;/api/v1/workers/remove_unavailable&lt;/code&gt; to clean up as needed).&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/workers.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;worker-decommission&quot;&gt;Worker Decommission&lt;/h4&gt;
+
+&lt;h5 id=&quot;1-exclude-worker&quot;&gt;1. Exclude Worker&lt;/h5&gt;
+
+&lt;p&gt;First, call the Master’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/workers/exclude&lt;/code&gt; to add the Worker information to the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;add&lt;/code&gt; field, adding the Worker to the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;manualExcludedWorkers&lt;/code&gt; list so that the Master will no longer assign slots to this Worker.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/exclude-worker.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h5 id=&quot;2-send-decommissionthenidle-event-and-wait-for-worker-to-enter-idle-state&quot;&gt;2. Send &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt; Event and Wait for Worker to Enter IDLE State&lt;/h5&gt;
+
+&lt;p&gt;Currently, Celeborn Master supports event types such as &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;None&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Immediately&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Decommission&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Graceful&lt;/code&gt;, and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Recommission&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;For decommissioning, the event types are &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Decommission&lt;/code&gt; and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;The following diagram shows some Worker states and the transitions between events. The &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;Decommission&lt;/code&gt; event will exit the Worker process after completion, while the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt; event will make the Worker enter the IDLE state after completion.&lt;/p&gt;
+
+&lt;p&gt;Since the Worker process will be automatically restarted by systemctl after exiting, we choose to use the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt; event for decommissioning to better control the Worker’s state.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/worker-states.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Call the Master’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/workers/events&lt;/code&gt; with &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;eventType&lt;/code&gt; set to &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;DecommissionThenIdle&lt;/code&gt; to send the decommission event and wait for the Worker to enter the IDLE state.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/worker-decom.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h5 id=&quot;3-graceful-shutdown&quot;&gt;3. Graceful Shutdown&lt;/h5&gt;
+
+&lt;p&gt;After the Worker enters the IDLE state, check the Worker’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;resourceConsumptions&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;resourceConsumptions&lt;/code&gt; is a map where the key is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;userIdentifier&lt;/code&gt; and the value is the user’s resource usage, including &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;diskBytesWritten&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;diskFileCount&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;hdfsBytesWritten&lt;/code&gt;, &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;hdfsFileCount&lt;/code&gt;, and &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;subResourceConsumptions&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;subResourceConsumptions&lt;/code&gt; is also a map where the key is &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;applicationId&lt;/code&gt; and the value is the application’s resource usage.&lt;/p&gt;
+
+&lt;p&gt;We determine whether the Worker has released all shuffle files by checking that there are no non-empty &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;resourceConsumption&lt;/code&gt; entries in &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;subResourceConsumptions&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;If the Worker has released all shuffle files, it can be gracefully shut down. Otherwise, continue to wait until the waiting time reaches a specified threshold.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/worker-resource-consumptions.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h4 id=&quot;worker-recommission&quot;&gt;Worker Recommission&lt;/h4&gt;
+
+&lt;p&gt;To re-add a Worker to the cluster, simply call the Master’s &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/workers/exclude&lt;/code&gt; and put the Worker information in the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;remove&lt;/code&gt; field to remove the Worker from the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;manualExcludedWorkers&lt;/code&gt; list, allowing it to assign slots again.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/imgs/celeborn/exclude-worker.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;summary&quot;&gt;Summary&lt;/h3&gt;
+
+&lt;p&gt;This article introduces some practices for automating the management of Celeborn clusters based on the latest RESTful API, with all API calls accessing the Master’s API.&lt;/p&gt;
+</description>
+                <link>http://www.turbofei.wang/celeborn/2024/11/28/celeborn-automation-integration</link>
+                <guid>http://www.turbofei.wang/celeborn/2024/11/28/celeborn-automation-integration</guid>
+                <pubDate>2024-11-28T00:00:00-08:00</pubDate>
+        </item>
 
         <item>
                 <title>基于Celeborn RESTful API进行自动化工具集成</title>

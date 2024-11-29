@@ -3,6 +3,14 @@
 	"data" : [
 	 
 	{
+		"title" : "Integration of Automation Tools Based on Celeborn RESTful API - celeborn",
+		"url" : "/celeborn/2024/11/28/celeborn-automation-integration"
+	}
+	
+	,
+	
+    
+	{
 		"title" : "基于Celeborn RESTful API进行自动化工具集成 - celeborn",
 		"url" : "/celeborn/2024/11/01/celeborn-automation"
 	}
