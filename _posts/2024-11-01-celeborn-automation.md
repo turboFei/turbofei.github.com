@@ -35,12 +35,12 @@ Celeborn 集群本身分为两个组件，Celeborn Master 和 Celeborn Worker, W
 
 #### Master Pod重启前流程
 
-下面是 podPreStart workflow 的流程图，首先我们会判断当前是否处于 SLA window，如果是则等待。
+下面是 podPreStart workflow 的流程图，首先判断当前是否处于 SLA window，如果是则等待。
 <img src="/imgs/celeborn/podPreStart.png" width="500" />
 
 
 ##### 1. 检查 Celeborn Master 集群的状态
-1. 因为Master基于RAFT协议保证数据的一致性，所以重启前Master 的数量要大于总数量的一半 + 1，Master 数量目前我们是通过Prometheus的Metrics来判断。
+1. 因为Master基于RAFT协议保证数据的一致性，所以重启前Master 的数量要大于总数量的一半 + 1，Master 数量目前是通过Prometheus的Metrics来判断。
 2. 检查当前集群Master集群拥有Leader，通过call Master API `GET /api/v1/masters`, 然后检查返回结果`leader`字段.
    <img src="/imgs/celeborn/masters.png" width="800" />
 3. 确认当前Master 集群的group size是预期的，检查返回结果的 `masterCommitInfo` 字段的size.
@@ -48,7 +48,7 @@ Celeborn 集群本身分为两个组件，Celeborn Master 和 Celeborn Worker, W
 
 ##### 2. 创建 Celeborn Master Ratis 快照
 
-Ratis是一个Raft 协议的Java实现，Celeborn 使用Ratis来保证Master集群的数据一致性，为了在重启后快速恢复数据，我们会在重启前创建Ratis的快照。
+Ratis是一个Raft 协议的Java实现，Celeborn 使用Ratis来保证Master集群的数据一致性，为了在重启后快速恢复数据，会在重启前创建Ratis的快照。
 
 Celeborn社区之前提供了Ratis-shell来管理ratis 集群，为了更好地和自动化工具进行集成，我们把所有ratis-shell命令都进行了RESTful实现, 方便进行Master的Failover以及创建Ratis快照。
 
@@ -123,7 +123,7 @@ resourceConsumptions 是 一个map，key 为 userIdentifier, value用户的资�
 
 subResourceConsumptions 也是一个map，key 为 applicationId, value是 application的资源占用情况。
 
-我们通过判断当前Worker 上面不存在 subResourceConsumptions 非空的 resourceConsumption 来判断当前worker是否已经释放所有shuffle文件。
+通过判断当前Worker 上面不存在 subResourceConsumptions 非空的 resourceConsumption 来判断当前worker是否已经释放所有shuffle文件。
 
 如果Worker已经释放所有shuffle文件，那么就可以graceful的shutdown当前Worker，否则需要继续等待，直到等待时间到达一个指定的阈值。
 

@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2024-11-28T19:21:59-08:00</updated>
+ <updated>2024-11-28T20:29:23-08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -51,16 +51,16 @@
 
 &lt;p&gt;In order to improve the elasticity of Spark on Kubernetes and solve the flexibility and stability issues of External Shuffle Service, eBay introduced Celeborn as a Remote Shuffle Service.&lt;/p&gt;
 
-&lt;p&gt;The Celeborn cluster itself consists of two components: Celeborn Master and Celeborn Worker. The Worker is responsible for data read and write and reports various information to the Master through heartbeat. The Master ensures the consistency of cluster data through the raft protocol.&lt;/p&gt;
+&lt;p&gt;The Celeborn cluster itself consists of two components: Celeborn Master and Celeborn Worker. The Worker is responsible for data read and write and reports worker info to the Master through heartbeat. The Master ensures the consistency of cluster metadata through the RAFT protocol.&lt;/p&gt;
 
 &lt;p&gt;For Celeborn Master, we deploy it in a Cloud Native manner. Celeborn Worker is co-located with the NodeManager of existing compute nodes and managed by systemctl. Currently, the largest cluster has nearly 6000 Celeborn Workers.&lt;/p&gt;
 
-&lt;p&gt;Due to the large scale of the cluster and the need to patch the OS of the cluster’s Pods every month, meaning the Worker Pods will restart once a month, we need to manage the Celeborn cluster through automation tools to better ensure the stability of the cluster.&lt;/p&gt;
+&lt;p&gt;Due to the large scale of the cluster and the need to patch the OS of the cluster’s Pods every month, meaning the Worker Pods will restart once every month, we need to manage the Celeborn cluster through automation tools to better ensure the stability of the cluster.&lt;/p&gt;
 
 &lt;p&gt;Therefore, we have optimized Celeborn’s &lt;a href=&quot;https://celeborn.apache.org/docs/latest/restapi/&quot;&gt;RESTful API&lt;/a&gt; for better integration with automation tools. These improvements will be available in version 0.6.0, along with the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;celeborn-openapi-client&lt;/code&gt; SDK to assist users in interacting with the new RESTful APIs.
 Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;http://host:port/swagger&lt;/code&gt; to better understand the usage of the API.&lt;/p&gt;
 
-&lt;p&gt;This article will introduce how we integrate automation tools to manage the Celeborn cluster based on the latest RESTful API, without detailing other aspects.&lt;/p&gt;
+&lt;p&gt;This article will explain how we use automation tools to manage the Celeborn cluster with the latest RESTful API.&lt;/p&gt;
 
 &lt;h3 id=&quot;celeborn-master-management&quot;&gt;Celeborn Master Management&lt;/h3&gt;
 
@@ -82,7 +82,7 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 
 &lt;h5 id=&quot;2-create-celeborn-master-ratis-snapshot&quot;&gt;2. Create Celeborn Master Ratis Snapshot&lt;/h5&gt;
 
-&lt;p&gt;Ratis is a Java implementation of the Raft protocol. Celeborn uses Ratis to ensure data consistency in the Master cluster. To quickly recover data after a restart, we create a Ratis snapshot before the restart.&lt;/p&gt;
+&lt;p&gt;Ratis is a Java implementation of the Raft protocol. Celeborn uses Ratis to ensure data consistency in the Master cluster. To quickly recover data after a restart, creating a Ratis snapshot before the restart.&lt;/p&gt;
 
 &lt;p&gt;Previously, the Celeborn community provided Ratis-shell to manage the Ratis cluster. To better integrate with automation tools, we implemented all Ratis-shell commands as RESTful APIs, facilitating Master failover and Ratis snapshot creation.&lt;/p&gt;
 
@@ -232,12 +232,12 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 
 &lt;h4 id=&quot;master-pod重启前流程&quot;&gt;Master Pod重启前流程&lt;/h4&gt;
 
-&lt;p&gt;下面是 podPreStart workflow 的流程图，首先我们会判断当前是否处于 SLA window，如果是则等待。
+&lt;p&gt;下面是 podPreStart workflow 的流程图，首先判断当前是否处于 SLA window，如果是则等待。
 &lt;img src=&quot;/imgs/celeborn/podPreStart.png&quot; width=&quot;500&quot; /&gt;&lt;/p&gt;
 
 &lt;h5 id=&quot;1-检查-celeborn-master-集群的状态&quot;&gt;1. 检查 Celeborn Master 集群的状态&lt;/h5&gt;
 &lt;ol&gt;
-  &lt;li&gt;因为Master基于RAFT协议保证数据的一致性，所以重启前Master 的数量要大于总数量的一半 + 1，Master 数量目前我们是通过Prometheus的Metrics来判断。&lt;/li&gt;
+  &lt;li&gt;因为Master基于RAFT协议保证数据的一致性，所以重启前Master 的数量要大于总数量的一半 + 1，Master 数量目前是通过Prometheus的Metrics来判断。&lt;/li&gt;
   &lt;li&gt;检查当前集群Master集群拥有Leader，通过call Master API &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;GET /api/v1/masters&lt;/code&gt;, 然后检查返回结果&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;leader&lt;/code&gt;字段.
 &lt;img src=&quot;/imgs/celeborn/masters.png&quot; width=&quot;800&quot; /&gt;&lt;/li&gt;
   &lt;li&gt;确认当前Master 集群的group size是预期的，检查返回结果的 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;masterCommitInfo&lt;/code&gt; 字段的size.&lt;/li&gt;
@@ -246,7 +246,7 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 
 &lt;h5 id=&quot;2-创建-celeborn-master-ratis-快照&quot;&gt;2. 创建 Celeborn Master Ratis 快照&lt;/h5&gt;
 
-&lt;p&gt;Ratis是一个Raft 协议的Java实现，Celeborn 使用Ratis来保证Master集群的数据一致性，为了在重启后快速恢复数据，我们会在重启前创建Ratis的快照。&lt;/p&gt;
+&lt;p&gt;Ratis是一个Raft 协议的Java实现，Celeborn 使用Ratis来保证Master集群的数据一致性，为了在重启后快速恢复数据，会在重启前创建Ratis的快照。&lt;/p&gt;
 
 &lt;p&gt;Celeborn社区之前提供了Ratis-shell来管理ratis 集群，为了更好地和自动化工具进行集成，我们把所有ratis-shell命令都进行了RESTful实现, 方便进行Master的Failover以及创建Ratis快照。&lt;/p&gt;
 
@@ -323,7 +323,7 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 
 &lt;p&gt;subResourceConsumptions 也是一个map，key 为 applicationId, value是 application的资源占用情况。&lt;/p&gt;
 
-&lt;p&gt;我们通过判断当前Worker 上面不存在 subResourceConsumptions 非空的 resourceConsumption 来判断当前worker是否已经释放所有shuffle文件。&lt;/p&gt;
+&lt;p&gt;通过判断当前Worker 上面不存在 subResourceConsumptions 非空的 resourceConsumption 来判断当前worker是否已经释放所有shuffle文件。&lt;/p&gt;
 
 &lt;p&gt;如果Worker已经释放所有shuffle文件，那么就可以graceful的shutdown当前Worker，否则需要继续等待，直到等待时间到达一个指定的阈值。&lt;/p&gt;
 

@@ -18,16 +18,16 @@ Apache Celeborn is a unified big data intermediate service dedicated to improvin
 
 In order to improve the elasticity of Spark on Kubernetes and solve the flexibility and stability issues of External Shuffle Service, eBay introduced Celeborn as a Remote Shuffle Service.
 
-The Celeborn cluster itself consists of two components: Celeborn Master and Celeborn Worker. The Worker is responsible for data read and write and reports various information to the Master through heartbeat. The Master ensures the consistency of cluster data through the raft protocol.
+The Celeborn cluster itself consists of two components: Celeborn Master and Celeborn Worker. The Worker is responsible for data read and write and reports worker info to the Master through heartbeat. The Master ensures the consistency of cluster metadata through the RAFT protocol.
 
 For Celeborn Master, we deploy it in a Cloud Native manner. Celeborn Worker is co-located with the NodeManager of existing compute nodes and managed by systemctl. Currently, the largest cluster has nearly 6000 Celeborn Workers.
 
-Due to the large scale of the cluster and the need to patch the OS of the cluster's Pods every month, meaning the Worker Pods will restart once a month, we need to manage the Celeborn cluster through automation tools to better ensure the stability of the cluster.
+Due to the large scale of the cluster and the need to patch the OS of the cluster's Pods every month, meaning the Worker Pods will restart once every month, we need to manage the Celeborn cluster through automation tools to better ensure the stability of the cluster.
 
 Therefore, we have optimized Celeborn's [RESTful API](https://celeborn.apache.org/docs/latest/restapi/) for better integration with automation tools. These improvements will be available in version 0.6.0, along with the `celeborn-openapi-client` SDK to assist users in interacting with the new RESTful APIs.
 Additionally, since Celeborn 0.5.0, you can view the Swagger UI at `http://host:port/swagger` to better understand the usage of the API.
 
-This article will introduce how we integrate automation tools to manage the Celeborn cluster based on the latest RESTful API, without detailing other aspects.
+This article will explain how we use automation tools to manage the Celeborn cluster with the latest RESTful API.
 
 ### Celeborn Master Management
 
@@ -47,7 +47,7 @@ Below is the `podPreStart` workflow diagram. First, it determines whether it is 
 
 ##### 2. Create Celeborn Master Ratis Snapshot
 
-Ratis is a Java implementation of the Raft protocol. Celeborn uses Ratis to ensure data consistency in the Master cluster. To quickly recover data after a restart, we create a Ratis snapshot before the restart.
+Ratis is a Java implementation of the Raft protocol. Celeborn uses Ratis to ensure data consistency in the Master cluster. To quickly recover data after a restart, creating a Ratis snapshot before the restart.
 
 Previously, the Celeborn community provided Ratis-shell to manage the Ratis cluster. To better integrate with automation tools, we implemented all Ratis-shell commands as RESTful APIs, facilitating Master failover and Ratis snapshot creation.
 
