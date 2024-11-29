@@ -35,7 +35,7 @@ For Celeborn Master, we deploy it on Kubernetes. There is an agent container in 
 
 #### Pre-Restart Workflow for Master Pod
 
-Below is the `podPreStart` workflow diagram. First, we determine whether it is within the SLA window. If it is, we wait.
+Below is the `podPreStart` workflow diagram. First, it determines whether it is within the SLA window. If yes, it waits.
 <img src="/imgs/celeborn/podPreStart.png" width="500" />
 
 ##### 1. Check the Status of the Celeborn Master Cluster

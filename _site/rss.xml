@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2024-11-28T19:02:57-08:00</lastBuildDate>
-        <pubDate>2024-11-28T19:02:57-08:00</pubDate>
+        <lastBuildDate>2024-11-28T19:21:59-08:00</lastBuildDate>
+        <pubDate>2024-11-28T19:21:59-08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -63,7 +63,7 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 
 &lt;h4 id=&quot;pre-restart-workflow-for-master-pod&quot;&gt;Pre-Restart Workflow for Master Pod&lt;/h4&gt;
 
-&lt;p&gt;Below is the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;podPreStart&lt;/code&gt; workflow diagram. First, we determine whether it is within the SLA window. If it is, we wait.
+&lt;p&gt;Below is the &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;podPreStart&lt;/code&gt; workflow diagram. First, it determines whether it is within the SLA window. If yes, it waits.
 &lt;img src=&quot;/imgs/celeborn/podPreStart.png&quot; width=&quot;500&quot; /&gt;&lt;/p&gt;
 
 &lt;h5 id=&quot;1-check-the-status-of-the-celeborn-master-cluster&quot;&gt;1. Check the Status of the Celeborn Master Cluster&lt;/h5&gt;
