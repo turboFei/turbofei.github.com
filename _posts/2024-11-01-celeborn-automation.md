@@ -24,7 +24,7 @@ Celeborn 集群本身分为两个组件，Celeborn Master 和 Celeborn Worker, W
 
 由于集群规模较大，而且每个月都需要对集群的Pod进行OS patching，也就是说每个月Worker Pod都会重启一次，所以我们需要通过自动化工具来管理Celeborn集群，以便更好地保证集群的稳定性。
 
-因此我们对 Celeborn 的[RESTful API](https://celeborn.apache.org/docs/latest/restapi/) 进行了优化，以便更好地与自动化工具进行集成，并将于0.6.0版本发布。
+因此，我们对 Celeborn 的[RESTful API](https://celeborn.apache.org/docs/latest/restapi/) 进行了优化，以便更好地与自动化工具进行集成。这些改进将在 0.6.0 版本中发布，并且 `celeborn-openapi-client` SDK 也将可用，以帮助用户与新的 RESTful API 进行交互。
 另外在 Celeborn 0.5.0 之后就支持通过 `http://host:port/swagger` 来查看swagger UI, 可以更好地了解API的使用。
 
 本文将介绍我们如何基于最新的RESTful API集成自动化工具来管理Celeborn集群，其他方面不再详细说明。
@@ -94,7 +94,7 @@ Celeborn社区之前提供了Ratis-shell来管理ratis 集群，为了更好地�
 
 ##### 1. Exclude Worker
 
-首先，调用 Master `POST /api/v1/workers/exclude` 把worker信息放入 `add` 字段把worker加入到 `manualExcludedWorkers` 列表中，这样Master就不会再往这个worker上分配任务。
+首先，调用 Master `POST /api/v1/workers/exclude` 把worker信息放入 `add` 字段把worker加入到 `manualExcludedWorkers` 列表中，这样Master就不会再往这个worker上分配slots。
 
 <img src="/imgs/celeborn/exclude-worker.png" width="800" />
 
@@ -131,7 +131,7 @@ subResourceConsumptions 也是一个map，key 为 applicationId, value是 applic
 
 #### Worker recommission
 
-当要把一台worker 重新加入到集群中时，只需调用 Master `POST /api/v1/workers/exclude` 把 worker信息放入 `remove` 字段即可将worker 从 `manualExcludedWorkers` 中移除, 重新接收任务。
+当要把一台worker 重新加入到集群中时，只需调用 Master `POST /api/v1/workers/exclude` 把 worker信息放入 `remove` 字段即可将worker 从 `manualExcludedWorkers` 中移除, 重新接受分配slots。
 
 <img src="/imgs/celeborn/exclude-worker.png" width="800" />
 

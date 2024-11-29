@@ -5,8 +5,8 @@
         <description>turboFei's blog - turboFei</description>
         <link>http://www.turbofei.wang</link>
         <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2024-11-28T18:52:05-08:00</lastBuildDate>
-        <pubDate>2024-11-28T18:52:05-08:00</pubDate>
+        <lastBuildDate>2024-11-28T18:56:51-08:00</lastBuildDate>
+        <pubDate>2024-11-28T18:56:51-08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -216,7 +216,7 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 
 &lt;p&gt;由于集群规模较大，而且每个月都需要对集群的Pod进行OS patching，也就是说每个月Worker Pod都会重启一次，所以我们需要通过自动化工具来管理Celeborn集群，以便更好地保证集群的稳定性。&lt;/p&gt;
 
-&lt;p&gt;因此我们对 Celeborn 的&lt;a href=&quot;https://celeborn.apache.org/docs/latest/restapi/&quot;&gt;RESTful API&lt;/a&gt; 进行了优化，以便更好地与自动化工具进行集成，并将于0.6.0版本发布。
+&lt;p&gt;因此，我们对 Celeborn 的&lt;a href=&quot;https://celeborn.apache.org/docs/latest/restapi/&quot;&gt;RESTful API&lt;/a&gt; 进行了优化，以便更好地与自动化工具进行集成。这些改进将在 0.6.0 版本中发布，并且 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;celeborn-openapi-client&lt;/code&gt; SDK 也将可用，以帮助用户与新的 RESTful API 进行交互。
 另外在 Celeborn 0.5.0 之后就支持通过 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;http://host:port/swagger&lt;/code&gt; 来查看swagger UI, 可以更好地了解API的使用。&lt;/p&gt;
 
 &lt;p&gt;本文将介绍我们如何基于最新的RESTful API集成自动化工具来管理Celeborn集群，其他方面不再详细说明。&lt;/p&gt;
@@ -290,7 +290,7 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 
 &lt;h5 id=&quot;1-exclude-worker&quot;&gt;1. Exclude Worker&lt;/h5&gt;
 
-&lt;p&gt;首先，调用 Master &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/workers/exclude&lt;/code&gt; 把worker信息放入 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;add&lt;/code&gt; 字段把worker加入到 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;manualExcludedWorkers&lt;/code&gt; 列表中，这样Master就不会再往这个worker上分配任务。&lt;/p&gt;
+&lt;p&gt;首先，调用 Master &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/workers/exclude&lt;/code&gt; 把worker信息放入 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;add&lt;/code&gt; 字段把worker加入到 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;manualExcludedWorkers&lt;/code&gt; 列表中，这样Master就不会再往这个worker上分配slots。&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;/imgs/celeborn/exclude-worker.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
 
@@ -326,7 +326,7 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 
 &lt;h4 id=&quot;worker-recommission&quot;&gt;Worker recommission&lt;/h4&gt;
 
-&lt;p&gt;当要把一台worker 重新加入到集群中时，只需调用 Master &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/workers/exclude&lt;/code&gt; 把 worker信息放入 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;remove&lt;/code&gt; 字段即可将worker 从 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;manualExcludedWorkers&lt;/code&gt; 中移除, 重新接收任务。&lt;/p&gt;
+&lt;p&gt;当要把一台worker 重新加入到集群中时，只需调用 Master &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;POST /api/v1/workers/exclude&lt;/code&gt; 把 worker信息放入 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;remove&lt;/code&gt; 字段即可将worker 从 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;manualExcludedWorkers&lt;/code&gt; 中移除, 重新接受分配slots。&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&quot;/imgs/celeborn/exclude-worker.png&quot; width=&quot;800&quot; /&gt;&lt;/p&gt;
 
