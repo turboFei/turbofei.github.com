@@ -2,7 +2,7 @@
 layout: post
 category: celeborn
 tagline: ""
-title: "Integration of Automation Tools Based on Celeborn RESTful API"
+title: "Automating Celeborn with RESTful API"
 tags: [celeborn]
 ---
 {% include JB/setup %}

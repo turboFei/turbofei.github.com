@@ -4,7 +4,7 @@
  <title>turboFei's blog</title>
  <link href="http://www.turbofei.wang/" rel="self"/>
  <link href="http://www.turbofei.wang"/>
- <updated>2024-11-28T18:56:51-08:00</updated>
+ <updated>2024-11-28T19:02:57-08:00</updated>
  <id>http://www.turbofei.wang</id>
  <author>
    <name>turboFei</name>
@@ -13,10 +13,10 @@
 
  
  <entry>
-   <title>Integration of Automation Tools Based on Celeborn RESTful API</title>
-   <link href="http://www.turbofei.wang/celeborn/2024/11/28/celeborn-automation-integration"/>
+   <title>Automating Celeborn with RESTful API</title>
+   <link href="http://www.turbofei.wang/celeborn/2024/11/28/automating-celeborn-with-restful-api"/>
    <updated>2024-11-28T00:00:00-08:00</updated>
-   <id>http://www.turbofei.wang/celeborn/2024/11/28/celeborn-automation-integration</id>
+   <id>http://www.turbofei.wang/celeborn/2024/11/28/automating-celeborn-with-restful-api</id>
    <content type="html">
 &lt;p&gt;Table of contents&lt;/p&gt;
 
