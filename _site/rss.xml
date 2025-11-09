@@ -3,10 +3,10 @@
 <channel>
         <title>turboFei's blog</title>
         <description>turboFei's blog - turboFei</description>
-        <link>http://www.turbofei.wang</link>
-        <link>http://www.turbofei.wang</link>
-        <lastBuildDate>2024-12-26T23:52:17-08:00</lastBuildDate>
-        <pubDate>2024-12-26T23:52:17-08:00</pubDate>
+        <link>https://turbofei.github.io</link>
+        <link>https://turbofei.github.io</link>
+        <lastBuildDate>2025-11-08T22:54:32-08:00</lastBuildDate>
+        <pubDate>2025-11-08T22:54:32-08:00</pubDate>
         <ttl>1800</ttl>
 
 
@@ -169,8 +169,8 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 
 &lt;p&gt;This article introduces some practices for automating the management of Celeborn clusters based on the latest RESTful API, with all API calls accessing the Master’s API.&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/celeborn/2024/11/28/automating-celeborn-with-restful-api</link>
-                <guid>http://www.turbofei.wang/celeborn/2024/11/28/automating-celeborn-with-restful-api</guid>
+                <link>https://turbofei.github.io/celeborn/2024/11/28/automating-celeborn-with-restful-api</link>
+                <guid>https://turbofei.github.io/celeborn/2024/11/28/automating-celeborn-with-restful-api</guid>
                 <pubDate>2024-11-28T00:00:00-08:00</pubDate>
         </item>
 
@@ -334,8 +334,8 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 
 &lt;p&gt;本文介绍了eBay基于最新RESTful API 进行自动化管理Celeborn集群的一些实践，所有API调用都是访问Master的API。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/celeborn/2024/11/01/celeborn-automation</link>
-                <guid>http://www.turbofei.wang/celeborn/2024/11/01/celeborn-automation</guid>
+                <link>https://turbofei.github.io/celeborn/2024/11/01/celeborn-automation</link>
+                <guid>https://turbofei.github.io/celeborn/2024/11/01/celeborn-automation</guid>
                 <pubDate>2024-11-01T00:00:00-07:00</pubDate>
         </item>
 
@@ -652,8 +652,8 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 
 &lt;p&gt;对于big result sets场景中，为了让服务更加稳定，对其结果进行预计算，将计算结果规整的落入文件，然后在读取时候，规整的读出，减少split的partition 数量和碎片，可以极大的提高用户query的稳定性和性能。此外，简单介绍UploadData/DownloadData API.&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-solution</link>
-                <guid>http://www.turbofei.wang/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-solution</guid>
+                <link>https://turbofei.github.io/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-solution</link>
+                <guid>https://turbofei.github.io/spark/2022/11/18/ebay-kyuubi-spark-engine-big-result-sets-solution</guid>
                 <pubDate>2022-11-18T00:00:00-08:00</pubDate>
         </item>
 
@@ -1089,8 +1089,8 @@ Additionally, since Celeborn 0.5.0, you can view the Swagger UI at &lt;code clas
 &lt;p&gt;eBay Hadoop team开发的Spark测试框架Woody能够利用LogicalPlan提取job语句中的有效信息，并利用ParserRuleContext进行转换，以线上数据作为输入，将结果输出到测试目录；支持使用不同的Spark版本，conf，甚至修改job sql语句来运行，在运行之后得到数据质量结果和性能比较。总的来说，测试框架Woody的功能主要有以下两个方面：一是用于Spark版本升级及Spark sql job调优，二是用于端到端测试，帮助用户在job pipeline上线之前安全的利用真实的线上数据进行端到端的测试，验证新feature和bug修复，而无需修改任何代码。未来，Hadoop team将进一步优化Woody，以期更好的使用体验。&lt;/p&gt;
 
 </description>
-                <link>http://www.turbofei.wang/spark/2020/10/29/eBay-Spark-Test-Framework-Woody</link>
-                <guid>http://www.turbofei.wang/spark/2020/10/29/eBay-Spark-Test-Framework-Woody</guid>
+                <link>https://turbofei.github.io/spark/2020/10/29/eBay-Spark-Test-Framework-Woody</link>
+                <guid>https://turbofei.github.io/spark/2020/10/29/eBay-Spark-Test-Framework-Woody</guid>
                 <pubDate>2020-10-29T00:00:00-07:00</pubDate>
         </item>
 
@@ -1390,8 +1390,8 @@ res0: Boolean &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quo
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 </description>
-                <link>http://www.turbofei.wang/spark/2020/03/28/%E8%AE%B0%E4%B8%80%E6%AC%A1%E4%B8%8ESpark-bucket-table%E7%9B%B8%E5%85%B3%E7%9A%84%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98</link>
-                <guid>http://www.turbofei.wang/spark/2020/03/28/记一次与Spark bucket table相关的小文件问题</guid>
+                <link>https://turbofei.github.io/spark/2020/03/28/%E8%AE%B0%E4%B8%80%E6%AC%A1%E4%B8%8ESpark-bucket-table%E7%9B%B8%E5%85%B3%E7%9A%84%E5%B0%8F%E6%96%87%E4%BB%B6%E9%97%AE%E9%A2%98</link>
+                <guid>https://turbofei.github.io/spark/2020/03/28/记一次与Spark bucket table相关的小文件问题</guid>
                 <pubDate>2020-03-28T00:00:00-07:00</pubDate>
         </item>
 
@@ -1531,8 +1531,8 @@ spark.task.reaper.killTimeout&lt;/p&gt;
 spark.worker.timeout&lt;/p&gt;
 
 </description>
-                <link>http://www.turbofei.wang/spark/2020/03/10/spark-timeout-parameters</link>
-                <guid>http://www.turbofei.wang/spark/2020/03/10/spark-timeout-parameters</guid>
+                <link>https://turbofei.github.io/spark/2020/03/10/spark-timeout-parameters</link>
+                <guid>https://turbofei.github.io/spark/2020/03/10/spark-timeout-parameters</guid>
                 <pubDate>2020-03-10T00:00:00-07:00</pubDate>
         </item>
 
@@ -1676,8 +1676,8 @@ spark.worker.timeout&lt;/p&gt;
 &lt;p&gt;但是在Spark中，为了减少在Decimal操作时容易溢出的问题，有时候会将Decimal转换为double类型。&lt;/p&gt;
 
 </description>
-                <link>http://www.turbofei.wang/essay/2020/01/10/%E9%87%8D%E6%96%B0%E4%BA%86%E8%A7%A3%E6%95%B0%E5%AD%97%E7%B1%BB%E5%9E%8B</link>
-                <guid>http://www.turbofei.wang/essay/2020/01/10/重新了解数字类型</guid>
+                <link>https://turbofei.github.io/essay/2020/01/10/%E9%87%8D%E6%96%B0%E4%BA%86%E8%A7%A3%E6%95%B0%E5%AD%97%E7%B1%BB%E5%9E%8B</link>
+                <guid>https://turbofei.github.io/essay/2020/01/10/重新了解数字类型</guid>
                 <pubDate>2020-01-10T00:00:00-08:00</pubDate>
         </item>
 
@@ -2001,8 +2001,8 @@ spark.worker.timeout&lt;/p&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 </description>
-                <link>http://www.turbofei.wang/hadoop/2019/12/28/About-Hdfs-Lease</link>
-                <guid>http://www.turbofei.wang/hadoop/2019/12/28/About-Hdfs-Lease</guid>
+                <link>https://turbofei.github.io/hadoop/2019/12/28/About-Hdfs-Lease</link>
+                <guid>https://turbofei.github.io/hadoop/2019/12/28/About-Hdfs-Lease</guid>
                 <pubDate>2019-12-28T00:00:00-08:00</pubDate>
         </item>
 
@@ -2090,8 +2090,8 @@ spark.worker.timeout&lt;/p&gt;
 
 &lt;p&gt;然后对对应部分进行替换，之后再把第二棵树的碎片对应的文本拼接起来就好了。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2019/12/04/Spark%E9%9A%8F%E7%AC%94</link>
-                <guid>http://www.turbofei.wang/spark/2019/12/04/Spark随笔</guid>
+                <link>https://turbofei.github.io/spark/2019/12/04/Spark%E9%9A%8F%E7%AC%94</link>
+                <guid>https://turbofei.github.io/spark/2019/12/04/Spark随笔</guid>
                 <pubDate>2019-12-04T00:00:00-08:00</pubDate>
         </item>
 
@@ -2340,8 +2340,8 @@ spark.worker.timeout&lt;/p&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 </description>
-                <link>http://www.turbofei.wang/spark/2019/10/29/A-BroadCastJoin-Issue-in-spark</link>
-                <guid>http://www.turbofei.wang/spark/2019/10/29/A-BroadCastJoin-Issue-in-spark</guid>
+                <link>https://turbofei.github.io/spark/2019/10/29/A-BroadCastJoin-Issue-in-spark</link>
+                <guid>https://turbofei.github.io/spark/2019/10/29/A-BroadCastJoin-Issue-in-spark</guid>
                 <pubDate>2019-10-29T00:00:00-07:00</pubDate>
         </item>
 
@@ -2552,7 +2552,7 @@ OPTIONS (
 
 &lt;p&gt;解决此问题，可以合入PR&lt;a href=&quot;https://github.com/apache/spark/pull/25701&quot;&gt;SPARK-29000&lt;/a&gt;来解决在非Decimal和Decimal之间操作数转化时，精度转换不当的问题，合入  &lt;a href=&quot;https://github.com/apache/spark/pull/20350&quot;&gt;SPARK-23179&lt;/a&gt; 来在Decimal计算overflow时抛出一个异常来提醒用户计算出现问题，让用户感知。&lt;/p&gt;
 
-&lt;p&gt;有兴趣的话，可以查看具体的分析和解决方案描述&lt;a href=&quot;https://www.turbofei.wang/spark/2019/09/09/Spark-SQL-Decimal-Precision-Overflow-Analysis&quot;&gt;Spark Sql Decimal Precision Overflow Analysis&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;有兴趣的话，可以查看具体的分析和解决方案描述&lt;a href=&quot;https://turbofei.github.io/spark/2019/09/09/Spark-SQL-Decimal-Precision-Overflow-Analysis&quot;&gt;Spark Sql Decimal Precision Overflow Analysis&lt;/a&gt;。&lt;/p&gt;
 
 &lt;h3 id=&quot;数据写入&quot;&gt;数据写入&lt;/h3&gt;
 
@@ -2674,8 +2674,8 @@ OPTIONS (
 
 &lt;p&gt;关于场景B中问题的长期解决方案，PR &lt;a href=&quot;https://github.com/apache/spark/pull/25863&quot;&gt;SPARK-29037&lt;/a&gt; 正在致力于解决这个问题，希望可以解决数据重复以及在多个操作并发写入一张表可能造成干扰的问题。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2019/09/30/%E5%85%B3%E4%BA%8ESpark%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E5%BC%82%E5%B8%B8%E7%9A%84%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90</link>
-                <guid>http://www.turbofei.wang/spark/2019/09/30/关于Spark数据计算结果异常的场景分析</guid>
+                <link>https://turbofei.github.io/spark/2019/09/30/%E5%85%B3%E4%BA%8ESpark%E6%95%B0%E6%8D%AE%E8%AE%A1%E7%AE%97%E7%BB%93%E6%9E%9C%E5%BC%82%E5%B8%B8%E7%9A%84%E5%9C%BA%E6%99%AF%E5%88%86%E6%9E%90</link>
+                <guid>https://turbofei.github.io/spark/2019/09/30/关于Spark数据计算结果异常的场景分析</guid>
                 <pubDate>2019-09-30T00:00:00-07:00</pubDate>
         </item>
 
@@ -2891,8 +2891,8 @@ OPTIONS (
 
 &lt;p&gt;因此，我们在上面的基础上合入该PR，引入&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;spark.sql.decimalOperations.nullOnOverflow&lt;/code&gt;参数，设置为false, 以保证线上计算任务的数据质量。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2019/09/09/Spark-SQL-Decimal-Precision-Overflow-Analysis</link>
-                <guid>http://www.turbofei.wang/spark/2019/09/09/Spark-SQL-Decimal-Precision-Overflow-Analysis</guid>
+                <link>https://turbofei.github.io/spark/2019/09/09/Spark-SQL-Decimal-Precision-Overflow-Analysis</link>
+                <guid>https://turbofei.github.io/spark/2019/09/09/Spark-SQL-Decimal-Precision-Overflow-Analysis</guid>
                 <pubDate>2019-09-09T00:00:00-07:00</pubDate>
         </item>
 
@@ -3054,8 +3054,8 @@ OPTIONS (
   &lt;/tbody&gt;
 &lt;/table&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2019/08/30/Spark-Blacklist-Mechanism-Introduction</link>
-                <guid>http://www.turbofei.wang/spark/2019/08/30/Spark-Blacklist-Mechanism-Introduction</guid>
+                <link>https://turbofei.github.io/spark/2019/08/30/Spark-Blacklist-Mechanism-Introduction</link>
+                <guid>https://turbofei.github.io/spark/2019/08/30/Spark-Blacklist-Mechanism-Introduction</guid>
                 <pubDate>2019-08-30T00:00:00-07:00</pubDate>
         </item>
 
@@ -3437,8 +3437,8 @@ Options:
 
 &lt;p&gt;&lt;a href=&quot;https://blog.csdn.net/yjclsx/article/details/81508455&quot;&gt;linux Top Usage&lt;/a&gt;&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/bigdata/2019/08/16/Linux-Ops-Commands</link>
-                <guid>http://www.turbofei.wang/bigdata/2019/08/16/Linux-Ops-Commands</guid>
+                <link>https://turbofei.github.io/bigdata/2019/08/16/Linux-Ops-Commands</link>
+                <guid>https://turbofei.github.io/bigdata/2019/08/16/Linux-Ops-Commands</guid>
                 <pubDate>2019-08-16T00:00:00-07:00</pubDate>
         </item>
 
@@ -3720,8 +3720,8 @@ Options:
 
 &lt;p&gt;PS:  Spark-2.3.2只能指定一个spark.sql.extensions，可以合入&lt;a href=&quot;https://github.com/apache/spark/pull/23398&quot;&gt;PR-26493&lt;/a&gt;来支持多个extensions.&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2019/07/06/spark-catalyst-%E6%B7%BB%E5%8A%A0%E8%87%AA%E5%B7%B1%E7%9A%84%E8%A7%84%E5%88%99</link>
-                <guid>http://www.turbofei.wang/spark/2019/07/06/spark-catalyst-添加自己的规则</guid>
+                <link>https://turbofei.github.io/spark/2019/07/06/spark-catalyst-%E6%B7%BB%E5%8A%A0%E8%87%AA%E5%B7%B1%E7%9A%84%E8%A7%84%E5%88%99</link>
+                <guid>https://turbofei.github.io/spark/2019/07/06/spark-catalyst-添加自己的规则</guid>
                 <pubDate>2019-07-06T00:00:00-07:00</pubDate>
         </item>
 
@@ -4105,8 +4105,8 @@ jmap_Top_Components.zip
 
 &lt;p&gt;&lt;a href=&quot;https://www.jianshu.com/p/c321d0808a1b&quot;&gt;jinfo&lt;/a&gt;&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/coding/2019/06/29/jvm-tools-usage</link>
-                <guid>http://www.turbofei.wang/coding/2019/06/29/jvm-tools-usage</guid>
+                <link>https://turbofei.github.io/coding/2019/06/29/jvm-tools-usage</link>
+                <guid>https://turbofei.github.io/coding/2019/06/29/jvm-tools-usage</guid>
                 <pubDate>2019-06-29T00:00:00-07:00</pubDate>
         </item>
 
@@ -4666,8 +4666,8 @@ jmap_Top_Components.zip
 &lt;/table&gt;
 
 </description>
-                <link>http://www.turbofei.wang/spark/2019/06/26/spark-sql-%E5%8F%82%E6%95%B0%E8%B0%83%E4%BC%98</link>
-                <guid>http://www.turbofei.wang/spark/2019/06/26/spark-sql-参数调优</guid>
+                <link>https://turbofei.github.io/spark/2019/06/26/spark-sql-%E5%8F%82%E6%95%B0%E8%B0%83%E4%BC%98</link>
+                <guid>https://turbofei.github.io/spark/2019/06/26/spark-sql-参数调优</guid>
                 <pubDate>2019-06-26T00:00:00-07:00</pubDate>
         </item>
 
@@ -4942,8 +4942,8 @@ jmap_Top_Components.zip
 
 &lt;p&gt;&lt;a href=&quot;https://dzone.com/articles/thread-local-allocation-buffers&quot;&gt;What is Thread Local Allocation Buffer&lt;/a&gt;&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/coding/2019/06/20/about-threadLocal</link>
-                <guid>http://www.turbofei.wang/coding/2019/06/20/about-threadLocal</guid>
+                <link>https://turbofei.github.io/coding/2019/06/20/about-threadLocal</link>
+                <guid>https://turbofei.github.io/coding/2019/06/20/about-threadLocal</guid>
                 <pubDate>2019-06-20T00:00:00-07:00</pubDate>
         </item>
 
@@ -5185,8 +5185,8 @@ jmap_Top_Components.zip
   &lt;/li&gt;
 &lt;/ul&gt;
 </description>
-                <link>http://www.turbofei.wang/essay/2019/06/07/about-jvm</link>
-                <guid>http://www.turbofei.wang/essay/2019/06/07/about-jvm</guid>
+                <link>https://turbofei.github.io/essay/2019/06/07/about-jvm</link>
+                <guid>https://turbofei.github.io/essay/2019/06/07/about-jvm</guid>
                 <pubDate>2019-06-07T00:00:00-07:00</pubDate>
         </item>
 
@@ -5535,8 +5535,8 @@ java.io.IOException: Connection reset by peer
 
 &lt;p&gt;对应PR &lt;a href=&quot;https://github.com/apache/spark/pull/24447&quot;&gt;SPARK-27562&lt;/a&gt;&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease</link>
-                <guid>http://www.turbofei.wang/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease</guid>
+                <link>https://turbofei.github.io/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease</link>
+                <guid>https://turbofei.github.io/spark/2019/05/30/Optimization-for-spark-shuffle-in-netease</guid>
                 <pubDate>2019-05-30T00:00:00-07:00</pubDate>
         </item>
 
@@ -5720,8 +5720,8 @@ java.io.IOException: Connection reset by peer
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 
 </description>
-                <link>http://www.turbofei.wang/coding/2019/05/26/java-concurrent-collection</link>
-                <guid>http://www.turbofei.wang/coding/2019/05/26/java-concurrent-collection</guid>
+                <link>https://turbofei.github.io/coding/2019/05/26/java-concurrent-collection</link>
+                <guid>https://turbofei.github.io/coding/2019/05/26/java-concurrent-collection</guid>
                 <pubDate>2019-05-26T00:00:00-07:00</pubDate>
         </item>
 
@@ -6028,8 +6028,8 @@ java.io.IOException: Connection reset by peer
 
 &lt;h4 id=&quot;to-be-continued&quot;&gt;To Be Continued&lt;/h4&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2019/05/26/about-spark-streaming</link>
-                <guid>http://www.turbofei.wang/spark/2019/05/26/about-spark-streaming</guid>
+                <link>https://turbofei.github.io/spark/2019/05/26/about-spark-streaming</link>
+                <guid>https://turbofei.github.io/spark/2019/05/26/about-spark-streaming</guid>
                 <pubDate>2019-05-26T00:00:00-07:00</pubDate>
         </item>
 
@@ -6212,8 +6212,8 @@ fei&quot;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;//可直接�
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 </description>
-                <link>http://www.turbofei.wang/coding/2019/05/25/scala-match-and-regex</link>
-                <guid>http://www.turbofei.wang/coding/2019/05/25/scala-match-and-regex</guid>
+                <link>https://turbofei.github.io/coding/2019/05/25/scala-match-and-regex</link>
+                <guid>https://turbofei.github.io/coding/2019/05/25/scala-match-and-regex</guid>
                 <pubDate>2019-05-25T00:00:00-07:00</pubDate>
         </item>
 
@@ -6373,8 +6373,8 @@ fei&quot;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;//可直接�
 
 &lt;p&gt;本文大概讲解了下execution包中各个部分的用途，重点是如何进行Exchange，以及什么是ExchangeCoordinator。对于join和Aggregate未涉及太多。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2019/05/20/spark-sql-execution</link>
-                <guid>http://www.turbofei.wang/spark/2019/05/20/spark-sql-execution</guid>
+                <link>https://turbofei.github.io/spark/2019/05/20/spark-sql-execution</link>
+                <guid>https://turbofei.github.io/spark/2019/05/20/spark-sql-execution</guid>
                 <pubDate>2019-05-20T00:00:00-07:00</pubDate>
         </item>
 
@@ -6683,8 +6683,8 @@ fei&quot;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;//可直接�
 
 &lt;p&gt;关于设置UncaughtExceptionHandler。ThreadGroup是UncaughtExceptionHandler的一个实现类，如果当前thread没有设置UncaughtExceptionHandler，那么返回threadGroup。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/coding/2019/05/19/scala-concurrent-programming-Future-And-Thread</link>
-                <guid>http://www.turbofei.wang/coding/2019/05/19/scala-concurrent-programming:-Future-And-Thread</guid>
+                <link>https://turbofei.github.io/coding/2019/05/19/scala-concurrent-programming-Future-And-Thread</link>
+                <guid>https://turbofei.github.io/coding/2019/05/19/scala-concurrent-programming:-Future-And-Thread</guid>
                 <pubDate>2019-05-19T00:00:00-07:00</pubDate>
         </item>
 
@@ -7540,8 +7540,8 @@ fei&quot;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;//可直接�
 &lt;p&gt;略&lt;/p&gt;
 
 </description>
-                <link>http://www.turbofei.wang/bigdata/2019/05/19/%E8%BD%AC%E8%BD%BD-Raft%E8%AF%91%E6%96%87</link>
-                <guid>http://www.turbofei.wang/bigdata/2019/05/19/[转载]-Raft译文</guid>
+                <link>https://turbofei.github.io/bigdata/2019/05/19/%E8%BD%AC%E8%BD%BD-Raft%E8%AF%91%E6%96%87</link>
+                <guid>https://turbofei.github.io/bigdata/2019/05/19/[转载]-Raft译文</guid>
                 <pubDate>2019-05-19T00:00:00-07:00</pubDate>
         </item>
 
@@ -8342,8 +8342,8 @@ layout：default或者legacy&lt;/p&gt;
 
 &lt;p&gt;https://www.cnblogs.com/qq78292959/p/3711501.html&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/coding/2019/05/19/About-Maven</link>
-                <guid>http://www.turbofei.wang/coding/2019/05/19/About-Maven</guid>
+                <link>https://turbofei.github.io/coding/2019/05/19/About-Maven</link>
+                <guid>https://turbofei.github.io/coding/2019/05/19/About-Maven</guid>
                 <pubDate>2019-05-19T00:00:00-07:00</pubDate>
         </item>
 
@@ -8697,8 +8697,8 @@ ForkJoinPool是一个用于运行ForkJoinTask的线程池. ForkJoinPool和其他
     &lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;
 &lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
 </description>
-                <link>http://www.turbofei.wang/coding/2019/05/18/scala-concurrent-programing-Promise-And-ForkJoinPool</link>
-                <guid>http://www.turbofei.wang/coding/2019/05/18/scala-concurrent-programing:-Promise-And-ForkJoinPool</guid>
+                <link>https://turbofei.github.io/coding/2019/05/18/scala-concurrent-programing-Promise-And-ForkJoinPool</link>
+                <guid>https://turbofei.github.io/coding/2019/05/18/scala-concurrent-programing:-Promise-And-ForkJoinPool</guid>
                 <pubDate>2019-05-18T00:00:00-07:00</pubDate>
         </item>
 
@@ -8819,8 +8819,8 @@ ForkJoinPool是一个用于运行ForkJoinTask的线程池. ForkJoinPool和其他
 
 &lt;p&gt;如果transactionOn为false，则不保障事务。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2019/05/12/transactions-suuport-for-spark-greenlum</link>
-                <guid>http://www.turbofei.wang/spark/2019/05/12/transactions-suuport-for-spark-greenlum</guid>
+                <link>https://turbofei.github.io/spark/2019/05/12/transactions-suuport-for-spark-greenlum</link>
+                <guid>https://turbofei.github.io/spark/2019/05/12/transactions-suuport-for-spark-greenlum</guid>
                 <pubDate>2019-05-12T00:00:00-07:00</pubDate>
         </item>
 
@@ -8943,8 +8943,8 @@ ForkJoinPool是一个用于运行ForkJoinTask的线程池. ForkJoinPool和其他
 &lt;p&gt;&lt;a href=&quot;https://jaceklaskowski.gitbooks.io/mastering-apache-spark/spark-ExternalShuffleService.html&quot;&gt;External Shuffle Service&lt;/a&gt;&lt;/p&gt;
 
 </description>
-                <link>http://www.turbofei.wang/spark/2018/12/10/spark-external-shuffle-service</link>
-                <guid>http://www.turbofei.wang/spark/2018/12/10/spark-external-shuffle-service</guid>
+                <link>https://turbofei.github.io/spark/2018/12/10/spark-external-shuffle-service</link>
+                <guid>https://turbofei.github.io/spark/2018/12/10/spark-external-shuffle-service</guid>
                 <pubDate>2018-12-10T00:00:00-08:00</pubDate>
         </item>
 
@@ -9298,8 +9298,8 @@ level 3: p({A, B, C, D})&lt;/p&gt;
 
 &lt;p&gt;而且，在joinSelection中，也应该基于rowCount来判断join的种类。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2018/12/04/spark-cbo-code-analysis</link>
-                <guid>http://www.turbofei.wang/spark/2018/12/04/spark-cbo-code-analysis</guid>
+                <link>https://turbofei.github.io/spark/2018/12/04/spark-cbo-code-analysis</link>
+                <guid>https://turbofei.github.io/spark/2018/12/04/spark-cbo-code-analysis</guid>
                 <pubDate>2018-12-04T00:00:00-08:00</pubDate>
         </item>
 
@@ -9717,8 +9717,8 @@ Aggregate [sum(v#12L) AS sum(v)#28L]
 &lt;p&gt;https://databricks.com/blog/2017/08/31/cost-based-optimizer-in-apache-spark-2-2.html&lt;/p&gt;
 
 </description>
-                <link>http://www.turbofei.wang/spark/2018/08/01/spark-sql-catalyst</link>
-                <guid>http://www.turbofei.wang/spark/2018/08/01/spark-sql-catalyst</guid>
+                <link>https://turbofei.github.io/spark/2018/08/01/spark-sql-catalyst</link>
+                <guid>https://turbofei.github.io/spark/2018/08/01/spark-sql-catalyst</guid>
                 <pubDate>2018-08-01T00:00:00-07:00</pubDate>
         </item>
 
@@ -10042,8 +10042,8 @@ protected def doExecute(): RDD[InternalRow]
 &lt;p&gt;这里的doExecute返回的是一个中间类型的RDD。&lt;/p&gt;
 
 </description>
-                <link>http://www.turbofei.wang/spark/2018/07/27/Spark-Sql-Analysis</link>
-                <guid>http://www.turbofei.wang/spark/2018/07/27/Spark-Sql-Analysis</guid>
+                <link>https://turbofei.github.io/spark/2018/07/27/Spark-Sql-Analysis</link>
+                <guid>https://turbofei.github.io/spark/2018/07/27/Spark-Sql-Analysis</guid>
                 <pubDate>2018-07-27T00:00:00-07:00</pubDate>
         </item>
 
@@ -10056,8 +10056,8 @@ protected def doExecute(): RDD[InternalRow]
 &lt;h3 id=&quot;正文&quot;&gt;正文&lt;/h3&gt;
 &lt;p&gt;是之前做的html格式的PPT，&lt;a href=&quot;https://netease-bigdata.github.io/ne-spark-courseware/slides/spark_core/rdd_basics.html#1&quot;&gt;链接&lt;/a&gt;&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2018/07/12/rdd-basics</link>
-                <guid>http://www.turbofei.wang/spark/2018/07/12/rdd-basics</guid>
+                <link>https://turbofei.github.io/spark/2018/07/12/rdd-basics</link>
+                <guid>https://turbofei.github.io/spark/2018/07/12/rdd-basics</guid>
                 <pubDate>2018-07-12T00:00:00-07:00</pubDate>
         </item>
 
@@ -10411,8 +10411,8 @@ spark.org.apache.hadoop.security.authentication.server.AuthenticationFilter.para
 
 &lt;p&gt;本文从总体上介绍了Spark中关于安全的各个方面，以及如何开启和配置这些安全机制。本文并未从原理和代码上阐述所有这些安全机制背后的原理以及实现，因为对于每一种安全机制都可以长篇大论赘述其由来。相反的是，相比于原理，怎么去使用它更为重要，毕竟绝大多数的用户/开发者不会涉及到里面真正的细节。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/jerryshao/2018/01/15/spark-security-overview</link>
-                <guid>http://www.turbofei.wang/jerryshao/2018/01/15/spark-security-overview</guid>
+                <link>https://turbofei.github.io/jerryshao/2018/01/15/spark-security-overview</link>
+                <guid>https://turbofei.github.io/jerryshao/2018/01/15/spark-security-overview</guid>
                 <pubDate>2018-01-15T00:00:00-08:00</pubDate>
         </item>
 
@@ -10539,8 +10539,8 @@ spark.org.apache.hadoop.security.authentication.server.AuthenticationFilter.para
 
 &lt;p&gt;&lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;mark&lt;/code&gt;&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/essay/2017/07/01/deca%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93</link>
-                <guid>http://www.turbofei.wang/essay/2017/07/01/deca项目总结</guid>
+                <link>https://turbofei.github.io/essay/2017/07/01/deca%E9%A1%B9%E7%9B%AE%E6%80%BB%E7%BB%93</link>
+                <guid>https://turbofei.github.io/essay/2017/07/01/deca项目总结</guid>
                 <pubDate>2017-07-01T00:00:00-07:00</pubDate>
         </item>
 
@@ -11048,8 +11048,8 @@ override def read(): Iterator[Product2[K, C]] = {
 
 &lt;p&gt;前两种shuffleWriter（UnsafeShuffleWriter没细看）里的shuffleWrite端最后得到的文件都只是一个IndexFile，这跟&lt;a href=&quot;http://jerryshao.me/architecture/2014/01/04/spark-shuffle-detail-investigation/&quot;&gt;早期的shuffle机制&lt;/a&gt;还是不一样的。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2016/12/26/spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90Shuffle%E5%AE%9E%E7%8E%B0</link>
-                <guid>http://www.turbofei.wang/spark/2016/12/26/spark源码分析Shuffle实现</guid>
+                <link>https://turbofei.github.io/spark/2016/12/26/spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90Shuffle%E5%AE%9E%E7%8E%B0</link>
+                <guid>https://turbofei.github.io/spark/2016/12/26/spark源码分析Shuffle实现</guid>
                 <pubDate>2016-12-26T00:00:00-08:00</pubDate>
         </item>
 
@@ -11270,8 +11270,8 @@ private def visitArray(array: AnyRef, arrayClass: Class[_], state: SearchState) 
 &lt;p&gt;就是  &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;math.min(s1,s2)*(length-ARRAY_SAMPLE_SIZE)+abs(s1-s2)&lt;/code&gt;，这应该是为了不让内存预估过大，以免占用太多，同时用一个小的增量对这个偏小的预估进行补偿。&lt;/p&gt;
 
 </description>
-                <link>http://www.turbofei.wang/spark/2016/12/26/spark%E5%86%85%E5%AD%98%E9%A2%84%E6%B5%8B</link>
-                <guid>http://www.turbofei.wang/spark/2016/12/26/spark内存预测</guid>
+                <link>https://turbofei.github.io/spark/2016/12/26/spark%E5%86%85%E5%AD%98%E9%A2%84%E6%B5%8B</link>
+                <guid>https://turbofei.github.io/spark/2016/12/26/spark内存预测</guid>
                 <pubDate>2016-12-26T00:00:00-08:00</pubDate>
         </item>
 
@@ -12089,8 +12089,8 @@ f(context, split.index, firstParent[T].iterator(split, context))
 &lt;p&gt; &lt;a href=&quot;http://blog.csdn.net/jiangpeng59/article/details/53212416&quot;&gt;Spark基础随笔：持久化&amp;amp;检查点&lt;/a&gt;&lt;/p&gt;
 
 </description>
-                <link>http://www.turbofei.wang/spark/2016/12/22/spark%E5%BA%94%E7%94%A8%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B</link>
-                <guid>http://www.turbofei.wang/spark/2016/12/22/spark应用执行流程</guid>
+                <link>https://turbofei.github.io/spark/2016/12/22/spark%E5%BA%94%E7%94%A8%E6%89%A7%E8%A1%8C%E6%B5%81%E7%A8%8B</link>
+                <guid>https://turbofei.github.io/spark/2016/12/22/spark应用执行流程</guid>
                 <pubDate>2016-12-22T00:00:00-08:00</pubDate>
         </item>
 
@@ -12185,8 +12185,8 @@ private def getMaxExecutionMemory(conf: SparkConf): Long = {
 
 &lt;p&gt;然后通过查看usages 发现是在 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;CoarseGrainedExecutorBackEnd&lt;/code&gt; 和 &lt;code class=&quot;language-plaintext highlighter-rouge&quot;&gt;MesosExecutorBackEnd&lt;/code&gt;里面调用的，所以是每个executor都有一个统一内存管理的实例(…很显然，逻辑也是这样)。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/spark/2016/12/19/spark%E7%BB%9F%E4%B8%80%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86</link>
-                <guid>http://www.turbofei.wang/spark/2016/12/19/spark统一内存管理</guid>
+                <link>https://turbofei.github.io/spark/2016/12/19/spark%E7%BB%9F%E4%B8%80%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86</link>
+                <guid>https://turbofei.github.io/spark/2016/12/19/spark统一内存管理</guid>
                 <pubDate>2016-12-19T00:00:00-08:00</pubDate>
         </item>
 
@@ -12510,8 +12510,8 @@ public  static long grow (long  baseAddress,int vType,int minCapacity) {
 
 &lt;/code&gt;&lt;/pre&gt;
 </description>
-                <link>http://www.turbofei.wang/coding/2016/11/12/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8</link>
-                <guid>http://www.turbofei.wang/coding/2016/11/12/java-unsafe类的使用</guid>
+                <link>https://turbofei.github.io/coding/2016/11/12/java-unsafe%E7%B1%BB%E7%9A%84%E4%BD%BF%E7%94%A8</link>
+                <guid>https://turbofei.github.io/coding/2016/11/12/java-unsafe类的使用</guid>
                 <pubDate>2016-11-12T16:24:19-08:00</pubDate>
         </item>
 
@@ -12754,8 +12754,8 @@ systemctl start gmond
 &lt;p&gt;&lt;img src=&quot;http://www.slothparadise.com/wp-content/uploads/2016/03/ganglia-home-page.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 
 </description>
-                <link>http://www.turbofei.wang/bigdata/2016/08/16/ganglia-%E5%AE%89%E8%A3%85</link>
-                <guid>http://www.turbofei.wang/bigdata/2016/08/16/ganglia-安装</guid>
+                <link>https://turbofei.github.io/bigdata/2016/08/16/ganglia-%E5%AE%89%E8%A3%85</link>
+                <guid>https://turbofei.github.io/bigdata/2016/08/16/ganglia-安装</guid>
                 <pubDate>2016-08-16T14:15:03-07:00</pubDate>
         </item>
 
@@ -12971,8 +12971,8 @@ class ShuffleBlockManager(blockManager: BlockManager) {
 
 &lt;p&gt;本文详细地介绍了Spark的shuffle实现是如何进化的，以及遇到问题解决问题的过程。shuffle作为Spark程序中很重要的一个环节，直接影响了Spark程序的性能，现如今的Spark版本虽然shuffle实现还存在着种种问题，但是相比于早期版本，已经有了很大的进步。开源代码就是如此不停地迭代推进，随着Spark的普及程度越来越高，贡献的人越来越多，相信后续的版本会有更大的提升。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/jerryshao/2014/01/04/spark-shuffle-detail-investigation</link>
-                <guid>http://www.turbofei.wang/jerryshao/2014/01/04/spark-shuffle-detail-investigation</guid>
+                <link>https://turbofei.github.io/jerryshao/2014/01/04/spark-shuffle-detail-investigation</link>
+                <guid>https://turbofei.github.io/jerryshao/2014/01/04/spark-shuffle-detail-investigation</guid>
                 <pubDate>2014-01-04T00:00:00-08:00</pubDate>
         </item>
 
@@ -13707,8 +13707,8 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
 
 &lt;p&gt;本文从整体上分析了storage模块的实现，并未就具体实现做非常细节的分析，相信在看完本文对storage模块有一个整体的印象以后再去分析细节的实现会有事半功倍的效果。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/jerryshao/2013/10/08/spark-storage-module-analysis</link>
-                <guid>http://www.turbofei.wang/jerryshao/2013/10/08/spark-storage-module-analysis</guid>
+                <link>https://turbofei.github.io/jerryshao/2013/10/08/spark-storage-module-analysis</link>
+                <guid>https://turbofei.github.io/jerryshao/2013/10/08/spark-storage-module-analysis</guid>
                 <pubDate>2013-10-08T00:00:00-07:00</pubDate>
         </item>
 
@@ -13829,8 +13829,8 @@ private val entries = new LinkedHashMap[String, Entry](32, 0.75f, true)
 
 &lt;p&gt;Spark屏蔽了RDD的转换和实现细节，设置了抽象屏障，使我们只需关注RDD如何转换并提供行为函数，并且Spark以统一且公认的函数式公共模式提供了API，使得熟悉函数式语言的用户可以轻松地了解这些公共模式的作用。同时由于提供了众多的公共模式，因此可以将算法清晰地分解为不同模式的组合，表述更为清晰和简洁。同样是基于map-reduce的算法框架，相比于Hadoop Spark提供了更精炼的API和更高的抽象模式，使得用户可以更清晰简单地描述其算法。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/jerryshao/2013/08/30/Functional-Abstraction-of-Sequence-Spark-API-Design</link>
-                <guid>http://www.turbofei.wang/jerryshao/2013/08/30/Functional-Abstraction-of-Sequence-Spark-API-Design</guid>
+                <link>https://turbofei.github.io/jerryshao/2013/08/30/Functional-Abstraction-of-Sequence-Spark-API-Design</link>
+                <guid>https://turbofei.github.io/jerryshao/2013/08/30/Functional-Abstraction-of-Sequence-Spark-API-Design</guid>
                 <pubDate>2013-08-30T00:00:00-07:00</pubDate>
         </item>
 
@@ -13927,8 +13927,8 @@ Question&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;One way to break down this RDD dependency chain is to write RDD to file and read it back to memory, this will clean all the dependencies of this RDD. Maybe a way to clean dependencies might also be a solution, but it is hard to implment.&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/jerryshao/2013/05/22/SparkStreaming-Job-Troubleshooting-of-Dependency-Chain</link>
-                <guid>http://www.turbofei.wang/jerryshao/2013/05/22/SparkStreaming-Job-Troubleshooting-of-Dependency-Chain</guid>
+                <link>https://turbofei.github.io/jerryshao/2013/05/22/SparkStreaming-Job-Troubleshooting-of-Dependency-Chain</link>
+                <guid>https://turbofei.github.io/jerryshao/2013/05/22/SparkStreaming-Job-Troubleshooting-of-Dependency-Chain</guid>
                 <pubDate>2013-05-22T00:00:00-07:00</pubDate>
         </item>
 
@@ -14240,8 +14240,8 @@ def fetchAndRunExecutor() {
 
 &lt;p&gt;总的来说作为Mesos的一种简单替代方式，deploy模块对于推广Spark还是有积极意义的。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/jerryshao/2013/04/30/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-deploy%E6%A8%A1%E5%9D%97</link>
-                <guid>http://www.turbofei.wang/jerryshao/2013/04/30/Spark源码分析之-deploy模块</guid>
+                <link>https://turbofei.github.io/jerryshao/2013/04/30/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-deploy%E6%A8%A1%E5%9D%97</link>
+                <guid>https://turbofei.github.io/jerryshao/2013/04/30/Spark源码分析之-deploy模块</guid>
                 <pubDate>2013-04-30T00:00:00-07:00</pubDate>
         </item>
 
@@ -14839,8 +14839,8 @@ def launchTask(context: ExecutorBackend, taskId: Long, serializedTask: ByteBuffe
 
 &lt;p&gt;当然Spark的代码仍然在积极开发之中，当前的源码分析在过不久后可能会变得没有意义，但重要的是体会Spark区别于MapReduce的设计理念，以及DAG思想的应用。DAG作为对MapReduce框架的改进越来越受到大数据界的重视，&lt;a href=&quot;http://hortonworks.com/&quot;&gt;&lt;strong&gt;hortonworks&lt;/strong&gt;&lt;/a&gt;也提出了类似DAG的框架&lt;a href=&quot;http://hortonworks.com/blog/category/tez/&quot;&gt;tez&lt;/a&gt;作为对MapReduce的改进。&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/jerryshao/2013/04/21/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-scheduler%E6%A8%A1%E5%9D%97</link>
-                <guid>http://www.turbofei.wang/jerryshao/2013/04/21/Spark源码分析之-scheduler模块</guid>
+                <link>https://turbofei.github.io/jerryshao/2013/04/21/Spark%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8B-scheduler%E6%A8%A1%E5%9D%97</link>
+                <guid>https://turbofei.github.io/jerryshao/2013/04/21/Spark源码分析之-scheduler模块</guid>
                 <pubDate>2013-04-21T00:00:00-07:00</pubDate>
         </item>
 
@@ -15124,8 +15124,8 @@ longTime =&amp;gt; generateJobs(new Time(longTime)))
 
 &lt;p&gt;&lt;a href=&quot;http://spark-project.org/docs/latest/streaming-programming-guide.html&quot;&gt;&lt;strong&gt;Spark Streaming Documentation&lt;/strong&gt;&lt;/a&gt;&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/jerryshao/2013/04/02/spark-streaming-introduction</link>
-                <guid>http://www.turbofei.wang/jerryshao/2013/04/02/spark-streaming-introduction</guid>
+                <link>https://turbofei.github.io/jerryshao/2013/04/02/spark-streaming-introduction</link>
+                <guid>https://turbofei.github.io/jerryshao/2013/04/02/spark-streaming-introduction</guid>
                 <pubDate>2013-04-02T00:00:00-07:00</pubDate>
         </item>
 
@@ -15188,8 +15188,8 @@ application，类似于Hadoop YARN框架。&lt;/li&gt;
 &lt;h1 id=&quot;end&quot;&gt;End&lt;/h1&gt;
 &lt;p&gt;以上大致地介绍了Spark的architecture，之后会陆续对各子模块作详细的介绍&lt;/p&gt;
 </description>
-                <link>http://www.turbofei.wang/jerryshao/2013/03/29/spark-overview</link>
-                <guid>http://www.turbofei.wang/jerryshao/2013/03/29/spark-overview</guid>
+                <link>https://turbofei.github.io/jerryshao/2013/03/29/spark-overview</link>
+                <guid>https://turbofei.github.io/jerryshao/2013/03/29/spark-overview</guid>
                 <pubDate>2013-03-29T00:00:00-07:00</pubDate>
         </item>
 
